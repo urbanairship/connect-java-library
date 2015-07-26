@@ -1,6 +1,8 @@
 package com.urbanairship.connect.client.mes;
 
 import com.google.common.net.HttpHeaders;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ning.http.client.AsyncHttpClient;
@@ -11,6 +13,13 @@ import com.sun.net.httpserver.HttpServer;
 import com.urbanairship.connect.client.Creds;
 import com.urbanairship.connect.client.MobileEventStream;
 import com.urbanairship.connect.client.StreamDescriptor;
+import com.urbanairship.connect.client.filters.DeviceFilter;
+import com.urbanairship.connect.client.filters.DeviceFilterSerializer;
+import com.urbanairship.connect.client.filters.DeviceIdType;
+import com.urbanairship.connect.client.filters.EventType;
+import com.urbanairship.connect.client.filters.Filter;
+import com.urbanairship.connect.client.filters.NotificationFilter;
+import com.urbanairship.connect.client.filters.OptionalSerializer;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -197,6 +206,48 @@ public class MobileEventStreamTest {
     }
 
     @Test
+    public void testRequestBodyWithFilter() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+
+            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+            byte[] bytes = new byte[length];
+            exchange.getRequestBody().read(bytes);
+            body.set(new String(bytes, UTF_8));
+
+            exchange.sendResponseHeaders(200, 0L);
+            return null;
+        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        DeviceFilter device1 = new DeviceFilter(DeviceIdType.ANDROID, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
+        DeviceFilter device2 = new DeviceFilter(DeviceIdType.IOS, "3d970087-600e-4bb6-8474-5857d438faaa");
+        DeviceFilter device3 = new DeviceFilter(DeviceIdType.NAMED_USER, "cool user");
+        NotificationFilter notification = NotificationFilter.createGroupIdFilter("a30abf06-7878-4096-9535-b50ac0ad6e8e");
+
+        Filter filter = Filter.newBuilder()
+            .setLatency(20000000)
+            .addDevices(device1, device2, device3)
+            .addDeviceTypes(DeviceIdType.ANDROID, DeviceIdType.AMAZON)
+            .addNotification(notification)
+            .addType(EventType.OPEN)
+            .build();
+
+        StreamDescriptor descriptor = filterDescriptor(Optional.of(filter));
+
+        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream.connect(10, TimeUnit.SECONDS);
+
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
+            .registerTypeAdapter(Optional.class, new OptionalSerializer())
+            .create();
+
+        JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
+        assertEquals(gson.toJson(filter), gson.toJson(bodyObj.get("filters")));
+    }
+
+    @Test
     public void testConnectionFail() throws Exception {
         doAnswer(invocationOnMock -> {
             HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
@@ -357,7 +408,19 @@ public class MobileEventStreamTest {
                         .setAppKey(randomAlphabetic(22))
                         .setSecret(randomAlphabetic(5))
                         .build(),
-                offset
+                offset,
+                Optional.empty()
+        );
+    }
+
+    private StreamDescriptor filterDescriptor(Optional<Filter> filter) {
+        return new StreamDescriptor(
+                Creds.newBuilder()
+                    .setAppKey(randomAlphabetic(22))
+                    .setSecret(randomAlphabetic(5))
+                    .build(),
+                Optional.<Long>empty(),
+                filter
         );
     }
 }
