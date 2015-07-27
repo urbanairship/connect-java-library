@@ -221,6 +221,10 @@ public class MobileEventStream implements AutoCloseable {
             body.put("start", "LATEST");
         }
 
+        if (descriptor.getSubset().isPresent()) {
+            body.put("subset", descriptor.getSubset().get());
+        }
+
         if (descriptor.getFilters().isPresent()) {
             body.put("filters", descriptor.getFilters().get());
         }

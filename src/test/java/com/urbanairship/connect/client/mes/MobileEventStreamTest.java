@@ -13,6 +13,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.urbanairship.connect.client.Creds;
 import com.urbanairship.connect.client.MobileEventStream;
 import com.urbanairship.connect.client.StreamDescriptor;
+import com.urbanairship.connect.client.Subset;
 import com.urbanairship.connect.client.filters.DeviceFilter;
 import com.urbanairship.connect.client.filters.DeviceFilterSerializer;
 import com.urbanairship.connect.client.filters.DeviceIdType;
@@ -248,6 +249,36 @@ public class MobileEventStreamTest {
     }
 
     @Test
+    public void testRequestBodyWithSubset() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+
+            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+            byte[] bytes = new byte[length];
+            exchange.getRequestBody().read(bytes);
+            body.set(new String(bytes, UTF_8));
+
+            exchange.sendResponseHeaders(200, 0L);
+            return null;
+        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        Subset subset = Subset.createPartitionSubset(10, 0);
+        StreamDescriptor descriptor = subsetDescriptor(Optional.of(subset));
+
+        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream.connect(10, TimeUnit.SECONDS);
+
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
+            .registerTypeAdapter(Optional.class, new OptionalSerializer())
+            .create();
+
+        JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
+        assertEquals(gson.toJson(subset), gson.toJson(bodyObj.get("subset")));
+    }
+
+    @Test
     public void testConnectionFail() throws Exception {
         doAnswer(invocationOnMock -> {
             HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
@@ -409,7 +440,8 @@ public class MobileEventStreamTest {
                         .setSecret(randomAlphabetic(5))
                         .build(),
                 offset,
-                Optional.empty()
+                Optional.empty(),
+                Optional.<Subset>empty()
         );
     }
 
@@ -420,7 +452,20 @@ public class MobileEventStreamTest {
                     .setSecret(randomAlphabetic(5))
                     .build(),
                 Optional.<Long>empty(),
-                filter
+                filter,
+                Optional.<Subset>empty()
+        );
+    }
+
+    private StreamDescriptor subsetDescriptor(Optional<Subset> subset) {
+        return new StreamDescriptor(
+                Creds.newBuilder()
+                    .setAppKey(randomAlphabetic(22))
+                    .setSecret(randomAlphabetic(5))
+                    .build(),
+                Optional.<Long>empty(),
+                Optional.<Filter>empty(),
+                subset
         );
     }
 }

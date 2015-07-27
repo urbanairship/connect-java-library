@@ -5,6 +5,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.urbanairship.connect.client.Creds;
 import com.urbanairship.connect.client.MobileEventStream;
 import com.urbanairship.connect.client.StreamDescriptor;
+import com.urbanairship.connect.client.Subset;
 import com.urbanairship.connect.client.filters.Filter;
 
 import java.util.Optional;
@@ -30,7 +31,8 @@ public class HitFirehouse {
                 .setSecret("wat")
                 .build(),
                 Optional.<Long>empty(),
-                Optional.<Filter>empty());
+                Optional.<Filter>empty(),
+                Optional.<Subset>empty());
 
 
         Consumer<String> consumer = s -> {};//System.out.println("Event: " + s);
