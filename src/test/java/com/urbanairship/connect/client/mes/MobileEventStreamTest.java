@@ -234,7 +234,7 @@ public class MobileEventStreamTest {
             .addType(EventType.OPEN)
             .build();
 
-        StreamDescriptor descriptor = filterDescriptor(Optional.of(filter));
+        StreamDescriptor descriptor = filterDescriptor(filter);
 
         stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
@@ -264,7 +264,7 @@ public class MobileEventStreamTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         Subset subset = Subset.createPartitionSubset(10, 0);
-        StreamDescriptor descriptor = subsetDescriptor(Optional.of(subset));
+        StreamDescriptor descriptor = subsetDescriptor(subset);
 
         stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
@@ -434,38 +434,34 @@ public class MobileEventStreamTest {
     }
 
     private StreamDescriptor descriptor(Optional<Long> offset) {
-        return new StreamDescriptor(
-                Creds.newBuilder()
-                        .setAppKey(randomAlphabetic(22))
-                        .setSecret(randomAlphabetic(5))
-                        .build(),
-                offset,
-                Optional.empty(),
-                Optional.<Subset>empty()
-        );
+        StreamDescriptor.Builder builder = StreamDescriptor.newBuilder()
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setSecret(randomAlphabetic(5))
+                .build());
+        if (offset.isPresent()) {
+            builder.setOffset(offset.get());
+        }
+        return builder.build();
     }
 
-    private StreamDescriptor filterDescriptor(Optional<Filter> filter) {
-        return new StreamDescriptor(
-                Creds.newBuilder()
-                    .setAppKey(randomAlphabetic(22))
-                    .setSecret(randomAlphabetic(5))
-                    .build(),
-                Optional.<Long>empty(),
-                filter,
-                Optional.<Subset>empty()
-        );
+    private StreamDescriptor filterDescriptor(Filter filter) {
+        return StreamDescriptor.newBuilder()
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setSecret(randomAlphabetic(5))
+                .build())
+            .setFilters(filter)
+            .build();
     }
 
-    private StreamDescriptor subsetDescriptor(Optional<Subset> subset) {
-        return new StreamDescriptor(
-                Creds.newBuilder()
-                    .setAppKey(randomAlphabetic(22))
-                    .setSecret(randomAlphabetic(5))
-                    .build(),
-                Optional.<Long>empty(),
-                Optional.<Filter>empty(),
-                subset
-        );
+    private StreamDescriptor subsetDescriptor(Subset subset) {
+        return StreamDescriptor.newBuilder()
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setSecret(randomAlphabetic(5))
+                .build())
+            .setSubset(subset)
+            .build();
     }
 }

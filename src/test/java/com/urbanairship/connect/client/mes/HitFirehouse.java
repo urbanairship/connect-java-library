@@ -5,10 +5,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.urbanairship.connect.client.Creds;
 import com.urbanairship.connect.client.MobileEventStream;
 import com.urbanairship.connect.client.StreamDescriptor;
-import com.urbanairship.connect.client.Subset;
-import com.urbanairship.connect.client.filters.Filter;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -26,13 +23,12 @@ public class HitFirehouse {
 
         AsyncHttpClient client = new AsyncHttpClient(clientConfig);
 
-        StreamDescriptor descriptor = new StreamDescriptor(Creds.newBuilder()
+        StreamDescriptor descriptor = StreamDescriptor.newBuilder()
+            .setCreds(Creds.newBuilder()
                 .setAppKey("wat")
                 .setSecret("wat")
-                .build(),
-                Optional.<Long>empty(),
-                Optional.<Filter>empty(),
-                Optional.<Subset>empty());
+                .build())
+                .build();
 
 
         Consumer<String> consumer = s -> {};//System.out.println("Event: " + s);

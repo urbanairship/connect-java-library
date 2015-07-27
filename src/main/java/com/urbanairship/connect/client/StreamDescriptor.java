@@ -12,7 +12,11 @@ public final class StreamDescriptor {
     private final Optional<Filter> filters;
     private final Optional<Subset> subset;
 
-    public StreamDescriptor(Creds creds, Optional<Long> offset, Optional<Filter> filters, Optional<Subset> subset) {
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
+    private StreamDescriptor(Creds creds, Optional<Long> offset, Optional<Filter> filters, Optional<Subset> subset) {
         this.creds = creds;
         this.offset = offset;
         this.filters = filters;
@@ -53,5 +57,38 @@ public final class StreamDescriptor {
     @Override
     public int hashCode() {
         return Objects.hash(creds, offset, filters, subset);
+    }
+
+    public static final class Builder {
+        private Creds creds;
+        private Long offset = null;
+        private Filter filters = null;
+        private Subset subset = null;
+
+        private Builder() {}
+
+        public Builder setCreds(Creds value) {
+            this.creds = value;
+            return this;
+        }
+
+        public Builder setOffset(Long value) {
+            this.offset = value;
+            return this;
+        }
+
+        public Builder setFilters(Filter value) {
+            this.filters = value;
+            return this;
+        }
+
+        public Builder setSubset(Subset value) {
+            this.subset = value;
+            return this;
+        }
+
+        public StreamDescriptor build() {
+            return new StreamDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
+        }
     }
 }
