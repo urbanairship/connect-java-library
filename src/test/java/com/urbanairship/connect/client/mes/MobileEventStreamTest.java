@@ -34,7 +34,9 @@ import org.mockito.MockitoAnnotations;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -226,7 +228,7 @@ public class MobileEventStreamTest {
         DeviceFilter device3 = new DeviceFilter(DeviceIdType.NAMED_USER, "cool user");
         NotificationFilter notification = NotificationFilter.createGroupIdFilter("a30abf06-7878-4096-9535-b50ac0ad6e8e");
 
-        Filter filter = Filter.newBuilder()
+        Filter filter1 = Filter.newBuilder()
             .setLatency(20000000)
             .addDevices(device1, device2, device3)
             .addDeviceTypes(DeviceIdType.ANDROID, DeviceIdType.AMAZON)
@@ -234,7 +236,13 @@ public class MobileEventStreamTest {
             .addType(EventType.OPEN)
             .build();
 
-        StreamDescriptor descriptor = filterDescriptor(filter);
+        Filter filter2 = Filter.newBuilder()
+            .setLatency(400)
+            .addDeviceTypes(DeviceIdType.IOS)
+            .addType(EventType.TAG_CHANGE)
+            .build();
+
+        StreamDescriptor descriptor = filterDescriptor(filter1, filter2);
 
         stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
@@ -245,7 +253,7 @@ public class MobileEventStreamTest {
             .create();
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals(gson.toJson(filter), gson.toJson(bodyObj.get("filters")));
+        assertEquals(gson.toJson(new HashSet<>(Arrays.asList(filter1, filter2))), gson.toJson(bodyObj.get("filters")));
     }
 
     @Test
@@ -445,13 +453,13 @@ public class MobileEventStreamTest {
         return builder.build();
     }
 
-    private StreamDescriptor filterDescriptor(Filter filter) {
+    private StreamDescriptor filterDescriptor(Filter... filter) {
         return StreamDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
                 .setSecret(randomAlphabetic(5))
                 .build())
-            .setFilters(filter)
+            .addFilters(filter)
             .build();
     }
 

@@ -2,21 +2,24 @@ package com.urbanairship.connect.client;
 
 import com.urbanairship.connect.client.filters.Filter;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public final class StreamDescriptor {
 
     private final Creds creds;
     private final Optional<Long> offset;
-    private final Optional<Filter> filters;
+    private final Optional<Set<Filter>> filters;
     private final Optional<Subset> subset;
 
     public static Builder newBuilder() {
         return new Builder();
     }
 
-    private StreamDescriptor(Creds creds, Optional<Long> offset, Optional<Filter> filters, Optional<Subset> subset) {
+    private StreamDescriptor(Creds creds, Optional<Long> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
         this.creds = creds;
         this.offset = offset;
         this.filters = filters;
@@ -31,7 +34,7 @@ public final class StreamDescriptor {
         return offset;
     }
 
-    public Optional<Filter> getFilters() {
+    public Optional<Set<Filter>> getFilters() {
         return filters;
     }
 
@@ -62,7 +65,7 @@ public final class StreamDescriptor {
     public static final class Builder {
         private Creds creds;
         private Long offset = null;
-        private Filter filters = null;
+        private Set<Filter> filters = null;
         private Subset subset = null;
 
         private Builder() {}
@@ -77,7 +80,15 @@ public final class StreamDescriptor {
             return this;
         }
 
-        public Builder setFilters(Filter value) {
+        public Builder addFilter(Filter value) {
+            return addFilters(value);
+        }
+
+        public Builder addFilters(Filter... value) {
+            return addFilters(new HashSet<Filter>(Arrays.asList(value)));
+        }
+
+        public Builder addFilters(Set<Filter> value) {
             this.filters = value;
             return this;
         }
