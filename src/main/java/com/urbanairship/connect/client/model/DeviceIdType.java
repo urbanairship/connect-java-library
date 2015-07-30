@@ -1,4 +1,4 @@
-package com.urbanairship.connect.client.filters;
+package com.urbanairship.connect.client.model;
 
 import com.google.gson.annotations.SerializedName;
 

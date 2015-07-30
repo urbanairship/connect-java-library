@@ -1,14 +1,10 @@
-package com.urbanairship.connect.client.mes.filters;
+package com.urbanairship.connect.client.model.filters;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.urbanairship.connect.client.filters.DeviceFilter;
-import com.urbanairship.connect.client.filters.DeviceFilterSerializer;
-import com.urbanairship.connect.client.filters.Filter;
-import com.urbanairship.connect.client.filters.NotificationFilter;
-import com.urbanairship.connect.client.filters.OptionalSerializer;
-import com.urbanairship.connect.client.filters.DeviceIdType;
-import com.urbanairship.connect.client.filters.EventType;
+import com.google.gson.JsonObject;
+import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.EventType;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -40,8 +36,8 @@ public class FilterSerializerTest {
 
         String json = "{" +
               "\"device_types\":[" +
-                "\"amazon\"," +
-                "\"android\"" +
+                "\"android\"," +
+                "\"amazon\"" +
               "]," +
               "\"notifications\":[" +
                 "{" +
@@ -50,10 +46,10 @@ public class FilterSerializerTest {
               "]," +
               "\"devices\":[" +
                 "{" +
-                  "\"android_channel\":\"c8044c8a-d5fa-4e58-91d4-54d0f70b7409\"" +
+                  "\"named_user_id\":\"cool user\"" +
                 "}," +
                 "{" +
-                  "\"named_user_id\":\"cool user\"" +
+                  "\"android_channel\":\"c8044c8a-d5fa-4e58-91d4-54d0f70b7409\"" +
                 "}," +
                 "{" +
                   "\"ios_channel\":\"3d970087-600e-4bb6-8474-5857d438faaa\"" +
@@ -65,7 +61,17 @@ public class FilterSerializerTest {
             "\"latency\":20000000" +
             "}";
 
-        assertEquals(json, gson.toJson(filter));
+        JsonObject expectedJsonObject = new JsonObject();
+        expectedJsonObject.addProperty("filters", json);
+
+        JsonObject filterJsonObject = new JsonObject();
+        filterJsonObject.addProperty("filters", gson.toJson(filter));
+
+        assertEquals(expectedJsonObject.get("device_types"), filterJsonObject.get("device_types"));
+        assertEquals(expectedJsonObject.get("notifications"), filterJsonObject.get("notifications"));
+        assertEquals(expectedJsonObject.get("devices"), filterJsonObject.get("devices"));
+        assertEquals(expectedJsonObject.get("types"), filterJsonObject.get("types"));
+        assertEquals(expectedJsonObject.get("latency"), filterJsonObject.get("latency"));
     }
 
     @Test

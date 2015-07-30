@@ -1,4 +1,4 @@
-package com.urbanairship.connect.client;
+package com.urbanairship.connect.client.model;
 
 import com.google.common.base.Preconditions;
 
@@ -75,7 +75,7 @@ public class Subset {
         return result;
     }
 
-    public static final class Builder {
+    private static final class Builder {
         private SubsetType type;
         private Float proportion = null;
         private Integer count = null;
@@ -83,27 +83,27 @@ public class Subset {
 
         private Builder() {}
 
-        public Builder setType(SubsetType value) {
+        private Builder setType(SubsetType value) {
             this.type = value;
             return this;
         }
 
-        public Builder setProportion(Float value) {
+        private Builder setProportion(Float value) {
             this.proportion = value;
             return this;
         }
 
-        public Builder setCount(Integer value) {
+        private Builder setCount(Integer value) {
             this.count = value;
             return this;
         }
 
-        public Builder setSelection(Integer value) {
+        private Builder setSelection(Integer value) {
             this.selection = value;
             return this;
         }
 
-        public Subset build() {
+        private Subset build() {
             if (type == SubsetType.SAMPLE) {
                 Preconditions.checkArgument(proportion != null,
                     "If the subset is of type SAMPLE, proportion may not be null");
@@ -113,7 +113,7 @@ public class Subset {
                 Preconditions.checkArgument(proportion == null,
                     "If the subset is of type PARTITION, proportion must be null");
                 Preconditions.checkArgument(selection != null && count != null,
-                    "If the subset is of type SAMPLE, selection and count may not be null");
+                    "If the subset is of type PARTITION, selection and count may not be null");
                 Preconditions.checkArgument(selection < count,
                     "Selection must be less than count");
             }

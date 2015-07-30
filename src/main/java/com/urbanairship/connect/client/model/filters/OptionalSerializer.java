@@ -1,4 +1,4 @@
-package com.urbanairship.connect.client.filters;
+package com.urbanairship.connect.client.model.filters;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;

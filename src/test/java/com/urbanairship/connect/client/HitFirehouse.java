@@ -1,10 +1,7 @@
-package com.urbanairship.connect.client.mes;
+package com.urbanairship.connect.client;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.urbanairship.connect.client.Creds;
-import com.urbanairship.connect.client.MobileEventStream;
-import com.urbanairship.connect.client.StreamDescriptor;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;

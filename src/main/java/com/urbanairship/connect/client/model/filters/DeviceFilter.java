@@ -1,4 +1,6 @@
-package com.urbanairship.connect.client.filters;
+package com.urbanairship.connect.client.model.filters;
+
+import com.urbanairship.connect.client.model.DeviceIdType;
 
 public class DeviceFilter {
 

@@ -1,6 +1,7 @@
 package com.urbanairship.connect.client;
 
-import com.urbanairship.connect.client.filters.Filter;
+import com.urbanairship.connect.client.model.Subset;
+import com.urbanairship.connect.client.model.filters.Filter;
 
 import java.util.Arrays;
 import java.util.HashSet;

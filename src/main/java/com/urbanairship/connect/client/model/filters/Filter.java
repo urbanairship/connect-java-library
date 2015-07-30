@@ -1,7 +1,9 @@
-package com.urbanairship.connect.client.filters;
+package com.urbanairship.connect.client.model.filters;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.annotations.SerializedName;
+import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.EventType;
 
 import java.util.Arrays;
 import java.util.HashSet;

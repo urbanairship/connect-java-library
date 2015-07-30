@@ -1,4 +1,4 @@
-package com.urbanairship.connect.client.filters;
+package com.urbanairship.connect.client.model;
 
 public enum EventType {
         OPEN,
@@ -8,5 +8,6 @@ public enum EventType {
         SEND,
         TAG_CHANGE,
         FIRST_OPEN,
-        UNINSTALL
+        UNINSTALL,
+        PUSH_BODY
 }

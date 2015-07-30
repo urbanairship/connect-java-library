@@ -1,4 +1,4 @@
-package com.urbanairship.connect.client.mes.consume;
+package com.urbanairship.connect.client.consume;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -7,9 +7,6 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
-import com.urbanairship.connect.client.consume.ConnectCallback;
-import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
-import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;

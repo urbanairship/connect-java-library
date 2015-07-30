@@ -1,10 +1,11 @@
-package com.urbanairship.connect.client.filters;
+package com.urbanairship.connect.client.model.filters;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.urbanairship.connect.client.model.DeviceIdType;
 
 import java.lang.reflect.Type;
 

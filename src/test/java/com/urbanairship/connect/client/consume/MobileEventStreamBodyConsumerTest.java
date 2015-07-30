@@ -1,7 +1,6 @@
-package com.urbanairship.connect.client.mes.consume;
+package com.urbanairship.connect.client.consume;
 
 import com.google.common.base.Joiner;
-import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;

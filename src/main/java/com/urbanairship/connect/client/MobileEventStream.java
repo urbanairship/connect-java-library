@@ -5,16 +5,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
-import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
-import com.urbanairship.connect.client.filters.DeviceFilter;
-import com.urbanairship.connect.client.filters.DeviceFilterSerializer;
-import com.urbanairship.connect.client.filters.OptionalSerializer;
+import com.urbanairship.connect.client.consume.StatusAndHeaders;
+import com.urbanairship.connect.client.model.GsonUtil;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import sun.net.www.protocol.http.HttpURLConnection;
@@ -50,7 +47,7 @@ public class MobileEventStream implements AutoCloseable {
 
     private static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
 
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = GsonUtil.getGson();
 
     private final StreamDescriptor descriptor;
     private final AsyncHttpClient client;
@@ -207,11 +204,6 @@ public class MobileEventStream implements AutoCloseable {
     }
 
     private byte[] getQuery() {
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
-            .registerTypeAdapter(Optional.class, new OptionalSerializer())
-            .create();
-
         Map<String, Object> body = new HashMap<>();
 
         if (descriptor.getOffset().isPresent()) {
@@ -229,7 +221,7 @@ public class MobileEventStream implements AutoCloseable {
             body.put("filters", descriptor.getFilters().get());
         }
 
-        String json = gson.toJson(body);
+        String json = GSON.toJson(body);
         return json.getBytes(StandardCharsets.UTF_8);
     }
 
