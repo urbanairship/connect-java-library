@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
-import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.GsonUtil;
 import org.junit.Test;
 
@@ -113,7 +113,7 @@ public class ModelParsingTest {
         Optional<String> namedUserId = Optional.of(UUID.randomUUID().toString());
         DeviceInfo deviceInfo = DeviceInfo.newBuilder()
                 .setChanneId(iosChannel)
-                .setPlatform(DeviceIdType.IOS)
+                .setPlatform(DeviceFilterType.IOS)
                 .setNamedUsedId(namedUserId)
                 .build();
 
@@ -122,7 +122,7 @@ public class ModelParsingTest {
 
         assertEquals(iosChannel, parsedDeviceInfo.getChannelId());
         assertEquals(namedUserId.get(), parsedDeviceInfo.getNamedUsedId().get());
-        assertEquals(DeviceIdType.IOS, parsedDeviceInfo.getPlatform());
+        assertEquals(DeviceFilterType.IOS, parsedDeviceInfo.getPlatform());
     }
 
     @Test(expected = JsonParseException.class)

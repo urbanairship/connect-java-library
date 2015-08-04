@@ -4,7 +4,7 @@ package com.urbanairship.connect.client.model.responses;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
-import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.GsonUtil;
 
 import java.util.Optional;
@@ -13,7 +13,7 @@ public class DeviceInfo {
     public static class Builder {
         private Optional<String> namedUsedId = Optional.<String>empty();
         private String channeId;
-        private DeviceIdType platform;
+        private DeviceFilterType platform;
 
         public Builder setNamedUsedId(Optional<String> namedUsedId) {
             this.namedUsedId = namedUsedId;
@@ -25,7 +25,7 @@ public class DeviceInfo {
             return this;
         }
 
-        public Builder setPlatform(DeviceIdType platform) {
+        public Builder setPlatform(DeviceFilterType platform) {
             this.platform = platform;
             return this;
         }
@@ -39,11 +39,11 @@ public class DeviceInfo {
 
 
     private final String channelId;
-    private final DeviceIdType platform;
+    private final DeviceFilterType platform;
     @SerializedName("named_user_id")
     private final Optional<String> namedUsedId;
 
-    private DeviceInfo(String channelId, DeviceIdType platform, Optional<String> namedUsedId) {
+    private DeviceInfo(String channelId, DeviceFilterType platform, Optional<String> namedUsedId) {
         this.channelId = channelId;
         this.platform = platform;
         this.namedUsedId = namedUsedId;
@@ -57,7 +57,7 @@ public class DeviceInfo {
         return channelId;
     }
 
-    public DeviceIdType getPlatform() {
+    public DeviceFilterType getPlatform() {
         return platform;
     }
 

@@ -1,19 +1,19 @@
 package com.urbanairship.connect.client.model.filters;
 
-import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 
 public class DeviceFilter {
 
-    private final DeviceIdType deviceIdType;
+    private final DeviceFilterType deviceFilterType;
     private final String channel;
 
-    public DeviceFilter(DeviceIdType deviceIdType, String channel) {
-        this.deviceIdType = deviceIdType;
+    public DeviceFilter(DeviceFilterType deviceFilterType, String channel) {
+        this.deviceFilterType = deviceFilterType;
         this.channel = channel;
     }
 
-    public DeviceIdType getDeviceIdType() {
-        return deviceIdType;
+    public DeviceFilterType getDeviceFilterType() {
+        return deviceFilterType;
     }
 
     public String getChannel() {
@@ -28,14 +28,14 @@ public class DeviceFilter {
         DeviceFilter deviceFilter = (DeviceFilter) o;
 
         if (!channel.equals(deviceFilter.channel)) return false;
-        if (deviceIdType != deviceFilter.deviceIdType) return false;
+        if (deviceFilterType != deviceFilter.deviceFilterType) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = deviceIdType.hashCode();
+        int result = deviceFilterType.hashCode();
         result = 31 * result + channel.hashCode();
         return result;
     }

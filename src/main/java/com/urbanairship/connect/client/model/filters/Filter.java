@@ -2,7 +2,7 @@ package com.urbanairship.connect.client.model.filters;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.annotations.SerializedName;
-import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 
 import java.util.Arrays;
@@ -13,7 +13,7 @@ import java.util.Set;
 public class Filter {
 
     @SerializedName("device_types")
-    private final Optional<Set<DeviceIdType>> deviceTypes;
+    private final Optional<Set<DeviceFilterType>> deviceTypes;
     private final Optional<Set<NotificationFilter>> notifications;
     private final Optional<Set<DeviceFilter>> devices;
     private final Optional<Set<EventType>> types;
@@ -23,7 +23,7 @@ public class Filter {
         return new Builder();
     }
 
-    private Filter(Set<DeviceIdType> deviceTypes, Set<NotificationFilter> notifications, Set<DeviceFilter> devices,
+    private Filter(Set<DeviceFilterType> deviceTypes, Set<NotificationFilter> notifications, Set<DeviceFilter> devices,
                    Set<EventType> types, Integer latency) {
         this.deviceTypes = Optional.ofNullable(deviceTypes);
         this.notifications = Optional.ofNullable(notifications);
@@ -32,7 +32,7 @@ public class Filter {
         this.latency = Optional.ofNullable(latency);
     }
 
-    public Optional<Set<DeviceIdType>> getDeviceTypes() {
+    public Optional<Set<DeviceFilterType>> getDeviceTypes() {
         return deviceTypes;
     }
 
@@ -80,7 +80,7 @@ public class Filter {
 
     public static final class Builder {
 
-        private Set<DeviceIdType> deviceTypes = null;
+        private Set<DeviceFilterType> deviceTypes = null;
         private Set<NotificationFilter> notifications = null;
         private Set<DeviceFilter> devices = null;
         private Set<EventType> types = null;
@@ -88,15 +88,15 @@ public class Filter {
 
         private Builder() {}
 
-        public Builder addDeviceType(DeviceIdType value) {
+        public Builder addDeviceType(DeviceFilterType value) {
             return addDeviceTypes(value);
         }
 
-        public Builder addDeviceTypes(DeviceIdType... value) {
+        public Builder addDeviceTypes(DeviceFilterType... value) {
             return addDeviceTypes(new HashSet<>(Arrays.asList(value)));
         }
 
-        public Builder addDeviceTypes(Set<DeviceIdType> value) {
+        public Builder addDeviceTypes(Set<DeviceFilterType> value) {
             this.deviceTypes = value;
             return this;
         }

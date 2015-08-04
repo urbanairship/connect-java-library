@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -23,10 +23,10 @@ public class DeviceInfoAdapter implements JsonDeserializer<DeviceInfo>, JsonSeri
     public static final String AMAZON_CHANNEL_KEY = "amazon_channel";
     public static final String NAMED_USER_KEY = "named_user_id";
 
-    private static final ImmutableBiMap<DeviceIdType, String> channelNameMap = ImmutableBiMap.<DeviceIdType, String>builder()
-            .put(DeviceIdType.IOS, IOS_CHANNEL_KEY)
-            .put(DeviceIdType.ANDROID, ANDROID_CHANNEL_KEY)
-            .put(DeviceIdType.AMAZON, AMAZON_CHANNEL_KEY)
+    private static final ImmutableBiMap<DeviceFilterType, String> channelNameMap = ImmutableBiMap.<DeviceFilterType, String>builder()
+            .put(DeviceFilterType.IOS, IOS_CHANNEL_KEY)
+            .put(DeviceFilterType.ANDROID, ANDROID_CHANNEL_KEY)
+            .put(DeviceFilterType.AMAZON, AMAZON_CHANNEL_KEY)
             .build();
 
     @Override

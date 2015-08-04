@@ -10,7 +10,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.urbanairship.connect.client.model.DeviceIdType;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.Subset;
 import com.urbanairship.connect.client.model.filters.DeviceFilter;
@@ -220,22 +220,22 @@ public class MobileEventStreamTest {
             return null;
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        DeviceFilter device1 = new DeviceFilter(DeviceIdType.ANDROID, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
-        DeviceFilter device2 = new DeviceFilter(DeviceIdType.IOS, "3d970087-600e-4bb6-8474-5857d438faaa");
-        DeviceFilter device3 = new DeviceFilter(DeviceIdType.NAMED_USER, "cool user");
+        DeviceFilter device1 = new DeviceFilter(DeviceFilterType.ANDROID, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
+        DeviceFilter device2 = new DeviceFilter(DeviceFilterType.IOS, "3d970087-600e-4bb6-8474-5857d438faaa");
+        DeviceFilter device3 = new DeviceFilter(DeviceFilterType.NAMED_USER, "cool user");
         NotificationFilter notification = NotificationFilter.createGroupIdFilter("a30abf06-7878-4096-9535-b50ac0ad6e8e");
 
         Filter filter1 = Filter.newBuilder()
             .setLatency(20000000)
             .addDevices(device1, device2, device3)
-            .addDeviceTypes(DeviceIdType.ANDROID, DeviceIdType.AMAZON)
+            .addDeviceTypes(DeviceFilterType.ANDROID, DeviceFilterType.AMAZON)
             .addNotification(notification)
             .addType(EventType.OPEN)
             .build();
 
         Filter filter2 = Filter.newBuilder()
             .setLatency(400)
-            .addDeviceTypes(DeviceIdType.IOS)
+            .addDeviceTypes(DeviceFilterType.IOS)
             .addType(EventType.TAG_CHANGE)
             .build();
 

@@ -4,6 +4,7 @@ import com.urbanairship.connect.client.model.Subset;
 import com.urbanairship.connect.client.model.filters.Filter;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -86,11 +87,15 @@ public final class StreamDescriptor {
         }
 
         public Builder addFilters(Filter... value) {
-            return addFilters(new HashSet<Filter>(Arrays.asList(value)));
+            return addFilters(new HashSet<>(Arrays.asList(value)));
         }
 
-        public Builder addFilters(Set<Filter> value) {
-            this.filters = value;
+        public Builder addFilters(Collection<Filter> value) {
+            if (this.filters == null) {
+                this.filters = new HashSet<>();
+            }
+
+            this.filters.addAll(value);
             return this;
         }
 
