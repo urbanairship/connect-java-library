@@ -7,10 +7,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
-import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
+import com.urbanairship.connect.client.consume.StatusAndHeaders;
+import com.urbanairship.connect.client.model.GsonUtil;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import sun.net.www.protocol.http.HttpURLConnection;
@@ -46,7 +47,7 @@ public class MobileEventStream implements AutoCloseable {
 
     private static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
 
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = GsonUtil.getGson();
 
     private final StreamDescriptor descriptor;
     private final AsyncHttpClient client;
@@ -204,11 +205,20 @@ public class MobileEventStream implements AutoCloseable {
 
     private byte[] getQuery() {
         Map<String, Object> body = new HashMap<>();
+
         if (descriptor.getOffset().isPresent()) {
             body.put("resume_offset", descriptor.getOffset().get());
         }
         else {
             body.put("start", "LATEST");
+        }
+
+        if (descriptor.getSubset().isPresent()) {
+            body.put("subset", descriptor.getSubset().get());
+        }
+
+        if (descriptor.getFilters().isPresent()) {
+            body.put("filters", descriptor.getFilters().get());
         }
 
         String json = GSON.toJson(body);

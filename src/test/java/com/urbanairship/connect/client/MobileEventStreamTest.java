@@ -1,6 +1,8 @@
-package com.urbanairship.connect.client.mes;
+package com.urbanairship.connect.client;
 
 import com.google.common.net.HttpHeaders;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ning.http.client.AsyncHttpClient;
@@ -8,9 +10,14 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.urbanairship.connect.client.Creds;
-import com.urbanairship.connect.client.MobileEventStream;
-import com.urbanairship.connect.client.StreamDescriptor;
+import com.urbanairship.connect.client.model.DeviceFilterType;
+import com.urbanairship.connect.client.model.EventType;
+import com.urbanairship.connect.client.model.Subset;
+import com.urbanairship.connect.client.model.filters.DeviceFilter;
+import com.urbanairship.connect.client.model.filters.DeviceFilterSerializer;
+import com.urbanairship.connect.client.model.filters.Filter;
+import com.urbanairship.connect.client.model.filters.NotificationFilter;
+import com.urbanairship.connect.client.model.filters.OptionalSerializer;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -24,7 +31,9 @@ import org.mockito.MockitoAnnotations;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -197,6 +206,84 @@ public class MobileEventStreamTest {
     }
 
     @Test
+    public void testRequestBodyWithFilter() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+
+            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+            byte[] bytes = new byte[length];
+            exchange.getRequestBody().read(bytes);
+            body.set(new String(bytes, UTF_8));
+
+            exchange.sendResponseHeaders(200, 0L);
+            return null;
+        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        DeviceFilter device1 = new DeviceFilter(DeviceFilterType.ANDROID, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
+        DeviceFilter device2 = new DeviceFilter(DeviceFilterType.IOS, "3d970087-600e-4bb6-8474-5857d438faaa");
+        DeviceFilter device3 = new DeviceFilter(DeviceFilterType.NAMED_USER, "cool user");
+        NotificationFilter notification = NotificationFilter.createGroupIdFilter("a30abf06-7878-4096-9535-b50ac0ad6e8e");
+
+        Filter filter1 = Filter.newBuilder()
+            .setLatency(20000000)
+            .addDevices(device1, device2, device3)
+            .addDeviceTypes(DeviceFilterType.ANDROID, DeviceFilterType.AMAZON)
+            .addNotification(notification)
+            .addType(EventType.OPEN)
+            .build();
+
+        Filter filter2 = Filter.newBuilder()
+            .setLatency(400)
+            .addDeviceTypes(DeviceFilterType.IOS)
+            .addType(EventType.TAG_CHANGE)
+            .build();
+
+        StreamDescriptor descriptor = filterDescriptor(filter1, filter2);
+
+        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream.connect(10, TimeUnit.SECONDS);
+
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
+            .registerTypeAdapter(Optional.class, new OptionalSerializer())
+            .create();
+
+        JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
+        assertEquals(gson.toJson(new HashSet<>(Arrays.asList(filter1, filter2))), gson.toJson(bodyObj.get("filters")));
+    }
+
+    @Test
+    public void testRequestBodyWithSubset() throws Exception {
+        AtomicReference<String> body = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+
+            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+            byte[] bytes = new byte[length];
+            exchange.getRequestBody().read(bytes);
+            body.set(new String(bytes, UTF_8));
+
+            exchange.sendResponseHeaders(200, 0L);
+            return null;
+        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        Subset subset = Subset.createPartitionSubset(10, 0);
+        StreamDescriptor descriptor = subsetDescriptor(subset);
+
+        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream.connect(10, TimeUnit.SECONDS);
+
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
+            .registerTypeAdapter(Optional.class, new OptionalSerializer())
+            .create();
+
+        JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
+        assertEquals(gson.toJson(subset), gson.toJson(bodyObj.get("subset")));
+    }
+
+    @Test
     public void testConnectionFail() throws Exception {
         doAnswer(invocationOnMock -> {
             HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
@@ -352,12 +439,34 @@ public class MobileEventStreamTest {
     }
 
     private StreamDescriptor descriptor(Optional<Long> offset) {
-        return new StreamDescriptor(
-                Creds.newBuilder()
-                        .setAppKey(randomAlphabetic(22))
-                        .setSecret(randomAlphabetic(5))
-                        .build(),
-                offset
-        );
+        StreamDescriptor.Builder builder = StreamDescriptor.newBuilder()
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setSecret(randomAlphabetic(5))
+                .build());
+        if (offset.isPresent()) {
+            builder.setOffset(offset.get());
+        }
+        return builder.build();
+    }
+
+    private StreamDescriptor filterDescriptor(Filter... filter) {
+        return StreamDescriptor.newBuilder()
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setSecret(randomAlphabetic(5))
+                .build())
+            .addFilters(filter)
+            .build();
+    }
+
+    private StreamDescriptor subsetDescriptor(Subset subset) {
+        return StreamDescriptor.newBuilder()
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setSecret(randomAlphabetic(5))
+                .build())
+            .setSubset(subset)
+            .build();
     }
 }
