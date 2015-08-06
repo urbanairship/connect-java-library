@@ -23,7 +23,7 @@ public class DeviceInfoAdapter implements JsonDeserializer<DeviceInfo>, JsonSeri
         DeviceInfo.Builder deviceInfoBuilder = DeviceInfo.newBuilder();
 
         List<Map.Entry<String, JsonElement>> platforms = deviceJson.entrySet().stream()
-                .filter(entry -> DeviceFilterType.isDeviceType(entry.getKey())).collect(Collectors.toList());
+                .filter(entry -> DeviceFilterType.getDeviceType(entry.getKey()).isChannelType()).collect(Collectors.toList());
         if (platforms.size() > 1) {
             throw new JsonParseException("Multiple platforms defined, maximum of one platform allowed");
         }

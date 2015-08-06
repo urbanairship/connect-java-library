@@ -4,30 +4,27 @@ import com.google.gson.annotations.SerializedName;
 
 public enum DeviceFilterType {
     @SerializedName("ios")
-    IOS ("ios_channel"),
+    IOS ("ios_channel", true),
     @SerializedName("android")
-    ANDROID ("android_channel"),
+    ANDROID ("android_channel", true),
     @SerializedName("amazon")
-    AMAZON ("amazon_channel"),
-    NAMED_USER ("named_user_id");
+    AMAZON ("amazon_channel", true),
+    NAMED_USER ("named_user_id", false);
 
     private final String key;
+    private final boolean isChannel;
 
-    DeviceFilterType(String key) {
+    DeviceFilterType(String key, boolean isChannel) {
         this.key = key;
+        this.isChannel = isChannel;
     }
 
     public String getKey() {
         return this.key;
     }
 
-    public static boolean isDeviceType(String key) {
-        for (DeviceFilterType type : DeviceFilterType.values()) {
-            if (key.equals(type.getKey()) && !type.equals(DeviceFilterType.NAMED_USER)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isChannelType() {
+        return this.isChannel;
     }
 
     public static DeviceFilterType getDeviceType(String key) {
