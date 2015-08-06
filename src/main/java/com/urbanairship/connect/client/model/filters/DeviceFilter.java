@@ -5,19 +5,19 @@ import com.urbanairship.connect.client.model.DeviceFilterType;
 public class DeviceFilter {
 
     private final DeviceFilterType deviceFilterType;
-    private final String channel;
+    private final String identifier;
 
-    public DeviceFilter(DeviceFilterType deviceFilterType, String channel) {
+    public DeviceFilter(DeviceFilterType deviceFilterType, String identifier) {
         this.deviceFilterType = deviceFilterType;
-        this.channel = channel;
+        this.identifier = identifier;
     }
 
     public DeviceFilterType getDeviceFilterType() {
         return deviceFilterType;
     }
 
-    public String getChannel() {
-        return channel;
+    public String getIdentifier() {
+        return identifier;
     }
 
     @Override
@@ -27,7 +27,7 @@ public class DeviceFilter {
 
         DeviceFilter deviceFilter = (DeviceFilter) o;
 
-        if (!channel.equals(deviceFilter.channel)) return false;
+        if (!identifier.equals(deviceFilter.identifier)) return false;
         if (deviceFilterType != deviceFilter.deviceFilterType) return false;
 
         return true;
@@ -36,7 +36,7 @@ public class DeviceFilter {
     @Override
     public int hashCode() {
         int result = deviceFilterType.hashCode();
-        result = 31 * result + channel.hashCode();
+        result = 31 * result + identifier.hashCode();
         return result;
     }
 }

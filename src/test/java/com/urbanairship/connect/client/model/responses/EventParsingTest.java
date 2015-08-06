@@ -3,6 +3,7 @@ package com.urbanairship.connect.client.model.responses;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonParseException;
+import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
 import org.apache.commons.lang3.RandomUtils;
@@ -28,7 +29,7 @@ public class EventParsingTest {
         rawJson.put(Event.OCCURRED_KEY, Instant.now());
         rawJson.put(Event.PROCESSED_KEY, Instant.now());
         rawJson.put(Event.DEVICE_INFO_KEY,
-                ImmutableMap.<String, String>of(DeviceInfoAdapter.IOS_CHANNEL_KEY, UUID.randomUUID().toString()));
+                ImmutableMap.<String, String>of(DeviceFilterType.IOS.getKey(), UUID.randomUUID().toString()));
         rawJson.put(Event.EVENT_BODY_KEY,
                 ImmutableMap.<String, String>of("push_id", UUID.randomUUID().toString()));
         rawJson.put(Event.OFFSET_KEY, RandomUtils.nextLong(0L, 100000L));
@@ -66,7 +67,7 @@ public class EventParsingTest {
         rawJson.put(Event.OCCURRED_KEY, Instant.now());
         rawJson.put(Event.PROCESSED_KEY, Instant.now());
         rawJson.put(Event.DEVICE_INFO_KEY,
-                ImmutableMap.<String, String>of(DeviceInfoAdapter.IOS_CHANNEL_KEY, UUID.randomUUID().toString()));
+                ImmutableMap.<String, String>of(DeviceFilterType.IOS.getKey(), UUID.randomUUID().toString()));
 
         String json = GsonUtil.getGson().toJson(rawJson);
 

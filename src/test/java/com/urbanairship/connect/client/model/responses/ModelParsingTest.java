@@ -131,9 +131,9 @@ public class ModelParsingTest {
         String androidChannel = UUID.randomUUID().toString();
         String namedUserId = UUID.randomUUID().toString();
         Map<String, String> rawJson = Maps.newHashMap();
-        rawJson.put(DeviceInfoAdapter.IOS_CHANNEL_KEY, iosChannel);
-        rawJson.put(DeviceInfoAdapter.ANDROID_CHANNEL_KEY, androidChannel);
-        rawJson.put(DeviceInfoAdapter.NAMED_USER_KEY, namedUserId);
+        rawJson.put(DeviceFilterType.IOS.getKey(), iosChannel);
+        rawJson.put(DeviceFilterType.ANDROID.getKey(), androidChannel);
+        rawJson.put(DeviceFilterType.AMAZON.getKey(), namedUserId);
         String json = GsonUtil.getGson().toJson(rawJson);
         DeviceInfo parsedDeviceInfo = DeviceInfo.parseJSON(json);
     }

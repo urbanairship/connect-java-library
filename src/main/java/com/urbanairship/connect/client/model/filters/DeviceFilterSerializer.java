@@ -29,7 +29,7 @@ public class DeviceFilterSerializer implements JsonSerializer<DeviceFilter>{
         JsonObject deviceInfo = new JsonObject();
 
         String platformChannel = channelNameMap.get(src.getDeviceFilterType());
-        deviceInfo.addProperty(platformChannel, src.getChannel());
+        deviceInfo.addProperty(platformChannel, src.getIdentifier());
         return deviceInfo;
     }
 }
