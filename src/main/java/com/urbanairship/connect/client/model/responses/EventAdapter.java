@@ -91,7 +91,7 @@ public class EventAdapter implements JsonDeserializer<Event> {
             throw new JsonParseException("Unable to parse event with missing occurred field");
         }
 
-        JsonElement processedJson = eventJson.get(Event.OCCURRED_KEY);
+        JsonElement processedJson = eventJson.get(Event.PROCESSED_KEY);
         if (processedJson == null) {
             throw new JsonParseException("Unable to parse event with missing processed field");
         }

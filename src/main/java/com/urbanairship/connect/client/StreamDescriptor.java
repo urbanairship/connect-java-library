@@ -10,6 +10,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Object containing app credentials and API request details for the {@link com.urbanairship.connect.client.MobileEventStream}.
+ */
 public final class StreamDescriptor {
 
     private final Creds creds;
@@ -17,6 +20,10 @@ public final class StreamDescriptor {
     private final Optional<Set<Filter>> filters;
     private final Optional<Subset> subset;
 
+    /**
+     * StreamDescriptor builder
+     * @return Builder
+     */
     public static Builder newBuilder() {
         return new Builder();
     }
@@ -28,18 +35,38 @@ public final class StreamDescriptor {
         this.subset = subset;
     }
 
+    /**
+     * Get the app creds.
+     *
+     * @return the app creds.
+     */
     public Creds getCreds() {
         return creds;
     }
 
+    /**
+     * Get the stream offset.
+     *
+     * @return offset
+     */
     public Optional<Long> getOffset() {
         return offset;
     }
 
+    /**
+     * Get the request filters.
+     *
+     * @return set of filters.
+     */
     public Optional<Set<Filter>> getFilters() {
         return filters;
     }
 
+    /**
+     * Get the request subset.
+     *
+     * @return subset.
+     */
     public Optional<Subset> getSubset() {
         return subset;
     }
@@ -72,24 +99,54 @@ public final class StreamDescriptor {
 
         private Builder() {}
 
+        /**
+         * Sets the app creds.
+         *
+         * @param value Creds
+         * @return Builder
+         */
         public Builder setCreds(Creds value) {
             this.creds = value;
             return this;
         }
 
+        /**
+         * Set the stream offset.
+         *
+         * @param value Long
+         * @return Builder
+         */
         public Builder setOffset(Long value) {
             this.offset = value;
             return this;
         }
 
+        /**
+         * Add a single filter.
+         *
+         * @param value Filter
+         * @return Builder
+         */
         public Builder addFilter(Filter value) {
             return addFilters(value);
         }
 
+        /**
+         * Add multiple filters.
+         *
+         * @param value Filter...
+         * @return Builder
+         */
         public Builder addFilters(Filter... value) {
             return addFilters(new HashSet<>(Arrays.asList(value)));
         }
 
+        /**
+         * Add a Collection of filters.
+         *
+         * @param value Collection<>Filters</>
+         * @return Builder
+         */
         public Builder addFilters(Collection<Filter> value) {
             if (this.filters == null) {
                 this.filters = new HashSet<>();
@@ -99,11 +156,21 @@ public final class StreamDescriptor {
             return this;
         }
 
+        /**
+         * Set the subset.
+         *
+         * @param value Subset
+         * @return Builder
+         */
         public Builder setSubset(Subset value) {
             this.subset = value;
             return this;
         }
 
+        /**
+         * Builder a StreamDescriptor object.
+         * @return StreamDescriptor
+         */
         public StreamDescriptor build() {
             return new StreamDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
         }
