@@ -32,7 +32,6 @@ import org.mockito.MockitoAnnotations;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -158,11 +157,12 @@ public class MobileEventStreamTest {
 
     @Test
     public void testAuth() throws Exception {
-        AtomicReference<String> auth = new AtomicReference<>();
+        AtomicReference<String> authorization = new AtomicReference<>();
+        AtomicReference<String> appKeyHeader = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
             HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            String value = exchange.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-            auth.set(value);
+            authorization.set(exchange.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+            appKeyHeader.set(exchange.getRequestHeaders().getFirst("X-UA-Appkey"));
             exchange.sendResponseHeaders(200, 0L);
             return null;
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
@@ -171,13 +171,11 @@ public class MobileEventStreamTest {
         stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
 
-        assertTrue(auth.get().toLowerCase().startsWith("basic"));
-        byte[] decodeBytes = Base64.getDecoder().decode(auth.get().substring("basic ".length()));
-        String decoded = new String(decodeBytes, UTF_8);
-        String[] pieces = decoded.split(":");
+        assertTrue(authorization.get().toLowerCase().startsWith("bearer"));
+        String token = authorization.get().substring("bearer ".length());
 
-        assertEquals(descriptor.getCreds().getAppKey(), pieces[0]);
-        assertEquals(descriptor.getCreds().getSecret(), pieces[1]);
+        assertEquals(descriptor.getCreds().getAppKey(), appKeyHeader.get());
+        assertEquals(descriptor.getCreds().getToken(), token);
     }
 
     @Test
@@ -306,7 +304,7 @@ public class MobileEventStreamTest {
 
     @Test
     public void testConnectRedirect() throws Exception {
-        String leaderHost = randomAlphanumeric(15);
+        String leaderHost = "SRV=" + randomAlphanumeric(15);
 
         AtomicReference<String> receivedLeaderHost = new AtomicReference<>();
 
@@ -442,7 +440,7 @@ public class MobileEventStreamTest {
         StreamDescriptor.Builder builder = StreamDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
-                .setSecret(randomAlphabetic(5))
+                .setToken(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
             builder.setOffset(offset.get());
@@ -454,7 +452,7 @@ public class MobileEventStreamTest {
         return StreamDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
-                .setSecret(randomAlphabetic(5))
+                .setToken(randomAlphabetic(5))
                 .build())
             .addFilters(filter)
             .build();
@@ -464,7 +462,7 @@ public class MobileEventStreamTest {
         return StreamDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
-                .setSecret(randomAlphabetic(5))
+                .setToken(randomAlphabetic(5))
                 .build())
             .setSubset(subset)
             .build();

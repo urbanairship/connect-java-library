@@ -338,7 +338,7 @@ public class StreamHandlerTest {
         StreamDescriptor.Builder builder = StreamDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
-                .setSecret(randomAlphabetic(5))
+                .setToken(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
             builder.setOffset(offset.get());
