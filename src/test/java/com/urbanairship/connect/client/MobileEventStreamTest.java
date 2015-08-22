@@ -98,7 +98,7 @@ public class MobileEventStreamTest {
         stream = null;
 
         AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
-                .setUserAgent("Wildwood Ingress Client")
+                .setUserAgent("Connect Client")
                 .setRequestTimeout(-1)
                 .setAllowPoolingConnections(false)
                 .setAllowPoolingSslConnections(false)
@@ -445,7 +445,7 @@ public class MobileEventStreamTest {
                 .setSecret(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
-            builder.setOffset(offset.get());
+            builder.setOffset(String.valueOf(offset.get()));
         }
         return builder.build();
     }

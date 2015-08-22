@@ -13,7 +13,7 @@ public class Event {
         private Instant occurred;
         private Instant processed;
         private String appKey;
-        private Long offset;
+        private String offset;
         private DeviceInfo deviceInfo;
         private EventBody eventBody;
 
@@ -42,7 +42,7 @@ public class Event {
             return this;
         }
 
-        public Builder setOffset(Long offset) {
+        public Builder setOffset(String offset) {
             this.offset = offset;
             return this;
         }
@@ -60,7 +60,7 @@ public class Event {
         public Event build() {
             Preconditions.checkNotNull(identifier, "Missing event UUID");
             Preconditions.checkNotNull(eventType, "Event type not set");
-            Preconditions.checkNotNull(occurred, "Missing occured timestamp");
+            Preconditions.checkNotNull(occurred, "Missing occurred timestamp");
             Preconditions.checkNotNull(processed, "Missing processed timestamp");
             Preconditions.checkNotNull(appKey, "Missing appKey");
             Preconditions.checkNotNull(deviceInfo, "Missing device info");
@@ -87,17 +87,17 @@ public class Event {
     private Instant processed;
     @SerializedName(APP_KEY)
     private String appKey;
-    private long offset;
+    private String offset;
     @SerializedName(DEVICE_INFO_KEY)
     private DeviceInfo deviceInfo;
     @SerializedName(EVENT_BODY_KEY)
     private EventBody eventBody;
 
     private Event() {
-        this(null, null, null, null, null, 0L, null, null);
+        this(null, null, null, null, null, null, null, null);
     }
 
-    private Event(String identifier, EventType eventType, Instant occurred, Instant processed, String appKey, long offset, DeviceInfo deviceInfo, EventBody eventBody) {
+    private Event(String identifier, EventType eventType, Instant occurred, Instant processed, String appKey, String offset, DeviceInfo deviceInfo, EventBody eventBody) {
         this.identifier = identifier;
         this.eventType = eventType;
         this.occurred = occurred;
@@ -124,7 +124,7 @@ public class Event {
         return processed;
     }
 
-    public long getOffset() {
+    public String getOffset() {
         return offset;
     }
 
@@ -169,7 +169,7 @@ public class Event {
         result = 31 * result + (occurred != null ? occurred.hashCode() : 0);
         result = 31 * result + (processed != null ? processed.hashCode() : 0);
         result = 31 * result + (appKey != null ? appKey.hashCode() : 0);
-        result = 31 * result + (int) (offset ^ (offset >>> 32));
+        result = 31 * result + (appKey != null ? appKey.hashCode() : 0);
         result = 31 * result + (deviceInfo != null ? deviceInfo.hashCode() : 0);
         result = 31 * result + (eventBody != null ? eventBody.hashCode() : 0);
         return result;

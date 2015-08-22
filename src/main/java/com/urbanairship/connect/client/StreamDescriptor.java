@@ -16,7 +16,7 @@ import java.util.Set;
 public final class StreamDescriptor {
 
     private final Creds creds;
-    private final Optional<Long> offset;
+    private final Optional<String> offset;
     private final Optional<Set<Filter>> filters;
     private final Optional<Subset> subset;
 
@@ -28,7 +28,7 @@ public final class StreamDescriptor {
         return new Builder();
     }
 
-    private StreamDescriptor(Creds creds, Optional<Long> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
+    private StreamDescriptor(Creds creds, Optional<String> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
         this.creds = creds;
         this.offset = offset;
         this.filters = filters;
@@ -49,7 +49,7 @@ public final class StreamDescriptor {
      *
      * @return offset
      */
-    public Optional<Long> getOffset() {
+    public Optional<String> getOffset() {
         return offset;
     }
 
@@ -93,7 +93,7 @@ public final class StreamDescriptor {
 
     public static final class Builder {
         private Creds creds;
-        private Long offset = null;
+        private String offset = null;
         private Set<Filter> filters = null;
         private Subset subset = null;
 
@@ -113,10 +113,10 @@ public final class StreamDescriptor {
         /**
          * Set the stream offset.
          *
-         * @param value Long
+         * @param value String
          * @return Builder
          */
-        public Builder setOffset(Long value) {
+        public Builder setOffset(String value) {
             this.offset = value;
             return this;
         }

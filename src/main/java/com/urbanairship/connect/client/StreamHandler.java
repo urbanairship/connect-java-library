@@ -28,6 +28,7 @@ public class StreamHandler extends AbstractExecutionThreadService {
     private final RawEventReceiver rawEventReceiver;
     private final StreamDescriptor baseStreamDescriptor;
     private final StreamSupplier supplier;
+    private MobileEventStream stream;
 
     /**
      * StreamHandler builder
@@ -124,19 +125,27 @@ public class StreamHandler extends AbstractExecutionThreadService {
 
         try {
             while (doConsume.get()) {
+                boolean connected = false;
 
                 // if this is not the original consumption attempt, create a new StreamDescriptor with the most recent offset
-                StreamDescriptor descriptor = (consumptionAttempt == 0) ? baseStreamDescriptor : StreamUtils.buildNewDescriptor(baseStreamDescriptor, offsetManager);
+                final StreamDescriptor descriptor;
+                if (consumptionAttempt == 0) {
+                    descriptor = baseStreamDescriptor;
+                } else {
+                    descriptor = StreamUtils.buildNewDescriptor(baseStreamDescriptor, offsetManager);
+                }
 
                 // create a new MobileEventStream
-                try (MobileEventStream stream = supplier.get(descriptor, asyncClient, rawEventReceiver, config.mesUrl)) {
+                try (MobileEventStream newStream = supplier.get(descriptor, asyncClient, rawEventReceiver, config.mesUrl)) {
+                    stream = newStream;
 
                     // connect to the MobileEventStream
                     log.info("Connecting to stream for app " + baseStreamDescriptor.getCreds().getAppKey());
-                    boolean connected = connectWithRetries(stream);
+                    connected = connectWithRetries(stream);
 
                     // if connection attempts fail, exit the consumption loop.
                     if (!connected) {
+                        // TODO add handling to let connection error bubble up
                         break;
                     }
 
@@ -154,9 +163,11 @@ public class StreamHandler extends AbstractExecutionThreadService {
                     // update consumption attempt
                     consumptionAttempt += 1;
 
-                    // update offset
-                    log.debug("Updating offset for app " + baseStreamDescriptor.getCreds().getAppKey());
-                    offsetManager.update(rawEventReceiver.get());
+                    if (connected) {
+                        // update offset
+                        log.debug("Updating offset for app " + baseStreamDescriptor.getCreds().getAppKey());
+                        offsetManager.update(rawEventReceiver.get());
+                    }
                 }
             }
         } finally {
@@ -205,6 +216,14 @@ public class StreamHandler extends AbstractExecutionThreadService {
     public void triggerShutdown() {
         log.info("Shutting down stream handler for app " + baseStreamDescriptor.getCreds().getAppKey());
         doConsume.set(false);
+
+        if (stream != null) {
+            try {
+                stream.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public static final class Builder{

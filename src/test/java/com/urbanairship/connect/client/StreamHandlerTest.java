@@ -183,7 +183,7 @@ public class StreamHandlerTest {
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals("LATEST", bodyObj.get("start").getAsString());
-        assertEquals((Long) events.get(events.size() - 1).getOffset(), offsetManager.getLastOffset().get());
+        assertEquals(String.valueOf(events.get(events.size() - 1).getOffset()), offsetManager.getLastOffset().get());
 
         assertEquals(http, handler.getAsyncClient());
         assertEquals(offsetManager, handler.getOffsetManager());
@@ -287,7 +287,7 @@ public class StreamHandlerTest {
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals("4", bodyObj.get("resume_offset").getAsString());
-        assertEquals((Long) events.get(events.size() - 1).getOffset(), offsetManager.getLastOffset().get());
+        assertEquals(String.valueOf(events.get(events.size() - 1).getOffset()), offsetManager.getLastOffset().get());
     }
 
     @Test
@@ -341,7 +341,7 @@ public class StreamHandlerTest {
                 .setSecret(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
-            builder.setOffset(offset.get());
+            builder.setOffset(String.valueOf(offset.get()));
         }
         return builder.build();
     }
@@ -381,7 +381,7 @@ public class StreamHandlerTest {
             .setEventType(EventType.CUSTOM)
             .setEventBody(customEvent)
             .setDeviceInfo(deviceInfo)
-            .setOffset(offset)
+            .setOffset(String.valueOf(offset))
             .setOccurred(Instant.now())
             .setProcessed(Instant.now().plusSeconds(nextLong(1, 10)))
             .setIdentifier(UUID.randomUUID().toString())
