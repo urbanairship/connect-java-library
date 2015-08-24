@@ -141,10 +141,17 @@ public class StreamHandlerTest {
             exchange.close();
 
             return null;
+        }).doAnswer(invocationOnMock -> {
+            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+
+            exchange.sendResponseHeaders(200, 0L);
+            exchange.close();
+
+            return null;
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         List<Event> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(events.size());
         doAnswer(invocationOnMock -> {
             latch.countDown();
             Event consumedEvent = (Event) invocationOnMock.getArguments()[0];
@@ -248,7 +255,7 @@ public class StreamHandlerTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         List<Event> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(5);
+        CountDownLatch latch = new CountDownLatch(events.size());
         doAnswer(invocationOnMock -> {
             latch.countDown();
             Event consumedEvent = (Event) invocationOnMock.getArguments()[0];

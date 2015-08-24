@@ -151,7 +151,7 @@ public class Event {
 
         Event event = (Event) o;
 
-        if (offset != event.offset) return false;
+        if (offset != null ? !offset.equals(event.offset) : event.offset != null) return false;
         if (identifier != null ? !identifier.equals(event.identifier) : event.identifier != null) return false;
         if (eventType != event.eventType) return false;
         if (occurred != null ? !occurred.equals(event.occurred) : event.occurred != null) return false;
