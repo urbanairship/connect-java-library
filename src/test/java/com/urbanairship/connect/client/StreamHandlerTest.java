@@ -318,6 +318,7 @@ public class StreamHandlerTest {
         handler.run();
 
         verify(stream, never()).consume(anyLong(), any(TimeUnit.class));
+        verify(fatalExceptionHandler).handle(any(RuntimeException.class));
     }
     @Test
     public void testInterrupted() throws Exception {
