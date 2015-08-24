@@ -79,6 +79,8 @@ public class StreamHandlerTest {
     private Consumer<Event> consumer;
     @Mock
     private StreamSupplier supplier;
+    @Mock
+    private FatalExceptionHandler fatalExceptionHandler;
 
     @BeforeClass
     public static void serverStart() throws Exception {
@@ -359,7 +361,8 @@ public class StreamHandlerTest {
             .setBaseStreamDescriptor(descriptor(Optional.empty()))
             .setConfig(config)
             .setConsumer(consumer)
-            .setOffsetManager(offsetManager);
+            .setOffsetManager(offsetManager)
+            .setFatalExceptionHandler(fatalExceptionHandler);
     }
 
     private Event createEvent(Long offset) {

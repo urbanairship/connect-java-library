@@ -28,6 +28,7 @@ public class StreamHandler extends AbstractExecutionThreadService {
     private final RawEventReceiver rawEventReceiver;
     private final StreamDescriptor baseStreamDescriptor;
     private final StreamSupplier supplier;
+    private final FatalExceptionHandler fatalExceptionHandler;
     private MobileEventStream stream;
 
     /**
@@ -43,7 +44,8 @@ public class StreamHandler extends AbstractExecutionThreadService {
                          OffsetManager offsetManager,
                          StreamDescriptor baseStreamDescriptor,
                          Configuration config,
-                         StreamSupplier supplier) {
+                         StreamSupplier supplier,
+                         FatalExceptionHandler fatalExceptionHandler) {
         this.offsetManager = offsetManager;
         this.config = new ConnectClientConfiguration(config);
         this.asyncClient = client;
@@ -51,6 +53,7 @@ public class StreamHandler extends AbstractExecutionThreadService {
         this.rawEventReceiver = new RawEventReceiver(consumer);
         this.baseStreamDescriptor = baseStreamDescriptor;
         this.supplier = supplier;
+        this.fatalExceptionHandler = fatalExceptionHandler;
     }
 
     /**
@@ -108,6 +111,15 @@ public class StreamHandler extends AbstractExecutionThreadService {
     }
 
     /**
+     * Get the fatal exception handler for connection failures.
+     *
+     * @return FatalExceptionHandler
+     */
+    public FatalExceptionHandler getFatalExceptionHandler() {
+        return fatalExceptionHandler;
+    }
+
+    /**
      * Runs the stream handler by setting doConsume to {@code true} and creating a
      * {@link com.urbanairship.connect.client.MobileEventStream} instance.  The handler will
      * continue to consume or create new {@link com.urbanairship.connect.client.MobileEventStream} instances
@@ -145,7 +157,7 @@ public class StreamHandler extends AbstractExecutionThreadService {
 
                     // if connection attempts fail, exit the consumption loop.
                     if (!connected) {
-                        // TODO add handling to let connection error bubble up
+                        fatalExceptionHandler.handle(new RuntimeException("Could not connect to stream for app " + baseStreamDescriptor.getCreds().getAppKey()));
                         break;
                     }
 
@@ -233,6 +245,7 @@ public class StreamHandler extends AbstractExecutionThreadService {
         private StreamDescriptor baseStreamDescriptor;
         private Configuration config;
         private StreamSupplier supplier = new MobileEventStreamSupplier();
+        private FatalExceptionHandler fatalExceptionHandler;
 
         private Builder() {}
 
@@ -304,6 +317,17 @@ public class StreamHandler extends AbstractExecutionThreadService {
         }
 
         /**
+         * Set the fatal exception handler for connection failures.
+         *
+         * @param handler FatalExceptionHandler
+         * @return Builder
+         */
+        public Builder setFatalExceptionHandler(FatalExceptionHandler handler){
+            this.fatalExceptionHandler = handler;
+            return this;
+        }
+
+        /**
          * Build the StreamHandler object.
          *
          * @return StreamHandler
@@ -314,7 +338,8 @@ public class StreamHandler extends AbstractExecutionThreadService {
                 offsetManager,
                 baseStreamDescriptor,
                 config,
-                supplier);
+                supplier,
+                fatalExceptionHandler);
         }
     }
 
