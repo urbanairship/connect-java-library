@@ -185,7 +185,9 @@ public class MobileEventStream implements AutoCloseable {
             request.addHeader(entry.getKey(), entry.getValue());
         }
 
-        cookies.forEach(request::addCookie);
+        for (Cookie cookie : cookies) {
+            request.addCookie(cookie);
+        }
 
         request.setBody(query);
 
