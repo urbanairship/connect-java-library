@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Object containing app credentials and API request details for the {@link com.urbanairship.connect.client.MobileEventStream}.
  */
-public final class StreamDescriptor {
+public final class StreamQueryDescriptor {
 
     private final Creds creds;
     private final Optional<String> offset;
@@ -28,7 +28,7 @@ public final class StreamDescriptor {
         return new Builder();
     }
 
-    private StreamDescriptor(Creds creds, Optional<String> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
+    private StreamQueryDescriptor(Creds creds, Optional<String> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
         this.creds = creds;
         this.offset = offset;
         this.filters = filters;
@@ -79,7 +79,7 @@ public final class StreamDescriptor {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        StreamDescriptor that = (StreamDescriptor) o;
+        StreamQueryDescriptor that = (StreamQueryDescriptor) o;
         return Objects.equals(creds, that.creds) &&
                 Objects.equals(offset, that.offset) &&
                 Objects.equals(filters, that.filters) &&
@@ -171,8 +171,8 @@ public final class StreamDescriptor {
          * Builder a StreamDescriptor object.
          * @return StreamDescriptor
          */
-        public StreamDescriptor build() {
-            return new StreamDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
+        public StreamQueryDescriptor build() {
+            return new StreamQueryDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
         }
     }
 }

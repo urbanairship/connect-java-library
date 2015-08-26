@@ -49,10 +49,11 @@ public class MobileEventStream implements AutoCloseable {
 
     private static final Gson GSON = GsonUtil.getGson();
 
-    private final StreamDescriptor descriptor;
+    private final StreamQueryDescriptor descriptor;
     private final AsyncHttpClient client;
     private final Consumer<String> eventConsumer;
     private final String url;
+    private final FatalExceptionHandler fatalExceptionHandler;
 
     private final Object stateLock = new Object();
 
@@ -61,14 +62,16 @@ public class MobileEventStream implements AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public MobileEventStream(StreamDescriptor descriptor,
+    public MobileEventStream(StreamQueryDescriptor descriptor,
                              AsyncHttpClient client,
                              Consumer<String> eventConsumer,
-                             String url) {
+                             String url,
+                             FatalExceptionHandler fatalExceptionHandler) {
         this.descriptor = descriptor;
         this.client = client;
         this.eventConsumer = eventConsumer;
         this.url = url;
+        this.fatalExceptionHandler = fatalExceptionHandler;
     }
 
     public void connect(long maxConnectWaitTime, TimeUnit unit) throws InterruptedException {
@@ -160,6 +163,11 @@ public class MobileEventStream implements AutoCloseable {
         // At this point, we know we don't want to consume anything else on the response - even if there was something there
         responseHandler.stop();
         future.done();
+
+        // 400s indicate a bad request, don't want to cause unnecessary connection retries in the MobileEventConsumerService
+        if (399 < status || status < 500) {
+            fatalExceptionHandler.handle(new RuntimeException(String.format("Received status code (%d) from a bad request for app %s", status, getAppKey())));
+        }
 
         if (status != 307) {
             throw new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));

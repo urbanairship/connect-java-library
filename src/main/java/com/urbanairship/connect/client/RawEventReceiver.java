@@ -7,6 +7,7 @@ import com.urbanairship.connect.client.model.responses.Event;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -17,8 +18,8 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
 
     private static final Logger log = LogManager.getLogger(RawEventReceiver.class);
 
-    private final Gson gson = GsonUtil.getGson();
-    private String lastOffset = "0";
+    private static final Gson gson = GsonUtil.getGson();
+    private AtomicReference<String> lastOffset = new AtomicReference<>("0");
     private final Consumer<Event> consumer;
 
     /**
@@ -42,8 +43,7 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
             Event eventObj = gson.fromJson(event, Event.class);
             log.debug("Parsing event " + eventObj.getIdentifier());
 
-            // TODO dedupe events
-            lastOffset = eventObj.getOffset();
+            lastOffset.set(eventObj.getOffset());
             consumer.accept(eventObj);
         } catch (JsonSyntaxException e) {
             throw new RuntimeException("Failed to parse event: " + event);
@@ -57,7 +57,7 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
      */
     @Override
     public String get() {
-        return lastOffset;
+        return lastOffset.get();
     }
 
 }

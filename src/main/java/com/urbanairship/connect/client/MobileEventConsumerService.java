@@ -17,19 +17,19 @@ import java.util.function.Consumer;
  * A class for handling {@link com.urbanairship.connect.client.MobileEventStream} interactions.
  * Includes basic stream connection/consumption, reconnection, and offset tracking.
  */
-public class StreamHandler extends AbstractExecutionThreadService {
+public class MobileEventConsumerService extends AbstractExecutionThreadService {
 
-    private static final Logger log = LogManager.getLogger(StreamHandler.class);
+    private static final Logger log = LogManager.getLogger(MobileEventConsumerService.class);
 
     private final OffsetManager offsetManager;
     private final ConnectClientConfiguration config;
     private final AtomicBoolean doConsume;
     private final AsyncHttpClient asyncClient;
     private final RawEventReceiver rawEventReceiver;
-    private final StreamDescriptor baseStreamDescriptor;
+    private final StreamQueryDescriptor baseStreamQueryDescriptor;
     private final StreamSupplier supplier;
     private final FatalExceptionHandler fatalExceptionHandler;
-    private MobileEventStream stream;
+    private MobileEventStream mobileEventStream;
 
     /**
      * StreamHandler builder
@@ -39,38 +39,21 @@ public class StreamHandler extends AbstractExecutionThreadService {
         return new Builder();
     }
 
-    private StreamHandler(Consumer<Event> consumer,
-                         AsyncHttpClient client,
-                         OffsetManager offsetManager,
-                         StreamDescriptor baseStreamDescriptor,
-                         Configuration config,
-                         StreamSupplier supplier,
-                         FatalExceptionHandler fatalExceptionHandler) {
+    private MobileEventConsumerService(Consumer<Event> consumer,
+                                       AsyncHttpClient client,
+                                       OffsetManager offsetManager,
+                                       StreamQueryDescriptor baseStreamQueryDescriptor,
+                                       Configuration config,
+                                       StreamSupplier supplier,
+                                       FatalExceptionHandler fatalExceptionHandler) {
         this.offsetManager = offsetManager;
         this.config = new ConnectClientConfiguration(config);
         this.asyncClient = client;
         this.doConsume = new AtomicBoolean(true);
         this.rawEventReceiver = new RawEventReceiver(consumer);
-        this.baseStreamDescriptor = baseStreamDescriptor;
+        this.baseStreamQueryDescriptor = baseStreamQueryDescriptor;
         this.supplier = supplier;
         this.fatalExceptionHandler = fatalExceptionHandler;
-    }
-
-    /**
-     * Gets the implemented offset manager.
-     * @return OffsetManager
-     */
-    public OffsetManager getOffsetManager() {
-        return offsetManager;
-    }
-
-    /**
-     * Gets the library configuration.
-     *
-     * @return ConnectClientConfiguration
-     */
-    public ConnectClientConfiguration getConfig() {
-        return config;
     }
 
     /**
@@ -81,42 +64,6 @@ public class StreamHandler extends AbstractExecutionThreadService {
      */
     public AtomicBoolean getDoConsume() {
         return doConsume;
-    }
-
-    /**
-     * Get the Http client.
-     *
-     * @return AsyncHttpClient
-     */
-    public AsyncHttpClient getAsyncClient() {
-        return asyncClient;
-    }
-
-    /**
-     * Get the event receiver.
-     *
-     * @return RawEventReceiver
-     */
-    public RawEventReceiver getRawEventReceiver() {
-        return rawEventReceiver;
-    }
-
-    /**
-     * Get the base stream descriptor.
-     *
-     * @return StreamDescriptor
-     */
-    public StreamDescriptor getBaseStreamDescriptor() {
-        return baseStreamDescriptor;
-    }
-
-    /**
-     * Get the fatal exception handler for connection failures.
-     *
-     * @return FatalExceptionHandler
-     */
-    public FatalExceptionHandler getFatalExceptionHandler() {
-        return fatalExceptionHandler;
     }
 
     /**
@@ -140,44 +87,44 @@ public class StreamHandler extends AbstractExecutionThreadService {
                 boolean connected = false;
 
                 // if this is not the original consumption attempt, create a new StreamDescriptor with the most recent offset
-                final StreamDescriptor descriptor;
+                final StreamQueryDescriptor descriptor;
                 if (consumptionAttempt == 0) {
-                    descriptor = baseStreamDescriptor;
+                    descriptor = baseStreamQueryDescriptor;
                 } else {
-                    descriptor = StreamUtils.buildNewDescriptor(baseStreamDescriptor, offsetManager);
+                    descriptor = StreamUtils.buildNewDescriptor(baseStreamQueryDescriptor, offsetManager);
                 }
 
                 // create a new MobileEventStream
-                try (MobileEventStream newStream = supplier.get(descriptor, asyncClient, rawEventReceiver, config.mesUrl)) {
-                    stream = newStream;
+                try (MobileEventStream newMobileEventStream = supplier.get(descriptor, asyncClient, rawEventReceiver, config.mesUrl, fatalExceptionHandler)) {
+                    mobileEventStream = newMobileEventStream;
 
                     // connect to the MobileEventStream
-                    log.info("Connecting to stream for app " + baseStreamDescriptor.getCreds().getAppKey());
-                    connected = connectWithRetries(stream);
+                    log.info("Connecting to stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
+                    connected = StreamUtils.connectWithRetries(mobileEventStream, config, baseStreamQueryDescriptor.getCreds().getAppKey());
 
                     // if connection attempts fail, exit the consumption loop.
                     if (!connected) {
-                        fatalExceptionHandler.handle(new RuntimeException("Could not connect to stream for app " + baseStreamDescriptor.getCreds().getAppKey()));
+                        fatalExceptionHandler.handle(new RuntimeException("Could not connect to stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey()));
                         break;
                     }
 
                     // consume from the MobileEventStream
-                    log.info("Consuming from stream for app " + baseStreamDescriptor.getCreds().getAppKey());
-                    stream.consume(config.maxAppStreamConsumeTime, TimeUnit.MILLISECONDS);
+                    log.info("Consuming from stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
+                    mobileEventStream.consume(config.maxAppStreamConsumeTime, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Throwable throwable) {
-                    log.error("Error encountered while consuming stream for app " + baseStreamDescriptor.getCreds().getAppKey(), throwable);
+                    log.error("Error encountered while consuming stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey(), throwable);
                 } finally {
-                    log.info("Ending stream handling for app " + baseStreamDescriptor.getCreds().getAppKey());
+                    log.info("Ending stream handling for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
 
                     // update consumption attempt
                     consumptionAttempt += 1;
 
                     if (connected) {
                         // update offset
-                        log.debug("Updating offset for app " + baseStreamDescriptor.getCreds().getAppKey());
+                        log.debug("Updating offset for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
                         offsetManager.update(rawEventReceiver.get());
                     }
                 }
@@ -188,50 +135,17 @@ public class StreamHandler extends AbstractExecutionThreadService {
         }
     }
 
-    private boolean connectWithRetries(MobileEventStream stream) throws InterruptedException {
-
-        int baseConnectionAttempts = 0;
-        long backoff = config.mesReconnectBackoffTime;
-
-        for (int connectionAttempts = baseConnectionAttempts; connectionAttempts < config.maxConnectionAttempts; connectionAttempts++) {
-
-            try {
-                // have the thread sleep before trying to reconnect
-                if (connectionAttempts > baseConnectionAttempts) {
-                    Thread.sleep(backoff);
-                }
-
-                // update the backoff value for each connection attempt
-                backoff += backoff * connectionAttempts;
-                if (backoff > config.maxConnectionAttempts * config.mesReconnectBackoffTime) {
-                    backoff = config.maxConnectionAttempts * config.mesReconnectBackoffTime;
-                }
-
-                stream.connect(config.appStreamConnectTimeout, TimeUnit.MILLISECONDS);
-                return true;
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Throwable throwable) {
-                log.error("Error encountered while connecting to stream for app " + baseStreamDescriptor.getCreds().getAppKey(), throwable);
-            }
-        }
-
-        // if the reconnection retry limit is reached without connection, exit.
-        log.error("Handler failed to reconnect after " + config.maxConnectionAttempts + " attempts, exiting.");
-        return false;
-    }
-
     /**
      * Stops any stream handling by setting doConsume to {@code false}.
      */
     @Override
     public void triggerShutdown() {
-        log.info("Shutting down stream handler for app " + baseStreamDescriptor.getCreds().getAppKey());
+        log.info("Shutting down stream handler for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
         doConsume.set(false);
 
-        if (stream != null) {
+        if (mobileEventStream != null) {
             try {
-                stream.close();
+                mobileEventStream.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -242,7 +156,7 @@ public class StreamHandler extends AbstractExecutionThreadService {
         private Consumer<Event> consumer;
         private AsyncHttpClient client;
         private OffsetManager offsetManager;
-        private StreamDescriptor baseStreamDescriptor;
+        private StreamQueryDescriptor baseStreamQueryDescriptor;
         private Configuration config;
         private StreamSupplier supplier = new MobileEventStreamSupplier();
         private FatalExceptionHandler fatalExceptionHandler;
@@ -288,8 +202,8 @@ public class StreamHandler extends AbstractExecutionThreadService {
          * @param descriptor StreamDescriptor
          * @return Builder
          */
-        public Builder setBaseStreamDescriptor(StreamDescriptor descriptor) {
-            this.baseStreamDescriptor = descriptor;
+        public Builder setBaseStreamQueryDescriptor(StreamQueryDescriptor descriptor) {
+            this.baseStreamQueryDescriptor = descriptor;
             return this;
         }
 
@@ -332,11 +246,11 @@ public class StreamHandler extends AbstractExecutionThreadService {
          *
          * @return StreamHandler
          */
-        public StreamHandler build() {
-            return new StreamHandler(consumer,
+        public MobileEventConsumerService build() {
+            return new MobileEventConsumerService(consumer,
                 client,
                 offsetManager,
-                baseStreamDescriptor,
+                baseStreamQueryDescriptor,
                 config,
                 supplier,
                 fatalExceptionHandler);
@@ -346,11 +260,12 @@ public class StreamHandler extends AbstractExecutionThreadService {
     // Straightforward Supplier implementation
     private static class MobileEventStreamSupplier implements StreamSupplier {
         @Override
-        public MobileEventStream get(StreamDescriptor descriptor,
+        public MobileEventStream get(StreamQueryDescriptor descriptor,
                     AsyncHttpClient client,
                     Consumer<String> eventConsumer,
-                    String url) {
-            return new MobileEventStream(descriptor, client, eventConsumer, url);
+                    String url,
+                    FatalExceptionHandler fatalExceptionHandler) {
+            return new MobileEventStream(descriptor, client, eventConsumer, url, fatalExceptionHandler);
         }
     }
 }

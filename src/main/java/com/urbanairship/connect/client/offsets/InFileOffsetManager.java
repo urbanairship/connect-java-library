@@ -20,8 +20,9 @@ public class InFileOffsetManager implements OffsetManager {
 
     public InFileOffsetManager(String appName) {
         offsetFile = new File(System.getProperty("user.dir"), "." + appName + "offsets");
-        if (loadOffset().isPresent()) {
-            this.offset.set(loadOffset().get());
+        final Optional<String> loadedOffset = loadOffset();
+        if (loadedOffset.isPresent()) {
+            this.offset.set(loadedOffset.get());
         }
     }
 
