@@ -336,7 +336,7 @@ public class MobileEventConsumerServiceTest {
         StreamQueryDescriptor.Builder builder = StreamQueryDescriptor.newBuilder()
             .setCreds(Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
-                .setSecret(randomAlphabetic(5))
+                .setToken(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
             builder.setOffset(String.valueOf(offset.get()));
