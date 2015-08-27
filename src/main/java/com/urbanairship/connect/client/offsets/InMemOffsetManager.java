@@ -5,17 +5,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class InMemOffsetManager implements OffsetManager {
 
-    private final AtomicReference<Long> offset = new AtomicReference<>(null);
+    private final AtomicReference<String> offset = new AtomicReference<>(null);
 
     public InMemOffsetManager() {}
 
     @Override
-    public Optional<Long> getLastOffset() {
+    public Optional<String> getLastOffset() {
         return Optional.ofNullable(offset.get());
     }
 
     @Override
-    public void update(Long offset) {
+    public void update(String offset) {
         this.offset.set(offset);
     }
 }

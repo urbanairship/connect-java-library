@@ -12,12 +12,12 @@ public interface OffsetManager {
      *
      * @return Optional<>Long</>
      */
-    Optional<Long> getLastOffset();
+    Optional<String> getLastOffset();
 
     /**
      * Update the stored offset value.
      *
      * @param offset Long
      */
-    void update(Long offset);
+    void update(String offset);
 }

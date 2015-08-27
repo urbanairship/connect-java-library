@@ -61,7 +61,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-public class StreamHandlerTest {
+public class MobileEventConsumerServiceTest {
 
     private static final int PORT = 10000 + RandomUtils.nextInt(0, 50000);
     private static final String PATH = "/test";
@@ -71,7 +71,7 @@ public class StreamHandlerTest {
     private static HttpServer server;
     private static HttpHandler serverHandler;
     private static Configuration config;
-    private static StreamHandler handler;
+    private static MobileEventConsumerService mobileEventConsumerService;
 
     private AsyncHttpClient http;
 
@@ -79,6 +79,8 @@ public class StreamHandlerTest {
     private Consumer<Event> consumer;
     @Mock
     private StreamSupplier supplier;
+    @Mock
+    private FatalExceptionHandler fatalExceptionHandler;
 
     @BeforeClass
     public static void serverStart() throws Exception {
@@ -103,7 +105,7 @@ public class StreamHandlerTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         Mockito.reset(serverHandler);
-        handler = null;
+        mobileEventConsumerService = null;
 
         AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
             .setUserAgent("Connect Client")
@@ -144,7 +146,7 @@ public class StreamHandlerTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         List<Event> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch latch = new CountDownLatch(events.size());
         doAnswer(invocationOnMock -> {
             latch.countDown();
             Event consumedEvent = (Event) invocationOnMock.getArguments()[0];
@@ -153,19 +155,19 @@ public class StreamHandlerTest {
         }).when(consumer).accept(any(Event.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
-        handler = createHandler(offsetManager).build();
+        mobileEventConsumerService = createMobileEventConsumerService(offsetManager).build();
         ExecutorService thread = Executors.newSingleThreadExecutor();
         try {
             Future<Boolean> future = thread.submit(() -> {
-                handler.run();
+                mobileEventConsumerService.run();
                 return Boolean.TRUE;
             });
 
             // Wait till we get something from the server
             latch.await(1, TimeUnit.MINUTES);
 
-            // Now kill the handler connection
-            handler.triggerShutdown();
+            // Now kill the mobileEventConsumerService connection
+            mobileEventConsumerService.triggerShutdown();
 
             // Consume future should return without issue now
             try {
@@ -183,14 +185,9 @@ public class StreamHandlerTest {
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals("LATEST", bodyObj.get("start").getAsString());
-        assertEquals((Long) events.get(events.size() - 1).getOffset(), offsetManager.getLastOffset().get());
+        assertEquals(String.valueOf(events.get(events.size() - 1).getOffset()), offsetManager.getLastOffset().get());
 
-        assertEquals(http, handler.getAsyncClient());
-        assertEquals(offsetManager, handler.getOffsetManager());
-        assertFalse(handler.getDoConsume().get());
-        assertEquals(3, handler.getConfig().maxConnectionAttempts);
-        String serverUrl = String.format("http://localhost:%d%s", PORT, PATH);
-        assertEquals(serverUrl, handler.getConfig().mesUrl);
+        assertFalse(mobileEventConsumerService.getDoConsume().get());
     }
 
     @Test
@@ -248,7 +245,7 @@ public class StreamHandlerTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         List<Event> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(5);
+        CountDownLatch latch = new CountDownLatch(events.size());
         doAnswer(invocationOnMock -> {
             latch.countDown();
             Event consumedEvent = (Event) invocationOnMock.getArguments()[0];
@@ -257,19 +254,19 @@ public class StreamHandlerTest {
         }).when(consumer).accept(any(Event.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
-        handler = createHandler(offsetManager).build();
+        mobileEventConsumerService = createMobileEventConsumerService(offsetManager).build();
         ExecutorService thread = Executors.newSingleThreadExecutor();
         try {
             Future<Boolean> future = thread.submit(() -> {
-                handler.run();
+                mobileEventConsumerService.run();
                 return Boolean.TRUE;
             });
 
             // Wait till we get something from the server
             latch.await(10, TimeUnit.MINUTES);
 
-            // Now kill the handler connection
-            handler.triggerShutdown();
+            // Now kill the mobileEventConsumerService connection
+            mobileEventConsumerService.triggerShutdown();
 
             // Consume future should return without issue now
             try {
@@ -287,7 +284,7 @@ public class StreamHandlerTest {
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals("4", bodyObj.get("resume_offset").getAsString());
-        assertEquals((Long) events.get(events.size() - 1).getOffset(), offsetManager.getLastOffset().get());
+        assertEquals(String.valueOf(events.get(events.size() - 1).getOffset()), offsetManager.getLastOffset().get());
     }
 
     @Test
@@ -301,28 +298,29 @@ public class StreamHandlerTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         MobileEventStream stream = mock(MobileEventStream.class);
-        doAnswer(invocationMock -> stream).when(supplier).get(any(StreamDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class));
+        doAnswer(invocationMock -> stream).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
         doThrow(new RuntimeException()).when(stream).connect(anyLong(), any(TimeUnit.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
-        handler = createHandler(offsetManager).setSupplier(supplier).build();
-        handler.run();
+        mobileEventConsumerService = createMobileEventConsumerService(offsetManager).setSupplier(supplier).build();
+        mobileEventConsumerService.run();
 
         verify(stream, never()).consume(anyLong(), any(TimeUnit.class));
+        verify(fatalExceptionHandler).handle(any(RuntimeException.class));
     }
     @Test
     public void testInterrupted() throws Exception {
         MobileEventStream stream = mock(MobileEventStream.class);
-        doAnswer(invocationMock -> stream).when(supplier).get(any(StreamDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class));
+        doAnswer(invocationMock -> stream).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
         doThrow(new InterruptedException()).when(stream).connect(anyLong(), any(TimeUnit.class));
 
-        handler = createHandler(new InMemOffsetManager()).setSupplier(supplier).build();
+        mobileEventConsumerService = createMobileEventConsumerService(new InMemOffsetManager()).setSupplier(supplier).build();
         CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean interrupted = new AtomicBoolean(false);
         ExecutorService thread = Executors.newSingleThreadExecutor();
         try {
             thread.execute(() -> {
-                handler.run();
+                mobileEventConsumerService.run();
                 interrupted.set(Thread.interrupted());
                 latch.countDown();
             });
@@ -334,25 +332,26 @@ public class StreamHandlerTest {
         assertTrue(interrupted.get());
     }
 
-    private StreamDescriptor descriptor(Optional<Long> offset) {
-        StreamDescriptor.Builder builder = StreamDescriptor.newBuilder()
-            .setCreds( Creds.newBuilder()
+    private StreamQueryDescriptor descriptor(Optional<Long> offset) {
+        StreamQueryDescriptor.Builder builder = StreamQueryDescriptor.newBuilder()
+            .setCreds(Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
                 .setToken(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
-            builder.setOffset(offset.get());
+            builder.setOffset(String.valueOf(offset.get()));
         }
         return builder.build();
     }
 
-    private StreamHandler.Builder createHandler(OffsetManager offsetManager) {
-        return StreamHandler.newBuilder()
+    private MobileEventConsumerService.Builder createMobileEventConsumerService(OffsetManager offsetManager) {
+        return MobileEventConsumerService.newBuilder()
             .setClient(http)
-            .setBaseStreamDescriptor(descriptor(Optional.empty()))
+            .setBaseStreamQueryDescriptor(descriptor(Optional.empty()))
             .setConfig(config)
             .setConsumer(consumer)
-            .setOffsetManager(offsetManager);
+            .setOffsetManager(offsetManager)
+            .setFatalExceptionHandler(fatalExceptionHandler);
     }
 
     private Event createEvent(Long offset) {
@@ -381,7 +380,7 @@ public class StreamHandlerTest {
             .setEventType(EventType.CUSTOM)
             .setEventBody(customEvent)
             .setDeviceInfo(deviceInfo)
-            .setOffset(offset)
+            .setOffset(String.valueOf(offset))
             .setOccurred(Instant.now())
             .setProcessed(Instant.now().plusSeconds(nextLong(1, 10)))
             .setIdentifier(UUID.randomUUID().toString())

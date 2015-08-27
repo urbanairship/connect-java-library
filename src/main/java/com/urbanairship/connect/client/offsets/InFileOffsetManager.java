@@ -16,47 +16,38 @@ public class InFileOffsetManager implements OffsetManager {
     private static final Logger logger = LogManager.getLogger(InFileOffsetManager.class);
 
     private final File offsetFile;
-    private final AtomicReference<Long> offset = new AtomicReference<>(null);
+    private final AtomicReference<String> offset = new AtomicReference<>(null);
 
-    private static InFileOffsetManager instance;
-
-    private InFileOffsetManager(String appName) {
+    public InFileOffsetManager(String appName) {
         offsetFile = new File(System.getProperty("user.dir"), "." + appName + "offsets");
-        if (loadOffset().isPresent()) {
-            this.offset.set(loadOffset().get());
+        final Optional<String> loadedOffset = loadOffset();
+        if (loadedOffset.isPresent()) {
+            this.offset.set(loadedOffset.get());
         }
-    }
-
-    public static InFileOffsetManager getInstance(String appName) {
-        if (instance == null) {
-            instance = new InFileOffsetManager(appName);
-        }
-
-        return instance;
     }
 
     @Override
-    public Optional<Long> getLastOffset() {
+    public Optional<String> getLastOffset() {
         return Optional.ofNullable(offset.get());
     }
 
     @Override
-    public void update(Long offset) {
+    public void update(String offset) {
         this.offset.set(offset);
         try {
             saveOffset();
         } catch (IOException e) {
-            logger.warn("Failed to update offset in file: " + offsetFile.getName(), e);
+            throw new RuntimeException("Failed to update offset in file: " + offsetFile.getName(), e);
         }
     }
 
-    private synchronized Optional<Long> loadOffset() {
+    private synchronized Optional<String> loadOffset() {
         if (!offsetFile.exists()) {
             logger.debug("No apps file exists: " + offsetFile.getAbsolutePath());
             return Optional.empty();
         }
         try {
-            offset.set(Long.parseLong(Files.toString(offsetFile, Charsets.UTF_8)));
+            offset.set(Files.toString(offsetFile, Charsets.UTF_8));
         } catch (IOException e) {
             logger.warn("Failed to read file: " + offsetFile.getName(), e);
         }
@@ -65,7 +56,7 @@ public class InFileOffsetManager implements OffsetManager {
 
     private synchronized void saveOffset() throws IOException {
         Writer writer = Files.newWriter(offsetFile, Charsets.UTF_8);
-        writer.write(offset.get().byteValue());
+        writer.write(offset.get());
         writer.flush();
         writer.close();
     }

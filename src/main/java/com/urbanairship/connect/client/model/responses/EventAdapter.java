@@ -50,7 +50,7 @@ public class EventAdapter implements JsonDeserializer<Event> {
         if (offset == null) {
             throw new JsonParseException("Unable to parse event with missing offset");
         }
-        eventBuilder.setOffset(offset.getAsLong());
+        eventBuilder.setOffset(offset.getAsString());
 
         // Parse Event Type
         JsonElement type = eventJson.get(Event.TYPE_KEY);
@@ -96,7 +96,7 @@ public class EventAdapter implements JsonDeserializer<Event> {
             throw new JsonParseException("Unable to parse event with missing processed field");
         }
 
-        // validate occurance string
+        // validate occurrence string
         Instant occurred = GsonUtil.getGson().fromJson(occurredJson, Instant.class);
         // validate processed string
         Instant processed = GsonUtil.getGson().fromJson(processedJson, Instant.class);

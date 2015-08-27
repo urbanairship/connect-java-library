@@ -1,23 +1,25 @@
 package com.urbanairship.connect.client;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.responses.Event;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * Class that consumes and parses the API response while tracking the stream offset.
  */
-public class RawEventReceiver implements Consumer<String>, Supplier<Long> {
+public class RawEventReceiver implements Consumer<String>, Supplier<String> {
 
     private static final Logger log = LogManager.getLogger(RawEventReceiver.class);
 
-    private final Gson gson = GsonUtil.getGson();
-    private long lastOffset = 0L;
+    private static final Gson gson = GsonUtil.getGson();
+    private AtomicReference<String> lastOffset = new AtomicReference<>("0");
     private final Consumer<Event> consumer;
 
     /**
@@ -37,13 +39,14 @@ public class RawEventReceiver implements Consumer<String>, Supplier<Long> {
      */
     @Override
     public void accept(String event) {
-        Event eventObj = gson.fromJson(event, Event.class);
-        log.debug("Parsing event " + eventObj.getIdentifier());
+        try {
+            Event eventObj = gson.fromJson(event, Event.class);
+            log.debug("Parsing event " + eventObj.getIdentifier());
 
-        if (lastOffset != eventObj.getOffset()) {
-            // assuming duplicates arrive sequentially, drop the event if it's a duplicate
-            lastOffset = eventObj.getOffset();
+            lastOffset.set(eventObj.getOffset());
             consumer.accept(eventObj);
+        } catch (JsonSyntaxException e) {
+            throw new RuntimeException("Failed to parse event: " + event);
         }
     }
 
@@ -53,8 +56,8 @@ public class RawEventReceiver implements Consumer<String>, Supplier<Long> {
      * @return offset
      */
     @Override
-    public Long get() {
-        return lastOffset;
+    public String get() {
+        return lastOffset.get();
     }
 
 }

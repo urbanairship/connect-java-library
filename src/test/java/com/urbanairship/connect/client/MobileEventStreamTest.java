@@ -69,6 +69,7 @@ public class MobileEventStreamTest {
     private AsyncHttpClient http;
 
     @Mock private Consumer<String> consumer;
+    @Mock private FatalExceptionHandler fatalExceptionHandler;
 
     private MobileEventStream stream;
 
@@ -97,7 +98,7 @@ public class MobileEventStreamTest {
         stream = null;
 
         AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
-                .setUserAgent("Wildwood Ingress Client")
+                .setUserAgent("Connect Client")
                 .setRequestTimeout(-1)
                 .setAllowPoolingConnections(false)
                 .setAllowPoolingSslConnections(false)
@@ -114,7 +115,7 @@ public class MobileEventStreamTest {
 
     @Test
     public void testStream() throws Exception {
-        StreamDescriptor descriptor = descriptor(Optional.<Long>empty());
+        StreamQueryDescriptor descriptor = descriptor(Optional.<Long>empty());
 
         String line = randomAlphabetic(15);
 
@@ -143,7 +144,7 @@ public class MobileEventStreamTest {
             return null;
         }).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
         stream.consume(10, TimeUnit.SECONDS);
@@ -167,8 +168,8 @@ public class MobileEventStreamTest {
             return null;
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        StreamDescriptor descriptor = descriptor(Optional.<Long>empty());
-        stream = new MobileEventStream(descriptor, http, consumer, url);
+        StreamQueryDescriptor descriptor = descriptor(Optional.<Long>empty());
+        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
         assertTrue(authorization.get().toLowerCase().startsWith("bearer"));
@@ -194,9 +195,9 @@ public class MobileEventStreamTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         long offset = RandomUtils.nextInt(0, 100000);
-        StreamDescriptor descriptor = descriptor(Optional.of(offset));
+        StreamQueryDescriptor descriptor = descriptor(Optional.of(offset));
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
@@ -237,9 +238,9 @@ public class MobileEventStreamTest {
             .addType(EventType.TAG_CHANGE)
             .build();
 
-        StreamDescriptor descriptor = filterDescriptor(filter1, filter2);
+        StreamQueryDescriptor descriptor = filterDescriptor(filter1, filter2);
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
         Gson gson = new GsonBuilder()
@@ -267,9 +268,9 @@ public class MobileEventStreamTest {
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         Subset subset = Subset.createPartitionSubset(10, 0);
-        StreamDescriptor descriptor = subsetDescriptor(subset);
+        StreamQueryDescriptor descriptor = subsetDescriptor(subset);
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
+        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
         Gson gson = new GsonBuilder()
@@ -289,7 +290,7 @@ public class MobileEventStreamTest {
             return null;
         }).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url);
+        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
 
         boolean failed = false;
         try {
@@ -326,7 +327,7 @@ public class MobileEventStreamTest {
         })
         .when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url);
+        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -346,7 +347,7 @@ public class MobileEventStreamTest {
 
         doThrow(new RuntimeException("boom")).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url);
+        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -380,7 +381,7 @@ public class MobileEventStreamTest {
             return null;
         }).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url);
+        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -420,7 +421,7 @@ public class MobileEventStreamTest {
         // No body is coming, but consume should exit after 1 second without failure
         long consumeTime;
         try {
-            stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url);
+            stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
             stream.connect(10, TimeUnit.SECONDS);
 
             long start = System.currentTimeMillis();
@@ -436,20 +437,20 @@ public class MobileEventStreamTest {
         assertTrue(consumeTime < 1500L);
     }
 
-    private StreamDescriptor descriptor(Optional<Long> offset) {
-        StreamDescriptor.Builder builder = StreamDescriptor.newBuilder()
+    private StreamQueryDescriptor descriptor(Optional<Long> offset) {
+        StreamQueryDescriptor.Builder builder = StreamQueryDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
                 .setToken(randomAlphabetic(5))
                 .build());
         if (offset.isPresent()) {
-            builder.setOffset(offset.get());
+            builder.setOffset(String.valueOf(offset.get()));
         }
         return builder.build();
     }
 
-    private StreamDescriptor filterDescriptor(Filter... filter) {
-        return StreamDescriptor.newBuilder()
+    private StreamQueryDescriptor filterDescriptor(Filter... filter) {
+        return StreamQueryDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
                 .setToken(randomAlphabetic(5))
@@ -458,8 +459,8 @@ public class MobileEventStreamTest {
             .build();
     }
 
-    private StreamDescriptor subsetDescriptor(Subset subset) {
-        return StreamDescriptor.newBuilder()
+    private StreamQueryDescriptor subsetDescriptor(Subset subset) {
+        return StreamQueryDescriptor.newBuilder()
             .setCreds( Creds.newBuilder()
                 .setAppKey(randomAlphabetic(22))
                 .setToken(randomAlphabetic(5))

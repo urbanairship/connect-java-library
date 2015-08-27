@@ -5,7 +5,7 @@ import com.ning.http.client.AsyncHttpClient;
 import java.util.function.Consumer;
 
 /**
- * Interface for supplying the {@link com.urbanairship.connect.client.StreamHandler} with
+ * Interface for supplying the {@link MobileEventConsumerService} with
  * a {@link com.urbanairship.connect.client.MobileEventStream} instance.
  */
 public interface StreamSupplier {
@@ -19,8 +19,9 @@ public interface StreamSupplier {
      * @param url The API URL as a String.
      * @return MobileEventStream instance.
      */
-    MobileEventStream get(StreamDescriptor descriptor,
+    MobileEventStream get(StreamQueryDescriptor descriptor,
                           AsyncHttpClient client,
                           Consumer<String> eventConsumer,
-                          String url);
+                          String url,
+                          FatalExceptionHandler fatalExceptionHandler);
 }
