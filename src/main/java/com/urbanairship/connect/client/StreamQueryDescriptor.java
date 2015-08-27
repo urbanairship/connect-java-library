@@ -10,36 +10,63 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public final class StreamDescriptor {
+/**
+ * Object containing app credentials and API request details for the {@link com.urbanairship.connect.client.MobileEventStream}.
+ */
+public final class StreamQueryDescriptor {
 
     private final Creds creds;
-    private final Optional<Long> offset;
+    private final Optional<String> offset;
     private final Optional<Set<Filter>> filters;
     private final Optional<Subset> subset;
 
+    /**
+     * StreamDescriptor builder
+     * @return Builder
+     */
     public static Builder newBuilder() {
         return new Builder();
     }
 
-    private StreamDescriptor(Creds creds, Optional<Long> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
+    private StreamQueryDescriptor(Creds creds, Optional<String> offset, Optional<Set<Filter>> filters, Optional<Subset> subset) {
         this.creds = creds;
         this.offset = offset;
         this.filters = filters;
         this.subset = subset;
     }
 
+    /**
+     * Get the app creds.
+     *
+     * @return the app creds.
+     */
     public Creds getCreds() {
         return creds;
     }
 
-    public Optional<Long> getOffset() {
+    /**
+     * Get the stream offset.
+     *
+     * @return offset
+     */
+    public Optional<String> getOffset() {
         return offset;
     }
 
+    /**
+     * Get the request filters.
+     *
+     * @return set of filters.
+     */
     public Optional<Set<Filter>> getFilters() {
         return filters;
     }
 
+    /**
+     * Get the request subset.
+     *
+     * @return subset.
+     */
     public Optional<Subset> getSubset() {
         return subset;
     }
@@ -52,7 +79,7 @@ public final class StreamDescriptor {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        StreamDescriptor that = (StreamDescriptor) o;
+        StreamQueryDescriptor that = (StreamQueryDescriptor) o;
         return Objects.equals(creds, that.creds) &&
                 Objects.equals(offset, that.offset) &&
                 Objects.equals(filters, that.filters) &&
@@ -66,30 +93,60 @@ public final class StreamDescriptor {
 
     public static final class Builder {
         private Creds creds;
-        private Long offset = null;
+        private String offset = null;
         private Set<Filter> filters = null;
         private Subset subset = null;
 
         private Builder() {}
 
+        /**
+         * Sets the app creds.
+         *
+         * @param value Creds
+         * @return Builder
+         */
         public Builder setCreds(Creds value) {
             this.creds = value;
             return this;
         }
 
-        public Builder setOffset(Long value) {
+        /**
+         * Set the stream offset.
+         *
+         * @param value String
+         * @return Builder
+         */
+        public Builder setOffset(String value) {
             this.offset = value;
             return this;
         }
 
+        /**
+         * Add a single filter.
+         *
+         * @param value Filter
+         * @return Builder
+         */
         public Builder addFilter(Filter value) {
             return addFilters(value);
         }
 
+        /**
+         * Add multiple filters.
+         *
+         * @param value Filter...
+         * @return Builder
+         */
         public Builder addFilters(Filter... value) {
             return addFilters(new HashSet<>(Arrays.asList(value)));
         }
 
+        /**
+         * Add a Collection of filters.
+         *
+         * @param value Collection<>Filters</>
+         * @return Builder
+         */
         public Builder addFilters(Collection<Filter> value) {
             if (this.filters == null) {
                 this.filters = new HashSet<>();
@@ -99,13 +156,23 @@ public final class StreamDescriptor {
             return this;
         }
 
+        /**
+         * Set the subset.
+         *
+         * @param value Subset
+         * @return Builder
+         */
         public Builder setSubset(Subset value) {
             this.subset = value;
             return this;
         }
 
-        public StreamDescriptor build() {
-            return new StreamDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
+        /**
+         * Builder a StreamDescriptor object.
+         * @return StreamDescriptor
+         */
+        public StreamQueryDescriptor build() {
+            return new StreamQueryDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
         }
     }
 }

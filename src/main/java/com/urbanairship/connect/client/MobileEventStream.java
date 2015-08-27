@@ -1,12 +1,15 @@
 package com.urbanairship.connect.client;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
+import com.ning.http.client.cookie.Cookie;
+import com.ning.http.client.cookie.CookieDecoder;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
@@ -17,7 +20,7 @@ import org.apache.log4j.Logger;
 import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -45,14 +48,16 @@ public class MobileEventStream implements AutoCloseable {
 
     private static final Logger log = LogManager.getLogger(MobileEventStream.class);
 
+    public static final String X_UA_APPKEY = "X-UA-Appkey";
     private static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
 
     private static final Gson GSON = GsonUtil.getGson();
 
-    private final StreamDescriptor descriptor;
+    private final StreamQueryDescriptor descriptor;
     private final AsyncHttpClient client;
     private final Consumer<String> eventConsumer;
     private final String url;
+    private final FatalExceptionHandler fatalExceptionHandler;
 
     private final Object stateLock = new Object();
 
@@ -61,14 +66,16 @@ public class MobileEventStream implements AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public MobileEventStream(StreamDescriptor descriptor,
+    public MobileEventStream(StreamQueryDescriptor descriptor,
                              AsyncHttpClient client,
                              Consumer<String> eventConsumer,
-                             String url) {
+                             String url,
+                             FatalExceptionHandler fatalExceptionHandler) {
         this.descriptor = descriptor;
         this.client = client;
         this.eventConsumer = eventConsumer;
         this.url = url;
+        this.fatalExceptionHandler = fatalExceptionHandler;
     }
 
     public void connect(long maxConnectWaitTime, TimeUnit unit) throws InterruptedException {
@@ -76,7 +83,7 @@ public class MobileEventStream implements AutoCloseable {
             Preconditions.checkState(connection == null);
 
             try {
-                connection = connect(maxConnectWaitTime, unit, Collections.emptyMap());
+                connection = connect(maxConnectWaitTime, unit, Collections.<Cookie>emptyList());
             }
             catch (ExecutionException e) {
                 throw new RuntimeException("Failure attempting to connect to mobile event stream for app " + getAppKey(), e);
@@ -139,10 +146,10 @@ public class MobileEventStream implements AutoCloseable {
         cleanup();
     }
 
-    private Connection connect(long maxConnectTime, TimeUnit unit, Map<String, String> extraHeaders)
+    private Connection connect(long maxConnectTime, TimeUnit unit, Collection<Cookie> cookies)
             throws InterruptedException, ExecutionException, TimeoutException {
 
-        AsyncHttpClient.BoundRequestBuilder request = buildRequest(extraHeaders);
+        AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies);
 
         MobileEventStreamConnectFuture connectFuture = new MobileEventStreamConnectFuture();
         Consumer<byte[]> consumer = new MobileEventStreamBodyConsumer(eventConsumer);
@@ -161,6 +168,11 @@ public class MobileEventStream implements AutoCloseable {
         responseHandler.stop();
         future.done();
 
+        // 400s indicate a bad request, don't want to cause unnecessary connection retries in the MobileEventConsumerService
+        if (399 < status || status < 500) {
+            fatalExceptionHandler.handle(new RuntimeException(String.format("Received status code (%d) from a bad request for app %s", status, getAppKey())));
+        }
+
         if (status != 307) {
             throw new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
         }
@@ -169,16 +181,20 @@ public class MobileEventStream implements AutoCloseable {
         return handleRedirect(maxConnectTime, unit, statusAndHeaders);
     }
 
-    private AsyncHttpClient.BoundRequestBuilder buildRequest(Map<String, String> extraHeaders) {
+    private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies) {
         byte[] query = getQuery();
 
         AsyncHttpClient.BoundRequestBuilder request = client.preparePost(url)
                 .addHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER)
-                .addHeader(HttpHeaders.AUTHORIZATION, getAuth())
                 .addHeader(HttpHeaders.CONTENT_LENGTH, Integer.toString(query.length));
 
-        for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
+        Map<String, String> authHeaders = getAuthHeaders(descriptor.getCreds());
+        for (Map.Entry<String, String> entry : authHeaders.entrySet()) {
             request.addHeader(entry.getKey(), entry.getValue());
+        }
+
+        for (Cookie cookie : cookies) {
+            request.addCookie(cookie);
         }
 
         request.setBody(query);
@@ -194,13 +210,21 @@ public class MobileEventStream implements AutoCloseable {
             throw new RuntimeException("Received redirect response with no 'Set-Cookie' header in response!");
         }
 
-        String streamLeaderHost = values.get(0);
-        return connect(maxConnectTime, unit, ImmutableMap.of("Cookie", streamLeaderHost));
+        String value = values.get(0);
+        Cookie cookie = CookieDecoder.decode(value);
+
+        if (cookie == null) {
+            throw new RuntimeException("Received redirect response with unparsable 'Set-Cookie' value - " + value);
+        }
+
+        return connect(maxConnectTime, unit, ImmutableList.of(cookie));
     }
 
-    private String getAuth() {
-        String auth = descriptor.getCreds().getAppKey() + ":" + descriptor.getCreds().getSecret();
-        return "Basic " + Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+    private Map<String, String> getAuthHeaders(Creds creds) {
+        return ImmutableMap.of(
+            HttpHeaders.AUTHORIZATION, "Bearer " + creds.getToken(),
+            X_UA_APPKEY, creds.getAppKey()
+        );
     }
 
     private byte[] getQuery() {
