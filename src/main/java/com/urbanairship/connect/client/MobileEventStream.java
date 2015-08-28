@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
- * Provides the abstraction through which events are stream from the mobile event stream endpoint to a caller.
+ * Provides the abstraction through which events are streamed from the mobile event stream endpoint to a caller.
  *
  * Usage should follow the pattern:
  * <pre>

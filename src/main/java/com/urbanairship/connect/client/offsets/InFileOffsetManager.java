@@ -18,8 +18,8 @@ public class InFileOffsetManager implements OffsetManager {
     private final File offsetFile;
     private final AtomicReference<String> offset = new AtomicReference<>(null);
 
-    public InFileOffsetManager(String appName) {
-        offsetFile = new File(System.getProperty("user.dir"), "." + appName + "offsets");
+    public InFileOffsetManager(String appKey) {
+        offsetFile = new File(System.getProperty("user.dir"), "." + appKey + "offsets");
         final Optional<String> loadedOffset = loadOffset();
         if (loadedOffset.isPresent()) {
             this.offset.set(loadedOffset.get());
