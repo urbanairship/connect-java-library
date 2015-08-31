@@ -9,5 +9,6 @@ public enum EventType {
         TAG_CHANGE,
         FIRST_OPEN,
         UNINSTALL,
-        PUSH_BODY
+        PUSH_BODY,
+        REGION
 }

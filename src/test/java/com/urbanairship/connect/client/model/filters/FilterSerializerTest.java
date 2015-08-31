@@ -1,23 +1,17 @@
 package com.urbanairship.connect.client.model.filters;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
+import com.urbanairship.connect.client.model.GsonUtil;
 import org.junit.Test;
-
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
 public class FilterSerializerTest {
 
-    Gson gson = new GsonBuilder()
-        .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
-        .registerTypeAdapter(Optional.class, new OptionalSerializer())
-        .create();
-
+    Gson gson = GsonUtil.getGson();
     @Test
     public void testMaxFilter() throws Exception {
 

@@ -119,6 +119,20 @@ public class CustomEvent implements EventBody {
     }
 
     @Override
+    public String toString() {
+        return "CustomEvent{" +
+            "name='" + name + '\'' +
+            ", value=" + value +
+            ", transactionalId=" + transactionalId +
+            ", customerId=" + customerId +
+            ", interactionId='" + interactionId + '\'' +
+            ", interactionType='" + interactionType + '\'' +
+            ", lastDelivered=" + lastDelivered +
+            ", triggeringPush=" + triggeringPush +
+            '}';
+    }
+
+    @Override
     public EventType getType() {
         return EventType.CUSTOM;
     }

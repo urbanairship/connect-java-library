@@ -60,6 +60,13 @@ public class CloseEvent implements EventBody {
     }
 
     @Override
+    public String toString() {
+        return "CloseEvent{" +
+            "sessionId='" + sessionId + '\'' +
+            '}';
+    }
+
+    @Override
     public EventType getType() {
         return EventType.CLOSE;
     }

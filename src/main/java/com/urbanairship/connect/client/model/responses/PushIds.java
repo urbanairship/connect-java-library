@@ -47,4 +47,12 @@ public class PushIds {
         result = 31 * result + groupId.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "PushIds{" +
+            "pushId='" + pushId + '\'' +
+            ", groupId=" + groupId +
+            '}';
+    }
 }

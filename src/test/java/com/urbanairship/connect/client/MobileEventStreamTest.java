@@ -2,7 +2,6 @@ package com.urbanairship.connect.client;
 
 import com.google.common.net.HttpHeaders;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ning.http.client.AsyncHttpClient;
@@ -12,12 +11,11 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
+import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.Subset;
 import com.urbanairship.connect.client.model.filters.DeviceFilter;
-import com.urbanairship.connect.client.model.filters.DeviceFilterSerializer;
 import com.urbanairship.connect.client.model.filters.Filter;
 import com.urbanairship.connect.client.model.filters.NotificationFilter;
-import com.urbanairship.connect.client.model.filters.OptionalSerializer;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -243,10 +241,7 @@ public class MobileEventStreamTest {
         stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
-            .registerTypeAdapter(Optional.class, new OptionalSerializer())
-            .create();
+        Gson gson = GsonUtil.getGson();
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals(gson.toJson(new HashSet<>(Arrays.asList(filter1, filter2))), gson.toJson(bodyObj.get("filters")));
@@ -273,10 +268,7 @@ public class MobileEventStreamTest {
         stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer())
-            .registerTypeAdapter(Optional.class, new OptionalSerializer())
-            .create();
+        Gson gson = GsonUtil.getGson();
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals(gson.toJson(subset), gson.toJson(bodyObj.get("subset")));

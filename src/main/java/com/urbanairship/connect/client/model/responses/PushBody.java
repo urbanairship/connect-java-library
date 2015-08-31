@@ -79,6 +79,16 @@ public class PushBody implements EventBody {
     }
 
     @Override
+    public String toString() {
+        return "PushBody{" +
+            "pushId='" + pushId + '\'' +
+            ", groupId=" + groupId +
+            ", trimmed=" + trimmed +
+            ", payload='" + payload + '\'' +
+            '}';
+    }
+
+    @Override
     public EventType getType() {
         return EventType.PUSH_BODY;
     }

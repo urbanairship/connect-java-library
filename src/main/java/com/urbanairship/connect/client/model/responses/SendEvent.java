@@ -74,6 +74,15 @@ public class SendEvent implements EventBody {
     }
 
     @Override
+    public String toString() {
+        return "SendEvent{" +
+            "pushId='" + pushId + '\'' +
+            ", groupId=" + groupId +
+            ", variantId=" + variantId +
+            '}';
+    }
+
+    @Override
     public EventType getType() {
         return EventType.SEND;
     }

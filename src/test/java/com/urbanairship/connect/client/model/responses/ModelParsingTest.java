@@ -7,6 +7,10 @@ import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.GsonUtil;
+import com.urbanairship.connect.client.model.responses.region.Proximity;
+import com.urbanairship.connect.client.model.responses.region.RegionAction;
+import com.urbanairship.connect.client.model.responses.region.RegionEvent;
+import com.urbanairship.connect.client.model.responses.region.RegionSource;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -142,8 +146,8 @@ public class ModelParsingTest {
 
     @Test
     public void testLocationEventParsing() throws Exception {
-        String latitude = "51.5033630";
-        String longitude = "-0.1276250";
+        double latitude = 51.5033630;
+        double longitude = -0.1276250;
         boolean foreground = true;
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
         LocationEvent locationEvent = new LocationEvent(latitude, longitude, foreground, sessionId);
@@ -274,4 +278,51 @@ public class ModelParsingTest {
         assertEquals(current.asMap(), parsedTagChange.getTagCurrent());
     }
 
+    /* Region Event Tests */
+
+    @Test
+    public void testRegionEventParsing() throws Exception {
+
+        String beaconId = UUID.randomUUID().toString();
+        double lat = 38.324420;
+        double longitude = -112.148438;
+        int major = 12;
+        int minor = 3;
+        int rssi = 100;
+
+        Proximity proximity = Proximity.newBuilder()
+            .setBeaconId(beaconId)
+            .setLatitude(lat)
+            .setLongitude(longitude)
+            .setMajor(major)
+            .setMinor(minor)
+            .setRssi(rssi)
+            .build();
+
+        String regionId = UUID.randomUUID().toString();
+        String sessionId = UUID.randomUUID().toString();
+
+        RegionEvent regionEvent = RegionEvent.newBuilder()
+            .setRegionId(regionId)
+            .setAction(RegionAction.ENTER)
+            .setSessionId(sessionId)
+            .setSource(RegionSource.GIMBAL)
+            .setProximity(proximity)
+            .build();
+
+        String json = new String(regionEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        RegionEvent parsedRegionEvent = RegionEvent.parseJSON(json);
+
+        assertEquals(parsedRegionEvent.getAction(), RegionAction.ENTER);
+        assertEquals(parsedRegionEvent.getSource(), RegionSource.GIMBAL);
+        assertEquals(parsedRegionEvent.getSessionId(), sessionId);
+        assertEquals(parsedRegionEvent.getRegionId(), regionId);
+        assertEquals(parsedRegionEvent.getProximity().get().getBeaconId(), beaconId);
+        assertEquals(parsedRegionEvent.getProximity().get().getBeaconId(), beaconId);
+        assertTrue(parsedRegionEvent.getProximity().get().getLat() == lat);
+        assertTrue(parsedRegionEvent.getProximity().get().getLongitude() == longitude);
+        assertEquals(parsedRegionEvent.getProximity().get().getMajor(), major);
+        assertEquals(parsedRegionEvent.getProximity().get().getMinor(), minor);
+        assertEquals(parsedRegionEvent.getProximity().get().getRssi(), rssi);
+    }
 }

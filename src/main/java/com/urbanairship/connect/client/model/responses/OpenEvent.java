@@ -74,6 +74,15 @@ public class OpenEvent implements EventBody {
     }
 
     @Override
+    public String toString() {
+        return "OpenEvent{" +
+            "lastDelivered=" + lastDelivered +
+            ", triggeringPush=" + triggeringPush +
+            ", sessionId=" + sessionId +
+            '}';
+    }
+
+    @Override
     public EventType getType() {
         return EventType.OPEN;
     }

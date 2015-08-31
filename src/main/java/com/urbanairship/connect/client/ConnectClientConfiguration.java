@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class ConnectClientConfiguration {
 
     public static final String MES_URL_PROP = "connect.client.mes.url";
-    public static final String MES_URL_DEFAULT = "https://stream.urbanairship.com/api/events";
+    public static final String MES_URL_DEFAULT = "https://stream.urbanairship.com/api/events/";
     public final String mesUrl;
 
     public static final String MES_CONNECT_TIMEOUT_PROP = "connect.client.mes.http.connectTimeoutMillis";

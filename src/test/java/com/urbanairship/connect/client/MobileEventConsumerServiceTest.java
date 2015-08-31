@@ -376,7 +376,6 @@ public class MobileEventConsumerServiceTest {
             .build();
 
         return Event.newBuilder()
-            .setAppKey(randomAlphabetic(22))
             .setEventType(EventType.CUSTOM)
             .setEventBody(customEvent)
             .setDeviceInfo(deviceInfo)
