@@ -49,7 +49,7 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
         } catch (JsonSyntaxException e) {
             throw new RuntimeException("Failed to parse event: " + event);
         } catch (JsonParseException e) {
-            log.warn(e);
+            log.warn("Error parsing " + event, e);
         }
     }
 
