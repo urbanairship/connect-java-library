@@ -13,5 +13,8 @@ public enum EventType {
         REGION,
         RICH_DELETE,
         RICH_DELIVERY,
-        RICH_READ
+        RICH_READ,
+        IN_APP_MESSAGE_EXPIRATION,
+        IN_APP_MESSAGE_RESOLUTION,
+        IN_APP_MESSAGE_DISPLAY
 }
