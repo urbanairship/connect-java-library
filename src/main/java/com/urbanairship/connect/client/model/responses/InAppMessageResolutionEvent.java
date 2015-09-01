@@ -11,14 +11,12 @@ import java.util.Optional;
 
 public class InAppMessageResolutionEvent implements EventBody {
 
-
-    //TODO add an enum for the various types of events
-
     public static final String BUTTON_CLICK = "BUTTON_CLICK";
     public static final String MESSAGE_CLICK = "MESSAGE_CLICK";
     public static final String USER_DISMISSED = "USER_DISMISSED";
+    public static final String TIMED_OUT = "TIMED_OUT";
 
-    public static final ImmutableSet<String> VALID_TYPES = ImmutableSet.of(BUTTON_CLICK, MESSAGE_CLICK, USER_DISMISSED);
+    public static final ImmutableSet<String> VALID_TYPES = ImmutableSet.of(BUTTON_CLICK, MESSAGE_CLICK, USER_DISMISSED, TIMED_OUT);
 
     @SerializedName("push_id")
     private final String pushId;
