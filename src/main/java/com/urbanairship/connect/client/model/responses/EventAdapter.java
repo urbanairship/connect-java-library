@@ -77,11 +77,9 @@ public class EventAdapter implements JsonDeserializer<Event> {
 
         // Parse device info
         JsonElement deviceInfo = eventJson.get(Event.DEVICE_INFO_KEY);
-        if (deviceInfo == null) {
-            throw new JsonParseException("Unable to parse event with missing deviceInfo");
+        if (deviceInfo != null) {
+            eventBuilder.setDeviceInfo(DeviceInfo.parseJSON(deviceInfo.toString()));
         }
-        eventBuilder.setDeviceInfo(DeviceInfo.parseJSON(deviceInfo.toString()));
-
 
         // Parse event body
         EventBody eventBody;

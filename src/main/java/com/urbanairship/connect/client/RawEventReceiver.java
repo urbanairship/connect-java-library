@@ -1,6 +1,7 @@
 package com.urbanairship.connect.client;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.responses.Event;
@@ -47,6 +48,8 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
             consumer.accept(eventObj);
         } catch (JsonSyntaxException e) {
             throw new RuntimeException("Failed to parse event: " + event);
+        } catch (JsonParseException e) {
+            log.warn(e);
         }
     }
 
