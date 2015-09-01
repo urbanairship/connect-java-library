@@ -4,7 +4,8 @@ import com.google.common.base.Preconditions;
 import com.google.gson.annotations.SerializedName;
 
 public class CircularRegion {
-    private final double lat;
+    @SerializedName("lat")
+    private final double latitude;
     @SerializedName("long")
     private final double longitude;
     private final int radius;
@@ -13,8 +14,8 @@ public class CircularRegion {
         this(0, 0, 0);
     }
 
-    private CircularRegion(double lat, double longitude, int radius) {
-        this.lat = lat;
+    private CircularRegion(double latitude, double longitude, int radius) {
+        this.latitude = latitude;
         this.longitude = longitude;
         this.radius = radius;
     }
@@ -23,8 +24,8 @@ public class CircularRegion {
         return new Builder();
     }
 
-    public double getLat() {
-        return lat;
+    public double getLatitude() {
+        return latitude;
     }
 
     public double getLongitude() {
@@ -42,7 +43,7 @@ public class CircularRegion {
 
         CircularRegion that = (CircularRegion) o;
 
-        if (Double.compare(that.lat, lat) != 0) return false;
+        if (Double.compare(that.latitude, latitude) != 0) return false;
         if (Double.compare(that.longitude, longitude) != 0) return false;
         if (radius != that.radius) return false;
 
@@ -53,7 +54,7 @@ public class CircularRegion {
     public int hashCode() {
         int result;
         long temp;
-        temp = Double.doubleToLongBits(lat);
+        temp = Double.doubleToLongBits(latitude);
         result = (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(longitude);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
@@ -64,14 +65,15 @@ public class CircularRegion {
     @Override
     public String toString() {
         return "CircularRegion{" +
-            "lat=" + lat +
+            "latitude=" + latitude +
             ", longitude=" + longitude +
             ", radius=" + radius +
             '}';
     }
 
     public static class Builder {
-        private double lat;
+        @SerializedName("lat")
+        private double latitude;
         @SerializedName("long")
         private double longitude;
         private int radius;
@@ -80,7 +82,7 @@ public class CircularRegion {
         }
 
         public Builder setLatitude(double value) {
-            this.lat = value;
+            this.latitude = value;
             return this;
         }
 
@@ -95,11 +97,11 @@ public class CircularRegion {
         }
 
         public CircularRegion build() {
-            Preconditions.checkNotNull(lat, "lat must be set");
+            Preconditions.checkNotNull(latitude, "latitude must be set");
             Preconditions.checkNotNull(longitude, "longitude must be set");
             Preconditions.checkNotNull(radius, "radius must be set");
 
-            return new CircularRegion(lat, longitude, radius);
+            return new CircularRegion(latitude, longitude, radius);
         }
     }
 }

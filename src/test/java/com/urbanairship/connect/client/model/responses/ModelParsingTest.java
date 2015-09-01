@@ -289,7 +289,7 @@ public class ModelParsingTest {
     public void testRegionEventParsing() throws Exception {
 
         String beaconId = UUID.randomUUID().toString();
-        double lat = 38.324420;
+        double latitude = 38.324420;
         double longitude = -112.148438;
         int major = 12;
         int minor = 3;
@@ -297,7 +297,7 @@ public class ModelParsingTest {
 
         Proximity proximity = Proximity.newBuilder()
             .setBeaconId(beaconId)
-            .setLatitude(lat)
+            .setLatitude(latitude)
             .setLongitude(longitude)
             .setMajor(major)
             .setMinor(minor)
@@ -324,7 +324,7 @@ public class ModelParsingTest {
         assertEquals(parsedRegionEvent.getRegionId(), regionId);
         assertEquals(parsedRegionEvent.getProximity().get().getBeaconId(), beaconId);
         assertEquals(parsedRegionEvent.getProximity().get().getBeaconId(), beaconId);
-        assertTrue(parsedRegionEvent.getProximity().get().getLat() == lat);
+        assertTrue(parsedRegionEvent.getProximity().get().getLatitude() == latitude);
         assertTrue(parsedRegionEvent.getProximity().get().getLongitude() == longitude);
         assertEquals(parsedRegionEvent.getProximity().get().getMajor(), major);
         assertEquals(parsedRegionEvent.getProximity().get().getMinor(), minor);

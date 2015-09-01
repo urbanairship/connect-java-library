@@ -10,7 +10,8 @@ public class Proximity {
     private final int major;
     private final int minor;
     private final int rssi;
-    private final double lat;
+    @SerializedName("lat")
+    private final double latitude;
     @SerializedName("long")
     private final double longitude;
 
@@ -18,12 +19,12 @@ public class Proximity {
         this(null, 0, 0, 0, 0, 0);
     }
 
-    private Proximity(String beaconId, int major, int minor, int rssi, double lat, double longitude) {
+    private Proximity(String beaconId, int major, int minor, int rssi, double latitude, double longitude) {
         this.beaconId = beaconId;
         this.major = major;
         this.minor = minor;
         this.rssi = rssi;
-        this.lat = lat;
+        this.latitude = latitude;
         this.longitude = longitude;
     }
 
@@ -47,8 +48,8 @@ public class Proximity {
         return rssi;
     }
 
-    public double getLat() {
-        return lat;
+    public double getLatitude() {
+        return latitude;
     }
 
     public double getLongitude() {
@@ -62,7 +63,7 @@ public class Proximity {
 
         Proximity proximity = (Proximity) o;
 
-        if (Double.compare(proximity.lat, lat) != 0) return false;
+        if (Double.compare(proximity.latitude, latitude) != 0) return false;
         if (Double.compare(proximity.longitude, longitude) != 0) return false;
         if (major != proximity.major) return false;
         if (minor != proximity.minor) return false;
@@ -80,7 +81,7 @@ public class Proximity {
         result = 31 * result + major;
         result = 31 * result + minor;
         result = 31 * result + rssi;
-        temp = Double.doubleToLongBits(lat);
+        temp = Double.doubleToLongBits(latitude);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(longitude);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
@@ -94,7 +95,7 @@ public class Proximity {
             ", major=" + major +
             ", minor=" + minor +
             ", rssi=" + rssi +
-            ", lat='" + lat + '\'' +
+            ", latitude='" + latitude + '\'' +
             ", longitude='" + longitude + '\'' +
             '}';
     }
@@ -105,7 +106,8 @@ public class Proximity {
         private int major;
         private int minor;
         private int rssi;
-        private double lat;
+        @SerializedName("lat")
+        private double latitude;
         @SerializedName("long")
         private double longitude;
 
@@ -134,7 +136,7 @@ public class Proximity {
         }
 
         public Builder setLatitude(double value) {
-            this.lat = value;
+            this.latitude = value;
             return this;
         }
 
@@ -149,10 +151,10 @@ public class Proximity {
             Preconditions.checkNotNull(major, "major must be set");
             Preconditions.checkNotNull(minor, "minor must be set");
             Preconditions.checkNotNull(rssi, "rssi must be set");
-            Preconditions.checkNotNull(lat, "lat must be set");
+            Preconditions.checkNotNull(latitude, "latitude must be set");
             Preconditions.checkNotNull(longitude, "longitude must be set");
 
-            return new Proximity(beaconId, major, minor, rssi, lat, longitude);
+            return new Proximity(beaconId, major, minor, rssi, latitude, longitude);
         }
     }
 }
