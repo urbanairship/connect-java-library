@@ -75,6 +75,16 @@ public class Subset {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "Subset{" +
+            "type=" + type +
+            ", proportion=" + proportion +
+            ", count=" + count +
+            ", selection=" + selection +
+            '}';
+    }
+
     private static final class Builder {
         private SubsetType type;
         private Float proportion = null;

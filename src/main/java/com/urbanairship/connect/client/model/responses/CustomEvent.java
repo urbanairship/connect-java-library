@@ -20,17 +20,22 @@ public class CustomEvent implements EventBody {
     @SerializedName("interaction_type")
     private final String interactionType;
     @SerializedName("last_delivered")
-    private final PushIds lastDelivered;
+    private final Optional<AssociatedPush> lastDelivered;
     @SerializedName("triggering_push")
-    private final PushIds triggeringPush;
+    private final Optional<AssociatedPush> triggeringPush;
 
     private CustomEvent() {
-        this(null, Optional.empty(), Optional.empty(), Optional.empty(), null, null, null, null);
+        this(null, Optional.empty(), Optional.empty(), Optional.empty(), null, null, Optional.empty(), Optional.empty());
     }
 
-    public CustomEvent(String name, Optional<Integer> value, Optional<String> transactionalId, Optional<String> customerId,
-                       String interactionId, String interactionType, PushIds lastDelivered,
-                       PushIds triggeringPush) {
+    public CustomEvent(String name,
+                       Optional<Integer> value,
+                       Optional<String> transactionalId,
+                       Optional<String> customerId,
+                       String interactionId,
+                       String interactionType,
+                       Optional<AssociatedPush> lastDelivered,
+                       Optional<AssociatedPush> triggeringPush) {
         this.name = name;
         this.value = value;
         this.transactionalId = transactionalId;
@@ -65,11 +70,11 @@ public class CustomEvent implements EventBody {
         return interactionType;
     }
 
-    public PushIds getLastDelivered() {
+    public Optional<AssociatedPush> getLastDelivered() {
         return lastDelivered;
     }
 
-    public PushIds getTriggeringPush() {
+    public Optional<AssociatedPush> getTriggeringPush() {
         return triggeringPush;
     }
 
@@ -116,6 +121,20 @@ public class CustomEvent implements EventBody {
         result = 31 * result + lastDelivered.hashCode();
         result = 31 * result + triggeringPush.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "CustomEvent{" +
+            "name='" + name + '\'' +
+            ", value=" + value +
+            ", transactionalId=" + transactionalId +
+            ", customerId=" + customerId +
+            ", interactionId='" + interactionId + '\'' +
+            ", interactionType='" + interactionType + '\'' +
+            ", lastDelivered=" + lastDelivered +
+            ", triggeringPush=" + triggeringPush +
+            '}';
     }
 
     @Override

@@ -15,7 +15,7 @@ import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.responses.CustomEvent;
 import com.urbanairship.connect.client.model.responses.DeviceInfo;
 import com.urbanairship.connect.client.model.responses.Event;
-import com.urbanairship.connect.client.model.responses.PushIds;
+import com.urbanairship.connect.client.model.responses.AssociatedPush;
 import com.urbanairship.connect.client.offsets.InMemOffsetManager;
 import com.urbanairship.connect.client.offsets.OffsetManager;
 import org.apache.commons.configuration.Configuration;
@@ -363,12 +363,12 @@ public class MobileEventConsumerServiceTest {
         Optional<String> transactionId = Optional.of(randomAlphabetic(10));
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
-        PushIds lastDelivered = new PushIds(lastDeliveredPushId, lastDeliveredGroupId);
+        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>empty(), Optional.<Instant>empty());
         String triggeringPushPushId = UUID.randomUUID().toString();
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
-        PushIds triggeringPush = new PushIds(triggeringPushPushId, triggeringPushGroupId);
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>empty(), Optional.<Instant>empty());
 
-        CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, lastDelivered, triggeringPush);
+        CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
 
         DeviceInfo deviceInfo = DeviceInfo.newBuilder()
             .setChanneId(UUID.randomUUID().toString())
@@ -376,7 +376,6 @@ public class MobileEventConsumerServiceTest {
             .build();
 
         return Event.newBuilder()
-            .setAppKey(randomAlphabetic(22))
             .setEventType(EventType.CUSTOM)
             .setEventBody(customEvent)
             .setDeviceInfo(deviceInfo)

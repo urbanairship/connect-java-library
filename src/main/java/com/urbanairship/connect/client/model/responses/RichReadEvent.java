@@ -7,7 +7,7 @@ import com.urbanairship.connect.client.model.GsonUtil;
 
 import java.util.Optional;
 
-public class SendEvent implements EventBody {
+public class RichReadEvent implements EventBody {
 
     @SerializedName("push_id")
     private final String pushId;
@@ -16,11 +16,11 @@ public class SendEvent implements EventBody {
     @SerializedName("variant_id")
     private final Optional<Integer> variantId;
 
-    private SendEvent() {
+    private RichReadEvent() {
         this(null, Optional.<String>empty(), Optional.<Integer>empty());
     }
 
-    public SendEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId) {
+    public RichReadEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -38,25 +38,25 @@ public class SendEvent implements EventBody {
         return pushId;
     }
 
-    public static SendEvent parseJSONfromBytes(byte[] bytes) {
+    public static RichReadEvent parseJSONfromBytes(byte[] bytes) {
         JsonObject jsonObject = GsonUtil.parseJSONfromBytes(bytes);
         return parseJSON(jsonObject.toString());
     }
 
-    public static SendEvent parseJSON(String json) {
-        return GsonUtil.getGson().fromJson(json, SendEvent.class);
+    public static RichReadEvent parseJSON(String json) {
+        return GsonUtil.getGson().fromJson(json, RichReadEvent.class);
     }
 
     public byte[] serializeToJSONBytes() {
-        return GsonUtil.serializeToJSONBytes(this, SendEvent.class);
+        return GsonUtil.serializeToJSONBytes(this, RichReadEvent.class);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SendEvent)) return false;
+        if (!(o instanceof RichReadEvent)) return false;
 
-        SendEvent sendEvent = (SendEvent) o;
+        RichReadEvent sendEvent = (RichReadEvent) o;
 
         if (!groupId.equals(sendEvent.groupId)) return false;
         if (!pushId.equals(sendEvent.pushId)) return false;
@@ -84,6 +84,6 @@ public class SendEvent implements EventBody {
 
     @Override
     public EventType getType() {
-        return EventType.SEND;
+        return EventType.RICH_READ;
     }
 }

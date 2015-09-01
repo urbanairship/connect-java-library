@@ -10,9 +10,11 @@ import com.urbanairship.connect.client.model.responses.DeviceInfo;
 import com.urbanairship.connect.client.model.responses.DeviceInfoAdapter;
 import com.urbanairship.connect.client.model.responses.Event;
 import com.urbanairship.connect.client.model.responses.EventAdapter;
+import com.urbanairship.connect.client.model.responses.InstantAdapter;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 public class GsonUtil {
     private final static JsonParser parser = new JsonParser();
@@ -24,6 +26,7 @@ public class GsonUtil {
         builder.registerTypeAdapterFactory(new OptionalTypeAdapterFactory());
         builder.registerTypeAdapter(Event.class, new EventAdapter());
         builder.registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer());
+        builder.registerTypeAdapter(Instant.class, new InstantAdapter());
         gson = builder.create();
     }
 

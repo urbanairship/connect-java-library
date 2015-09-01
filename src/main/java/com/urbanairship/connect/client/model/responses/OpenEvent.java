@@ -10,27 +10,27 @@ import java.util.Optional;
 public class OpenEvent implements EventBody {
 
     @SerializedName("last_delivered")
-    private final Optional<PushIds> lastDelivered;
+    private final Optional<AssociatedPush> lastDelivered;
     @SerializedName("triggering_push")
-    private final Optional<PushIds> triggeringPush;
+    private final Optional<AssociatedPush> triggeringPush;
     @SerializedName("session_id")
     private final Optional<String> sessionId;
 
     private OpenEvent() {
-        this(Optional.<PushIds>empty(), Optional.<PushIds>empty(), Optional.<String>empty());
+        this(Optional.<AssociatedPush>empty(), Optional.<AssociatedPush>empty(), Optional.<String>empty());
     }
 
-    public OpenEvent(Optional<PushIds> lastDelivered, Optional<PushIds> triggeringPush, Optional<String> sessionId) {
+    public OpenEvent(Optional<AssociatedPush> lastDelivered, Optional<AssociatedPush> triggeringPush, Optional<String> sessionId) {
         this.lastDelivered = lastDelivered;
         this.triggeringPush = triggeringPush;
         this.sessionId = sessionId;
     }
 
-    public Optional<PushIds> getLastDelivered() {
+    public Optional<AssociatedPush> getLastDelivered() {
         return lastDelivered;
     }
 
-    public Optional<PushIds> getTriggeringPush() {
+    public Optional<AssociatedPush> getTriggeringPush() {
         return triggeringPush;
     }
 
@@ -71,6 +71,15 @@ public class OpenEvent implements EventBody {
         result = 31 * result + triggeringPush.hashCode();
         result = 31 * result + sessionId.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "OpenEvent{" +
+            "lastDelivered=" + lastDelivered +
+            ", triggeringPush=" + triggeringPush +
+            ", sessionId=" + sessionId +
+            '}';
     }
 
     @Override

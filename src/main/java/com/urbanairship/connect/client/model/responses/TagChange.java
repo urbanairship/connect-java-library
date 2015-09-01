@@ -108,6 +108,15 @@ public class TagChange implements EventBody{
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "TagChange{" +
+            "tagAdd=" + tagAdd +
+            ", tagRemove=" + tagRemove +
+            ", tagCurrent=" + tagCurrent +
+            '}';
+    }
+
     public static Builder newBuilder() {
         return new Builder();
     }

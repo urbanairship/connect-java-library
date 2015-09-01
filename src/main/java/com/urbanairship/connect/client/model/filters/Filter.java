@@ -78,6 +78,17 @@ public class Filter {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "Filter{" +
+            "deviceTypes=" + deviceTypes +
+            ", notifications=" + notifications +
+            ", devices=" + devices +
+            ", types=" + types +
+            ", latency=" + latency +
+            '}';
+    }
+
     public static final class Builder {
 
         private Set<DeviceFilterType> deviceTypes = null;

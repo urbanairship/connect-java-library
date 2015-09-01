@@ -39,4 +39,12 @@ public class DeviceFilter {
         result = 31 * result + identifier.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "DeviceFilter{" +
+            "deviceFilterType=" + deviceFilterType +
+            ", identifier='" + identifier + '\'' +
+            '}';
+    }
 }

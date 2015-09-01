@@ -95,6 +95,15 @@ public class DeviceInfo {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "DeviceInfo{" +
+            "channelId='" + channelId + '\'' +
+            ", platform=" + platform +
+            ", namedUsedId=" + namedUsedId +
+            '}';
+    }
+
     public static Builder newBuilder() {
         return new Builder();
     }
