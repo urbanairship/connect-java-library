@@ -17,7 +17,6 @@ import java.time.Instant;
 
 public class EventAdapter implements JsonDeserializer<Event> {
 
-    // TODO: Add First open and Uninstall events when they become available
     private static final ImmutableBiMap<EventType, Type> typeMap = ImmutableBiMap.<EventType, Type>builder()
             .put(EventType.CLOSE, CloseEvent.class)
             .put(EventType.CUSTOM, CustomEvent.class)
@@ -28,6 +27,10 @@ public class EventAdapter implements JsonDeserializer<Event> {
             .put(EventType.UNINSTALL, UninstallEvent.class)
             .put(EventType.FIRST_OPEN, FirstOpenEvent.class)
             .put(EventType.REGION, RegionEvent.class)
+            .put(EventType.RICH_READ, RichReadEvent.class)
+            .put(EventType.RICH_DELETE, RichDeleteEvent.class)
+            .put(EventType.RICH_DELIVERY, RichDeliveryEvent.class)
+            .put(EventType.PUSH_BODY, PushBody.class)
             .build();
 
     private static final ImmutableList<EventType> emptyEventBodyTypes = ImmutableList.<EventType>builder()

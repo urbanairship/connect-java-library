@@ -10,5 +10,8 @@ public enum EventType {
         FIRST_OPEN,
         UNINSTALL,
         PUSH_BODY,
-        REGION
+        REGION,
+        RICH_DELETE,
+        RICH_DELIVERY,
+        RICH_READ
 }

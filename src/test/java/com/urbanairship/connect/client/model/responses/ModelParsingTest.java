@@ -14,6 +14,7 @@ import com.urbanairship.connect.client.model.responses.region.RegionSource;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,12 +51,14 @@ public class ModelParsingTest {
         Optional<String> transactionId = Optional.of("selling all the shoes");
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
-        PushIds lastDelivered = new PushIds(lastDeliveredPushId, lastDeliveredGroupId);
+        Optional<Integer> lastDeliveredVariantId = Optional.of(2);
+        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, lastDeliveredVariantId, Optional.<Instant>empty());
         String triggeringPushPushId = UUID.randomUUID().toString();
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
-        PushIds triggeringPush = new PushIds(triggeringPushPushId, triggeringPushGroupId);
+        Optional<Instant> triggeringPushTime = Optional.of(Instant.now());
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>empty(), triggeringPushTime);
 
-        CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, lastDelivered, triggeringPush);
+        CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
@@ -65,12 +68,14 @@ public class ModelParsingTest {
         assertEquals(interactionId, parsedCustomEvent.getInteractionId());
         assertEquals(customerId.get(), parsedCustomEvent.getCustomerId().get());
         assertEquals(transactionId.get(), parsedCustomEvent.getTransactionalId().get());
-        assertEquals(lastDeliveredPushId, parsedCustomEvent.getLastDelivered().getPushId());
-        assertEquals(lastDeliveredGroupId.get(), parsedCustomEvent.getLastDelivered().getGroupId().get());
-        assertEquals(lastDelivered, parsedCustomEvent.getLastDelivered());
-        assertEquals(triggeringPushPushId, parsedCustomEvent.getTriggeringPush().getPushId());
-        assertEquals(triggeringPushGroupId.get(), parsedCustomEvent.getTriggeringPush().getGroupId().get());
-        assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush());
+        assertEquals(lastDeliveredPushId, parsedCustomEvent.getLastDelivered().get().getPushId());
+        assertEquals(lastDeliveredGroupId.get(), parsedCustomEvent.getLastDelivered().get().getGroupId().get());
+        assertEquals(lastDeliveredVariantId.get(), parsedCustomEvent.getLastDelivered().get().getVariantId().get());
+        assertEquals(lastDelivered, parsedCustomEvent.getLastDelivered().get());
+        assertEquals(triggeringPushPushId, parsedCustomEvent.getTriggeringPush().get().getPushId());
+        assertEquals(triggeringPushGroupId.get(), parsedCustomEvent.getTriggeringPush().get().getGroupId().get());
+        assertEquals(triggeringPushTime.get(), parsedCustomEvent.getTriggeringPush().get().getTime().get());
+        assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush().get());
         assertEquals(customEvent, parsedCustomEvent);
 
         CustomEvent parsedFromBytesCustomEvent = CustomEvent.parseJSONfromBytes(customEvent.serializeToJSONBytes());
@@ -83,12 +88,12 @@ public class ModelParsingTest {
         String interactionType = "Landing Page";
         String interactionId = UUID.randomUUID().toString();
         String lastDeliveredPushId = UUID.randomUUID().toString();
-        PushIds lastDelivered = new PushIds(lastDeliveredPushId, Optional.<String>empty());
+        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty());
         String triggeringPushPushId = UUID.randomUUID().toString();
         String triggeringPushGroupId = UUID.randomUUID().toString();
-        PushIds triggeringPush = new PushIds(triggeringPushPushId, Optional.of(triggeringPushGroupId));
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>empty(), Optional.<Instant>empty());
 
-        CustomEvent customEvent = new CustomEvent(name, Optional.empty(), Optional.empty(), Optional.empty(), interactionId, interactionType, lastDelivered, triggeringPush);
+        CustomEvent customEvent = new CustomEvent(name, Optional.empty(), Optional.empty(), Optional.empty(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
@@ -98,11 +103,11 @@ public class ModelParsingTest {
         assertEquals(name, parsedCustomEvent.getName());
         assertEquals(interactionType, parsedCustomEvent.getInteractionType());
         assertEquals(interactionId, parsedCustomEvent.getInteractionId());
-        assertEquals(lastDeliveredPushId, parsedCustomEvent.getLastDelivered().getPushId());
-        assertEquals(lastDelivered, parsedCustomEvent.getLastDelivered());
-        assertEquals(triggeringPushPushId, parsedCustomEvent.getTriggeringPush().getPushId());
-        assertEquals(triggeringPushGroupId, parsedCustomEvent.getTriggeringPush().getGroupId().get());
-        assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush());
+        assertEquals(lastDeliveredPushId, parsedCustomEvent.getLastDelivered().get().getPushId());
+        assertEquals(lastDelivered, parsedCustomEvent.getLastDelivered().get());
+        assertEquals(triggeringPushPushId, parsedCustomEvent.getTriggeringPush().get().getPushId());
+        assertEquals(triggeringPushGroupId, parsedCustomEvent.getTriggeringPush().get().getGroupId().get());
+        assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush().get());
         assertEquals(customEvent, parsedCustomEvent);
 
         CustomEvent parsedFromBytesCustomEvent = CustomEvent.parseJSONfromBytes(customEvent.serializeToJSONBytes());
@@ -155,8 +160,8 @@ public class ModelParsingTest {
         String json = new String(locationEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         LocationEvent parsedLocationEvent = LocationEvent.parseJSON(json);
 
-        assertEquals(latitude, parsedLocationEvent.getLatitude());
-        assertEquals(longitude, parsedLocationEvent.getLongitude());
+        assertTrue(latitude == parsedLocationEvent.getLatitude());
+        assertTrue(longitude == parsedLocationEvent.getLongitude());
         assertTrue(parsedLocationEvent.isForeground());
         assertEquals(sessionId.get(), parsedLocationEvent.getSessionId().get());
     }
@@ -167,10 +172,10 @@ public class ModelParsingTest {
     public void testMaxOpenEventParsing() throws Exception {
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<PushIds> lastDelivered = Optional.of(new PushIds(lastDeliveredPushId, lastDeliveredGroupId));
+        Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>empty(), Optional.<Instant>empty()));
         String triggeringPushPushId = UUID.randomUUID().toString();
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<PushIds> triggeringPush = Optional.of(new PushIds(triggeringPushPushId, triggeringPushGroupId));
+        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>empty(), Optional.<Instant>empty()));
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
         OpenEvent openEvent = new OpenEvent(lastDelivered, triggeringPush, sessionId);
 
@@ -189,9 +194,9 @@ public class ModelParsingTest {
     @Test
     public void testOpenEventWithNullsParsing() throws Exception {
         String lastDeliveredPushId = UUID.randomUUID().toString();
-        Optional<PushIds> lastDelivered = Optional.of(new PushIds(lastDeliveredPushId, Optional.<String>empty()));
+        Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty()));
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
-        OpenEvent openEvent = new OpenEvent(lastDelivered, Optional.<PushIds>empty(), sessionId);
+        OpenEvent openEvent = new OpenEvent(lastDelivered, Optional.<AssociatedPush>empty(), sessionId);
 
         String json = new String(openEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         OpenEvent parsedOpenEvent = OpenEvent.parseJSON(json);
@@ -204,7 +209,7 @@ public class ModelParsingTest {
 
     @Test
     public void testEmptyOpenEventParsing() throws Exception {
-        OpenEvent openEvent = new OpenEvent(Optional.<PushIds>empty(), Optional.<PushIds>empty(), Optional.<String>empty());
+        OpenEvent openEvent = new OpenEvent(Optional.<AssociatedPush>empty(), Optional.<AssociatedPush>empty(), Optional.<String>empty());
         String json = new String(openEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         OpenEvent parsedOpenEvent = OpenEvent.parseJSON(json);
 
@@ -324,5 +329,52 @@ public class ModelParsingTest {
         assertEquals(parsedRegionEvent.getProximity().get().getMajor(), major);
         assertEquals(parsedRegionEvent.getProximity().get().getMinor(), minor);
         assertEquals(parsedRegionEvent.getProximity().get().getRssi(), rssi);
+    }
+
+        /* Rich Event Tests */
+
+    @Test
+    public void testRichDeleteEventParsing() throws Exception {
+        String pushId = UUID.randomUUID().toString();
+        Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
+        Optional<Integer> variantId = Optional.of(1);
+        RichDeleteEvent richDeleteEvent = new RichDeleteEvent(pushId, groupId, variantId);
+
+        String json = new String(richDeleteEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        RichDeleteEvent parsedRichEvent = RichDeleteEvent.parseJSON(json);
+
+        assertEquals(pushId, parsedRichEvent.getPushId());
+        assertEquals(groupId.get(), parsedRichEvent.getGroupId().get());
+        assertEquals(variantId.get(), parsedRichEvent.getVariantId().get());
+    }
+
+    @Test
+    public void testRichReadEventParsing() throws Exception {
+        String pushId = UUID.randomUUID().toString();
+        Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
+        Optional<Integer> variantId = Optional.of(1);
+        RichReadEvent richReadEvent = new RichReadEvent(pushId, groupId, variantId);
+
+        String json = new String(richReadEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        RichReadEvent parsedRichEvent = RichReadEvent.parseJSON(json);
+
+        assertEquals(pushId, parsedRichEvent.getPushId());
+        assertEquals(groupId.get(), parsedRichEvent.getGroupId().get());
+        assertEquals(variantId.get(), parsedRichEvent.getVariantId().get());
+    }
+
+    @Test
+    public void testRichDeliveryEventParsing() throws Exception {
+        String pushId = UUID.randomUUID().toString();
+        Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
+        Optional<Integer> variantId = Optional.of(1);
+        RichDeliveryEvent richDeliveryEvent = new RichDeliveryEvent(pushId, groupId, variantId);
+
+        String json = new String(richDeliveryEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        RichDeliveryEvent parsedRichEvent = RichDeliveryEvent.parseJSON(json);
+
+        assertEquals(pushId, parsedRichEvent.getPushId());
+        assertEquals(groupId.get(), parsedRichEvent.getGroupId().get());
+        assertEquals(variantId.get(), parsedRichEvent.getVariantId().get());
     }
 }
