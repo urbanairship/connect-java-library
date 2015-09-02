@@ -184,7 +184,7 @@ public class MobileEventConsumerServiceTest {
         assertEquals(events, received);
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals("LATEST", bodyObj.get("start").getAsString());
+        assertEquals("EARLIEST", bodyObj.get("start").getAsString());
         assertEquals(String.valueOf(events.get(events.size() - 1).getOffset()), offsetManager.getLastOffset().get());
 
         assertFalse(mobileEventConsumerService.getDoConsume().get());
