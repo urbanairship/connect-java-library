@@ -169,7 +169,7 @@ public class MobileEventStream implements AutoCloseable {
         future.done();
 
         // 400s indicate a bad request, don't want to cause unnecessary connection retries in the MobileEventConsumerService
-        if (399 < status || status < 500) {
+        if (399 < status && status < 500) {
             fatalExceptionHandler.handle(new RuntimeException(String.format("Received status code (%d) from a bad request for app %s", status, getAppKey())));
         }
 

@@ -38,24 +38,6 @@ public class EventParsingTest {
     }
 
     @Test
-    public void testMissingDeviceInfoException() throws Exception {
-        HashMap<String, Object> rawJson = Maps.newHashMap();
-        rawJson.put(Event.EVENT_ID_KEY, UUID.randomUUID().toString());
-        rawJson.put(Event.OFFSET_KEY, RandomUtils.nextLong(0L, 100000L));
-        rawJson.put(Event.TYPE_KEY, EventType.OPEN.name());
-        rawJson.put(Event.OCCURRED_KEY, Instant.now().toString());
-        rawJson.put(Event.PROCESSED_KEY, Instant.now().toString());
-        rawJson.put(Event.EVENT_BODY_KEY, UUID.randomUUID().toString());
-
-        String json = GsonUtil.getGson().toJson(rawJson);
-
-        // expect device info exception
-        expectedException.expect(JsonParseException.class);
-        expectedException.expectMessage("deviceInfo");
-        GsonUtil.getGson().fromJson(json, Event.class);
-    }
-
-    @Test
     public void testMissingEventBodyException() throws Exception {
         HashMap<String, Object> rawJson = Maps.newHashMap();
         rawJson.put(Event.EVENT_ID_KEY, UUID.randomUUID().toString());
