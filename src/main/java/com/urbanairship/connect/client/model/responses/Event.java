@@ -5,6 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public class Event {
     public static class Builder {
@@ -56,10 +57,9 @@ public class Event {
             Preconditions.checkNotNull(eventType, "Event type not set");
             Preconditions.checkNotNull(occurred, "Missing occurred timestamp");
             Preconditions.checkNotNull(processed, "Missing processed timestamp");
-            Preconditions.checkNotNull(deviceInfo, "Missing device info");
             Preconditions.checkNotNull(eventBody, "Missing event body");
             Preconditions.checkNotNull(offset, "Missing stream offset");
-            return new Event(identifier, eventType, occurred, processed, offset, deviceInfo, eventBody);
+            return new Event(identifier, eventType, occurred, processed, offset, Optional.ofNullable(deviceInfo), eventBody);
         }
     }
 
@@ -79,15 +79,15 @@ public class Event {
     private Instant processed;
     private String offset;
     @SerializedName(DEVICE_INFO_KEY)
-    private DeviceInfo deviceInfo;
+    private Optional<DeviceInfo> deviceInfo;
     @SerializedName(EVENT_BODY_KEY)
     private EventBody eventBody;
 
     private Event() {
-        this(null, null, null, null, null, null, null);
+        this(null, null, null, null, null, Optional.empty(), null);
     }
 
-    private Event(String identifier, EventType eventType, Instant occurred, Instant processed, String offset, DeviceInfo deviceInfo, EventBody eventBody) {
+    private Event(String identifier, EventType eventType, Instant occurred, Instant processed, String offset, Optional<DeviceInfo> deviceInfo, EventBody eventBody) {
         this.identifier = identifier;
         this.eventType = eventType;
         this.occurred = occurred;
@@ -117,7 +117,7 @@ public class Event {
         return offset;
     }
 
-    public DeviceInfo getDeviceInfo() {
+    public Optional<DeviceInfo> getDeviceInfo() {
         return deviceInfo;
     }
 
