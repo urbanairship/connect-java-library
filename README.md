@@ -52,25 +52,29 @@ Example
 
  An example of consuming from the client and then disconnecting may look something like:
 
- ```
+```
         Configuration config = new MapConfiguration(ImmutableMap.of());
         AsyncHttpClient httpClient = StreamUtils.buildHttpClient(new ConnectClientConfiguration(config));
-
+```
+```
         Creds creds = Creds.newBuilder()
             .setAppKey("key")
             .setToken("token")
             .build();
-
+```
+```
         // can also set eagle creek filter, subset, or offset specifications
         StreamQueryDescriptor descriptor = StreamQueryDescriptor.newBuilder()
             .setCreds(creds)
             .build();
-
+```
+```
         FatalExceptionHandler fatalExceptionHandler = new FatalExceptionHandler() {
             @Override
             public void handle(Exception e) { log.fatal(e); }
         };
-
+```
+```
         Consumer<Event> consumer = new Consumer<Event>() {
             @Override
             public void accept(Event event) {
@@ -79,7 +83,8 @@ Example
                 someDBClient.put(storableEvent)
             }
         };
-
+```
+```
         MobileEventConsumerService service = MobileEventConsumerService.newBuilder()
             .setBaseStreamQueryDescriptor(descriptor)
             .setConfig(config)
@@ -88,7 +93,8 @@ Example
             .setFatalExceptionHandler(fatalExceptionHandler)
             .setConsumer(consumer)
             .build();
-
+```
+```
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         Runnable stopConsuming = new Runnable() {
             @Override
@@ -96,11 +102,11 @@ Example
                 service.triggerShutdown();
             }
         };
-
+```
+```
         scheduledExecutorService.schedule(stopConsuming, 60, TimeUnit.SECONDS);
-
         service.run();
- ```
+```
 
 Note that Connect requests with this client may experience SSL handshake failures unless using the JCE Unlimited
  Strength package cipher suite.
