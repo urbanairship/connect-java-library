@@ -29,18 +29,22 @@ public class InAppMessageExpirationEvent implements EventBody {
     @SerializedName("variant_id")
     private final Optional<Integer> variantId;
 
-    @SerializedName("converting_push")
-    private final Optional<AssociatedPush> convertingPush;
+    @SerializedName("time_sent")
+    private final Optional<Instant> timeSent;
+
+    @SerializedName("triggering_push")
+    private final Optional<AssociatedPush> triggeringPush;
 
     private final String type;
 
-    private final Optional<Instant> time;
+    @SerializedName("time_expired")
+    private final Optional<Instant> timeExpired;
 
     @SerializedName("replacing_push")
     private final Optional<AssociatedPush> replacingPush;
 
     private InAppMessageExpirationEvent() {
-        this(null, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<AssociatedPush>empty(), null, null, Optional.<AssociatedPush>empty());
+        this(null, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty(), Optional.<AssociatedPush>empty(), null, null, Optional.<AssociatedPush>empty());
     }
 
     public static InAppMessageExpirationEvent parseJSONfromBytes(byte[] bytes) {
@@ -60,9 +64,10 @@ public class InAppMessageExpirationEvent implements EventBody {
         private String pushId;
         private Optional<String> groupId = Optional.empty();
         private Optional<Integer> variantId = Optional.empty();
-        private Optional<AssociatedPush> convertingPush = Optional.empty();
+        private Optional<Instant> timeSent = Optional.empty();
+        private Optional<AssociatedPush> triggeringPush = Optional.empty();
         private String type;
-        private Optional<Instant> time = Optional.empty();
+        private Optional<Instant> timeExpired = Optional.empty();
         private Optional<AssociatedPush> replacingPush = Optional.empty();
 
         public Builder setPushId(String pushId) {
@@ -80,8 +85,13 @@ public class InAppMessageExpirationEvent implements EventBody {
             return this;
         }
 
-        public Builder setConvertingPush(AssociatedPush convertingPush) {
-            this.convertingPush = Optional.of(convertingPush);
+        public Builder setTimeSent(Instant timeSent) {
+            this.timeSent = Optional.of(timeSent);
+            return this;
+        }
+
+        public Builder setTriggeringPush(AssociatedPush triggeringPush) {
+            this.triggeringPush = Optional.of(triggeringPush);
             return this;
         }
 
@@ -90,8 +100,8 @@ public class InAppMessageExpirationEvent implements EventBody {
             return this;
         }
 
-        public Builder setTime(Instant time) {
-            this.time = Optional.of(time);
+        public Builder setTimeExpired(Instant timeExpired) {
+            this.timeExpired = Optional.of(timeExpired);
             return this;
         }
 
@@ -103,19 +113,19 @@ public class InAppMessageExpirationEvent implements EventBody {
         public InAppMessageExpirationEvent build() {
             Preconditions.checkNotNull(pushId);
             Preconditions.checkNotNull(type);
-            Preconditions.checkNotNull(time);
             Preconditions.checkState(VALID_TYPES.contains(type));
-            return new InAppMessageExpirationEvent(pushId, groupId, variantId, convertingPush, type, time, replacingPush);
+            return new InAppMessageExpirationEvent(pushId, groupId, variantId, timeSent, triggeringPush, type, timeExpired, replacingPush);
         }
     }
 
-    public InAppMessageExpirationEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<AssociatedPush> convertingPush, String type, Optional<Instant> time, Optional<AssociatedPush> replacingPush) {
+    public InAppMessageExpirationEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<Instant> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<Instant> timeExpired, Optional<AssociatedPush> replacingPush) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
-        this.convertingPush = convertingPush;
+        this.timeSent = timeSent;
+        this.triggeringPush = triggeringPush;
         this.type = type;
-        this.time = time;
+        this.timeExpired = timeExpired;
         this.replacingPush = replacingPush;
     }
 
@@ -140,15 +150,67 @@ public class InAppMessageExpirationEvent implements EventBody {
         return variantId;
     }
 
-    public Optional<AssociatedPush> getConvertingPush() {
-        return convertingPush;
+    public Optional<Instant> getTimeSent() {
+        return timeSent;
     }
 
-    public Optional<Instant> getTime() {
-        return time;
+    public Optional<AssociatedPush> getTriggeringPush() {
+        return triggeringPush;
+    }
+
+    public Optional<Instant> getTimeExpired() {
+        return timeExpired;
     }
 
     public Optional<AssociatedPush> getReplacingPush() {
         return replacingPush;
+    }
+
+    @Override
+    public String toString() {
+        return "InAppMessageExpirationEvent{" +
+            "pushId='" + pushId + '\'' +
+            ", groupId=" + groupId +
+            ", variantId=" + variantId +
+            ", timeSent=" + timeSent +
+            ", triggeringPush=" + triggeringPush +
+            ", type='" + type + '\'' +
+            ", timeExpired=" + timeExpired +
+            ", replacingPush=" + replacingPush +
+            '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof InAppMessageExpirationEvent)) return false;
+
+        InAppMessageExpirationEvent that = (InAppMessageExpirationEvent) o;
+
+        if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) return false;
+        if (pushId != null ? !pushId.equals(that.pushId) : that.pushId != null) return false;
+        if (replacingPush != null ? !replacingPush.equals(that.replacingPush) : that.replacingPush != null)
+            return false;
+        if (timeExpired != null ? !timeExpired.equals(that.timeExpired) : that.timeExpired != null) return false;
+        if (timeSent != null ? !timeSent.equals(that.timeSent) : that.timeSent != null) return false;
+        if (triggeringPush != null ? !triggeringPush.equals(that.triggeringPush) : that.triggeringPush != null)
+            return false;
+        if (type != null ? !type.equals(that.type) : that.type != null) return false;
+        if (variantId != null ? !variantId.equals(that.variantId) : that.variantId != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = pushId != null ? pushId.hashCode() : 0;
+        result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
+        result = 31 * result + (variantId != null ? variantId.hashCode() : 0);
+        result = 31 * result + (timeSent != null ? timeSent.hashCode() : 0);
+        result = 31 * result + (triggeringPush != null ? triggeringPush.hashCode() : 0);
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (timeExpired != null ? timeExpired.hashCode() : 0);
+        result = 31 * result + (replacingPush != null ? replacingPush.hashCode() : 0);
+        return result;
     }
 }
