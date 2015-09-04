@@ -17,12 +17,14 @@ public class Subset {
 
     public static Subset createSampleSubset(Float proportion) {
         return new Builder()
+            .setType(SubsetType.SAMPLE)
             .setProportion(proportion)
             .build();
     }
 
     public static Subset createPartitionSubset(Integer count, Integer selection) {
         return new Builder()
+            .setType(SubsetType.PARTITION)
             .setCount(count)
             .setSelection(selection)
             .build();
