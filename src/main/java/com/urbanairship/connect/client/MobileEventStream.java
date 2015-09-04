@@ -230,11 +230,14 @@ public class MobileEventStream implements AutoCloseable {
     private byte[] getQuery() {
         Map<String, Object> body = new HashMap<>();
 
-        if (descriptor.getOffset().isPresent()) {
-            body.put("resume_offset", descriptor.getOffset().get());
+        if (!descriptor.getOffset().isPresent()) {
+            body.put("start", "LATEST");
+        }
+        else if (descriptor.getOffset().get().equals("EARLIEST") || descriptor.getOffset().get().equals("LATEST")) {
+            body.put("start", descriptor.getOffset().get());
         }
         else {
-            body.put("start", "EARLIEST");
+            body.put("resume_offset", descriptor.getOffset().get());
         }
 
         if (descriptor.getSubset().isPresent()) {
