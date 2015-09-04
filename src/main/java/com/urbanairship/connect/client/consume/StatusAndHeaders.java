@@ -1,3 +1,7 @@
+/*
+Copyright 2015 Urban Airship and Contributors
+*/
+
 package com.urbanairship.connect.client.consume;
 
 import com.google.common.base.MoreObjects;
