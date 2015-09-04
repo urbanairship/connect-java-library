@@ -151,7 +151,7 @@ public class MobileEventStreamTest {
         assertEquals(line, received.get(0));
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals("EARLIEST", bodyObj.get("start").getAsString());
+        assertEquals("LATEST", bodyObj.get("start").getAsString());
     }
 
     @Test

@@ -166,7 +166,8 @@ Including a stream offset, you can then build your StreamQueryDescriptor:
               .build
 ```
 
-If you don't include an offset here, the stream will default to the starting at the earliest available point.
+The offset can be a long ("250") or a specification for either the beginning or end of the available data window
+("EARLIEST" or "LATEST").  If you don't include an offset here, the stream will default to the starting at LATEST.
 
 OffsetManager
 -------------
@@ -175,8 +176,7 @@ The library provides a class, OffsetManager, which tracks your stream offset as 
  currently provides two simple implementations: InMemOffsetManager stores the offset in memory and InFileOffsetManager
  writes and reads the offset from a file named after the relevant app key. The OffsetManager implementation is passed
  into the MobileEventConsumerService as it's built, and will be internally used for reconnecting (but not the original
- connection). The included offset managers default the offset to begin at "0" and will update the value after
- the stream's first disconnection.
+ connection). The included offset managers will update the value after the stream's first disconnection.
 
 ```
         OffsetManager offsetManager = new InFileOffsetManager("app key");
