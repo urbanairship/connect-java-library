@@ -19,18 +19,18 @@ public class InAppMessageDisplayEvent implements EventBody {
     @SerializedName("variant_id")
     private final Optional<Integer> variantId;
 
-    @SerializedName("converting_push")
-    private final Optional<AssociatedPush> convertingPush;
+    @SerializedName("triggering_push")
+    private final Optional<AssociatedPush> triggeringPush;
 
     private InAppMessageDisplayEvent() {
         this(null, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<AssociatedPush>empty());
     }
 
-    public InAppMessageDisplayEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<AssociatedPush> convertingPush) {
+    public InAppMessageDisplayEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<AssociatedPush> triggeringPush) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
-        this.convertingPush = convertingPush;
+        this.triggeringPush = triggeringPush;
     }
 
     public static Builder newBuilder() {
@@ -41,7 +41,7 @@ public class InAppMessageDisplayEvent implements EventBody {
         private String pushId;
         private Optional<String> groupId = Optional.empty();
         private Optional<Integer> variantId = Optional.empty();
-        private Optional<AssociatedPush> convertingPush = Optional.empty();
+        private Optional<AssociatedPush> triggeringPush = Optional.empty();
 
         public Builder setPushId(String pushId) {
             this.pushId = pushId;
@@ -58,14 +58,14 @@ public class InAppMessageDisplayEvent implements EventBody {
             return this;
         }
 
-        public Builder setConvertingPush(AssociatedPush convertingPush) {
-            this.convertingPush = Optional.of(convertingPush);
+        public Builder setTriggeringPush(AssociatedPush triggeringPush) {
+            this.triggeringPush = Optional.of(triggeringPush);
             return this;
         }
 
         public InAppMessageDisplayEvent build() {
             Preconditions.checkNotNull(pushId);
-            return new InAppMessageDisplayEvent(pushId, groupId, variantId, convertingPush);
+            return new InAppMessageDisplayEvent(pushId, groupId, variantId, triggeringPush);
         }
     }
 
@@ -81,8 +81,8 @@ public class InAppMessageDisplayEvent implements EventBody {
         return variantId;
     }
 
-    public Optional<AssociatedPush> getConvertingPush() {
-        return convertingPush;
+    public Optional<AssociatedPush> getTriggeringPush() {
+        return triggeringPush;
     }
 
     @Override
@@ -109,7 +109,7 @@ public class InAppMessageDisplayEvent implements EventBody {
                 "pushId='" + pushId + '\'' +
                 ", groupId=" + groupId +
                 ", variantId=" + variantId +
-                ", convertingPush=" + convertingPush +
+                ", triggeringPush=" + triggeringPush +
                 '}';
     }
 
@@ -123,7 +123,7 @@ public class InAppMessageDisplayEvent implements EventBody {
         if (pushId != null ? !pushId.equals(that.pushId) : that.pushId != null) return false;
         if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) return false;
         if (variantId != null ? !variantId.equals(that.variantId) : that.variantId != null) return false;
-        return !(convertingPush != null ? !convertingPush.equals(that.convertingPush) : that.convertingPush != null);
+        return !(triggeringPush != null ? !triggeringPush.equals(that.triggeringPush) : that.triggeringPush != null);
 
     }
 
@@ -132,7 +132,7 @@ public class InAppMessageDisplayEvent implements EventBody {
         int result = pushId != null ? pushId.hashCode() : 0;
         result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
         result = 31 * result + (variantId != null ? variantId.hashCode() : 0);
-        result = 31 * result + (convertingPush != null ? convertingPush.hashCode() : 0);
+        result = 31 * result + (triggeringPush != null ? triggeringPush.hashCode() : 0);
         return result;
     }
 }

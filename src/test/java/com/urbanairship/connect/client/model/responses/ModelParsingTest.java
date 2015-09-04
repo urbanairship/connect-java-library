@@ -380,28 +380,28 @@ public class ModelParsingTest {
 
     @Test
     public void testInAppMessageDisplayEventParsing() throws Exception {
-        String convertingPushId = UUID.randomUUID().toString();
-        Optional<String> convertingGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<Integer> convertingVariantId = Optional.of(1);
-        AssociatedPush convertedPush = new AssociatedPush(convertingPushId, convertingGroupId, convertingVariantId, Optional.<Instant>empty());
+        String triggeringPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
+        Optional<Integer> triggeringVariantId = Optional.of(1);
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<Instant>empty());
         String pushId = UUID.randomUUID().toString();
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> variantId = Optional.of(1);
-        InAppMessageDisplayEvent inAppMessageDisplayEvent = new InAppMessageDisplayEvent(pushId, groupId, variantId, Optional.of(convertedPush));
+        InAppMessageDisplayEvent inAppMessageDisplayEvent = new InAppMessageDisplayEvent(pushId, groupId, variantId, Optional.of(triggeringPush));
         String json = new String(inAppMessageDisplayEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageDisplayEvent parsedInAppMessageDisplayEvent = InAppMessageDisplayEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageDisplayEvent.getPushId());
         assertEquals(groupId.get(), parsedInAppMessageDisplayEvent.getGroupId().get());
         assertEquals(variantId.get(), parsedInAppMessageDisplayEvent.getVariantId().get());
-        assertEquals(convertedPush, parsedInAppMessageDisplayEvent.getConvertingPush().get());
+        assertEquals(triggeringPush, parsedInAppMessageDisplayEvent.getTriggeringPush().get());
     }
 
     @Test
     public void testInAppMessageResolutionEventParsing() throws Exception {
-        String convertingPushId = UUID.randomUUID().toString();
-        Optional<String> convertingGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<Integer> convertingVariantId = Optional.of(1);
-        Optional<AssociatedPush> convertedPush = Optional.of(new AssociatedPush(convertingPushId, convertingGroupId, convertingVariantId, Optional.<Instant>empty()));
+        String triggeringPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
+        Optional<Integer> triggeringVariantId = Optional.of(1);
+        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<Instant>empty()));
         String pushId = UUID.randomUUID().toString();
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
         String type = InAppMessageResolutionEvent.BUTTON_CLICK;
@@ -410,14 +410,14 @@ public class ModelParsingTest {
         Optional<String> buttonGroup = Optional.of(UUID.randomUUID().toString());
         Optional<String> buttonDescription = Optional.of(UUID.randomUUID().toString());
         long duration = 9001;
-        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, convertedPush, type, buttonId, buttonGroup, buttonDescription, duration);
+        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<Instant>empty(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, duration);
         String json = new String(inAppMessageResolutionEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageResolutionEvent parsedInAppMessageResolution = InAppMessageResolutionEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageResolution.getPushId());
         assertEquals(groupId.get(), parsedInAppMessageResolution.getGroupId().get());
         assertEquals(variantId.get(), parsedInAppMessageResolution.getVariantId().get());
         assertEquals(type, parsedInAppMessageResolution.getResolutionType());
-        assertEquals(convertedPush.get(), parsedInAppMessageResolution.getConvertingPush().get());
+        assertEquals(triggeringPush.get(), parsedInAppMessageResolution.getTriggeringPush().get());
         assertEquals(buttonDescription.get(), parsedInAppMessageResolution.getButtonDescription().get());
         assertEquals(buttonGroup.get(), parsedInAppMessageResolution.getButtonGroup().get());
         assertEquals(buttonId.get(), parsedInAppMessageResolution.getButtonId().get());
@@ -426,10 +426,10 @@ public class ModelParsingTest {
 
     @Test
     public void testInAppMessageExpirationEventParsing() throws Exception {
-        String convertingPushId = UUID.randomUUID().toString();
-        Optional<String> convertingGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<Integer> convertingVariantId = Optional.of(1);
-        Optional<AssociatedPush> convertedPush = Optional.of(new AssociatedPush(convertingPushId, convertingGroupId, convertingVariantId, Optional.<Instant>empty()));
+        String triggeringPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
+        Optional<Integer> triggeringVariantId = Optional.of(1);
+        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<Instant>empty()));
 
 
         String replacingPushId = UUID.randomUUID().toString();
@@ -443,14 +443,14 @@ public class ModelParsingTest {
 
         String type = InAppMessageExpirationEvent.ALREADY_DISPLAYED;
 
-        InAppMessageExpirationEvent inAppMessageExpirationEvent = new InAppMessageExpirationEvent(pushId, groupId, variantId, convertedPush, type, Optional.<Instant>empty(), replacingPush);
+        InAppMessageExpirationEvent inAppMessageExpirationEvent = new InAppMessageExpirationEvent(pushId, groupId, variantId, Optional.<Instant>empty(), triggeringPush, type, Optional.<Instant>empty(), replacingPush);
         String json = new String(inAppMessageExpirationEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageExpirationEvent parsedInAppMessageExpirationEvent = InAppMessageExpirationEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageExpirationEvent.getPushId());
         assertEquals(groupId.get(), parsedInAppMessageExpirationEvent.getGroupId().get());
         assertEquals(type, parsedInAppMessageExpirationEvent.getExpirationType());
         assertEquals(variantId.get(), parsedInAppMessageExpirationEvent.getVariantId().get());
-        assertEquals(convertedPush.get(), parsedInAppMessageExpirationEvent.getConvertingPush().get());
+        assertEquals(triggeringPush.get(), parsedInAppMessageExpirationEvent.getTriggeringPush().get());
         assertEquals(replacingPush.get(), parsedInAppMessageExpirationEvent.getReplacingPush().get());
     }
 }
