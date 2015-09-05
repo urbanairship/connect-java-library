@@ -209,7 +209,8 @@ MobileEventConsumerService
 
 The final piece needed for the client setup is the MobileEventConsumerService.
 
-```        MobileEventConsumerService service = return MobileEventConsumerService.newBuilder()
+```
+        MobileEventConsumerService service = return MobileEventConsumerService.newBuilder()
                .setClient(httpClient)
                .setBaseStreamQueryDescriptor(descriptor)
                .setConfig(config)
@@ -224,8 +225,8 @@ executing and handling the HTTP requests.  If you don't have any particular pref
  consumption timeout and reattempt backoff settings.  Lastly, you will pass in a stream consumer.  The MobileEventConsumerService
  will parse the events into response model objects that the injected consumer can then accept and interact with.
 
-Calling run() in MobileEventConsumerService will run an AbstractIdleService implementing service that will connect and consume
-from Connect.  If the server closes the connection, the service will automatically reconnect with an up-to-date offset
-and retry the connection attempts up to a configurable limit with exponential back off.  The service can be stopped by
- calling triggerShutdown().
+Calling run() in MobileEventConsumerService will run an AbstractExecutionThreadService inheriting service that will connect
+ and consume from Connect.  If the server closes the connection, the service will automatically reconnect with an up-to-date
+ offset and retry the connection attempts up to a configurable limit with exponential back off.  The service can be stopped
+ by calling triggerShutdown().
 
