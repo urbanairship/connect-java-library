@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses.region;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -11,10 +12,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
+import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.responses.EventBody;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 public class RegionEvent implements EventBody {
 
@@ -68,12 +69,12 @@ public class RegionEvent implements EventBody {
             Preconditions.checkNotNull(source, "source must be set");
             Preconditions.checkNotNull(sessionId, "sessionId must be set");
 
-            return new RegionEvent(action, regionId, source, sessionId, Optional.ofNullable(proximity), Optional.ofNullable(circularRegion));
+            return new RegionEvent(action, regionId, source, sessionId, Optional.fromNullable(proximity), Optional.fromNullable(circularRegion));
         }
     }
 
     private final static JsonParser parser = new JsonParser();
-    private final static Gson gson = new Gson();
+    private final static Gson gson = GsonUtil.getGson();
 
     private final RegionAction action;
     @SerializedName("region_id")
@@ -86,7 +87,7 @@ public class RegionEvent implements EventBody {
     private final Optional<CircularRegion> circularRegion;
 
     private RegionEvent() {
-        this(null, null, null, null, Optional.<Proximity>empty(), Optional.<CircularRegion>empty());
+        this(null, null, null, null, Optional.<Proximity>absent(), Optional.<CircularRegion>absent());
     }
 
     private RegionEvent(RegionAction action,

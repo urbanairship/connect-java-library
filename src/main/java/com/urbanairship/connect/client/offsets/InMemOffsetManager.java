@@ -4,7 +4,8 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.offsets;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 public class InMemOffsetManager implements OffsetManager {
@@ -15,7 +16,7 @@ public class InMemOffsetManager implements OffsetManager {
 
     @Override
     public Optional<String> getLastOffset() {
-        return Optional.ofNullable(offset.get());
+        return Optional.fromNullable(offset.get());
     }
 
     @Override

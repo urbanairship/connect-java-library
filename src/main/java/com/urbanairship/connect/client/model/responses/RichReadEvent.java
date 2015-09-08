@@ -4,12 +4,11 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
-
-import java.util.Optional;
 
 public class RichReadEvent implements EventBody {
 
@@ -21,7 +20,7 @@ public class RichReadEvent implements EventBody {
     private final Optional<Integer> variantId;
 
     private RichReadEvent() {
-        this(null, Optional.<String>empty(), Optional.<Integer>empty());
+        this(null, Optional.<String>absent(), Optional.<Integer>absent());
     }
 
     public RichReadEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId) {

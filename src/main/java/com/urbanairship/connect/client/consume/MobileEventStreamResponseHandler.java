@@ -4,21 +4,21 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.consume;
 
+import com.google.common.base.Optional;
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
+import com.urbanairship.connect.java8.Consumer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * Provides the mechanism through which communication happens during request/response lifecycle of consuming a stream
@@ -110,7 +110,7 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
     }
 
     public Optional<Throwable> getError() {
-        return Optional.ofNullable(error.get());
+        return Optional.fromNullable(error.get());
     }
 
     public void stop() throws InterruptedException {

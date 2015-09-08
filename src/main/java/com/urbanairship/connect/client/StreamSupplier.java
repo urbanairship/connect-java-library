@@ -5,8 +5,7 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client;
 
 import com.ning.http.client.AsyncHttpClient;
-
-import java.util.function.Consumer;
+import com.urbanairship.connect.java8.Consumer;
 
 /**
  * Interface for supplying the {@link MobileEventConsumerService} with

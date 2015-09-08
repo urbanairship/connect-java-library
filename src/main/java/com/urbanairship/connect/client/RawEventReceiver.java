@@ -4,17 +4,17 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
+import com.google.common.base.Supplier;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.responses.Event;
+import com.urbanairship.connect.java8.Consumer;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Class that consumes and parses the API response while tracking the stream offset.

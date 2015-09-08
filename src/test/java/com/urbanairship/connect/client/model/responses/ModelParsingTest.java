@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -15,12 +16,12 @@ import com.urbanairship.connect.client.model.responses.region.Proximity;
 import com.urbanairship.connect.client.model.responses.region.RegionAction;
 import com.urbanairship.connect.client.model.responses.region.RegionEvent;
 import com.urbanairship.connect.client.model.responses.region.RegionSource;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -56,11 +57,11 @@ public class ModelParsingTest {
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> lastDeliveredVariantId = Optional.of(2);
-        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, lastDeliveredVariantId, Optional.<Instant>empty());
+        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, lastDeliveredVariantId, Optional.<DateTime>absent());
         String triggeringPushPushId = UUID.randomUUID().toString();
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<Instant> triggeringPushTime = Optional.of(Instant.now());
-        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>empty(), triggeringPushTime);
+        Optional<DateTime> triggeringPushTime = Optional.of(DateTime.now().withZone(DateTimeZone.UTC));
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), triggeringPushTime);
 
         CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
@@ -92,18 +93,18 @@ public class ModelParsingTest {
         String interactionType = "Landing Page";
         String interactionId = UUID.randomUUID().toString();
         String lastDeliveredPushId = UUID.randomUUID().toString();
-        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty());
+        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent());
         String triggeringPushPushId = UUID.randomUUID().toString();
         String triggeringPushGroupId = UUID.randomUUID().toString();
-        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>empty(), Optional.<Instant>empty());
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>absent(), Optional.<DateTime>absent());
 
-        CustomEvent customEvent = new CustomEvent(name, Optional.empty(), Optional.empty(), Optional.empty(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, Optional.<Integer>absent(), Optional.<String>absent(), Optional.<String>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
-        assertEquals(Optional.<Integer>empty(), parsedCustomEvent.getValue());
-        assertEquals(Optional.<String>empty(), parsedCustomEvent.getCustomerId());
-        assertEquals(Optional.<String>empty(), parsedCustomEvent.getTransactionalId());
+        assertEquals(Optional.<Integer>absent(), parsedCustomEvent.getValue());
+        assertEquals(Optional.<String>absent(), parsedCustomEvent.getCustomerId());
+        assertEquals(Optional.<String>absent(), parsedCustomEvent.getTransactionalId());
         assertEquals(name, parsedCustomEvent.getName());
         assertEquals(interactionType, parsedCustomEvent.getInteractionType());
         assertEquals(interactionId, parsedCustomEvent.getInteractionId());
@@ -176,10 +177,10 @@ public class ModelParsingTest {
     public void testMaxOpenEventParsing() throws Exception {
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>empty(), Optional.<Instant>empty()));
+        Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent()));
         String triggeringPushPushId = UUID.randomUUID().toString();
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
-        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>empty(), Optional.<Instant>empty()));
+        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent()));
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
         OpenEvent openEvent = new OpenEvent(lastDelivered, triggeringPush, sessionId);
 
@@ -198,9 +199,9 @@ public class ModelParsingTest {
     @Test
     public void testOpenEventWithNullsParsing() throws Exception {
         String lastDeliveredPushId = UUID.randomUUID().toString();
-        Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty()));
+        Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent()));
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
-        OpenEvent openEvent = new OpenEvent(lastDelivered, Optional.<AssociatedPush>empty(), sessionId);
+        OpenEvent openEvent = new OpenEvent(lastDelivered, Optional.<AssociatedPush>absent(), sessionId);
 
         String json = new String(openEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         OpenEvent parsedOpenEvent = OpenEvent.parseJSON(json);
@@ -212,8 +213,8 @@ public class ModelParsingTest {
     }
 
     @Test
-    public void testEmptyOpenEventParsing() throws Exception {
-        OpenEvent openEvent = new OpenEvent(Optional.<AssociatedPush>empty(), Optional.<AssociatedPush>empty(), Optional.<String>empty());
+    public void testabsentOpenEventParsing() throws Exception {
+        OpenEvent openEvent = new OpenEvent(Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent(), Optional.<String>absent());
         String json = new String(openEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         OpenEvent parsedOpenEvent = OpenEvent.parseJSON(json);
 
@@ -387,7 +388,7 @@ public class ModelParsingTest {
         String triggeringPushId = UUID.randomUUID().toString();
         Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> triggeringVariantId = Optional.of(1);
-        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<Instant>empty());
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<DateTime>absent());
         String pushId = UUID.randomUUID().toString();
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> variantId = Optional.of(1);
@@ -405,7 +406,7 @@ public class ModelParsingTest {
         String triggeringPushId = UUID.randomUUID().toString();
         Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> triggeringVariantId = Optional.of(1);
-        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<Instant>empty()));
+        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<DateTime>absent()));
         String pushId = UUID.randomUUID().toString();
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
         String type = InAppMessageResolutionEvent.BUTTON_CLICK;
@@ -414,7 +415,7 @@ public class ModelParsingTest {
         Optional<String> buttonGroup = Optional.of(UUID.randomUUID().toString());
         Optional<String> buttonDescription = Optional.of(UUID.randomUUID().toString());
         long duration = 9001;
-        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<Instant>empty(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, duration);
+        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<DateTime>absent(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, duration);
         String json = new String(inAppMessageResolutionEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageResolutionEvent parsedInAppMessageResolution = InAppMessageResolutionEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageResolution.getPushId());
@@ -433,13 +434,13 @@ public class ModelParsingTest {
         String triggeringPushId = UUID.randomUUID().toString();
         Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> triggeringVariantId = Optional.of(1);
-        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<Instant>empty()));
+        Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<DateTime>absent()));
 
 
         String replacingPushId = UUID.randomUUID().toString();
         Optional<String> replacingGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> replacingVariantId = Optional.of(2);
-        Optional<AssociatedPush> replacingPush = Optional.of(new AssociatedPush(replacingPushId, replacingGroupId, replacingVariantId, Optional.<Instant>empty()));
+        Optional<AssociatedPush> replacingPush = Optional.of(new AssociatedPush(replacingPushId, replacingGroupId, replacingVariantId, Optional.<DateTime>absent()));
 
         String pushId = UUID.randomUUID().toString();
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
@@ -447,7 +448,7 @@ public class ModelParsingTest {
 
         String type = InAppMessageExpirationEvent.ALREADY_DISPLAYED;
 
-        InAppMessageExpirationEvent inAppMessageExpirationEvent = new InAppMessageExpirationEvent(pushId, groupId, variantId, Optional.<Instant>empty(), triggeringPush, type, Optional.<Instant>empty(), replacingPush);
+        InAppMessageExpirationEvent inAppMessageExpirationEvent = new InAppMessageExpirationEvent(pushId, groupId, variantId, Optional.<DateTime>absent(), triggeringPush, type, Optional.<DateTime>absent(), replacingPush);
         String json = new String(inAppMessageExpirationEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageExpirationEvent parsedInAppMessageExpirationEvent = InAppMessageExpirationEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageExpirationEvent.getPushId());
@@ -457,4 +458,15 @@ public class ModelParsingTest {
         assertEquals(triggeringPush.get(), parsedInAppMessageExpirationEvent.getTriggeringPush().get());
         assertEquals(replacingPush.get(), parsedInAppMessageExpirationEvent.getReplacingPush().get());
     }
+
+    @Test
+    public void testDateTimeParsing() throws Exception {
+        String timestamp = "\"2015-08-12T11:06:33.937Z\"";
+        DateTime parsed = GsonUtil.getGson().fromJson(timestamp, DateTime.class);
+        assertEquals("2015-08-12T11:06:33.937Z", parsed.toString());
+
+        String serialized = GsonUtil.getGson().toJson(parsed);
+        assertEquals(serialized, timestamp);
+    }
+
 }

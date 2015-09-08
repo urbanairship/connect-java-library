@@ -4,19 +4,18 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
-
-import java.time.Instant;
-import java.util.Optional;
+import org.joda.time.DateTime;
 
 public class Event {
     public static class Builder {
         private String identifier;
         private EventType eventType;
-        private Instant occurred;
-        private Instant processed;
+        private DateTime occurred;
+        private DateTime processed;
         private String offset;
         private DeviceInfo deviceInfo;
         private EventBody eventBody;
@@ -31,12 +30,12 @@ public class Event {
             return this;
         }
 
-        public Builder setOccurred(Instant occurred) {
+        public Builder setOccurred(DateTime occurred) {
             this.occurred = occurred;
             return this;
         }
 
-        public Builder setProcessed(Instant processed) {
+        public Builder setProcessed(DateTime processed) {
             this.processed = processed;
             return this;
         }
@@ -63,7 +62,7 @@ public class Event {
             Preconditions.checkNotNull(processed, "Missing processed timestamp");
             Preconditions.checkNotNull(eventBody, "Missing event body");
             Preconditions.checkNotNull(offset, "Missing stream offset");
-            return new Event(identifier, eventType, occurred, processed, offset, Optional.ofNullable(deviceInfo), eventBody);
+            return new Event(identifier, eventType, occurred, processed, offset, Optional.fromNullable(deviceInfo), eventBody);
         }
     }
 
@@ -79,8 +78,8 @@ public class Event {
     private String identifier;
     @SerializedName(TYPE_KEY)
     private EventType eventType;
-    private Instant occurred;
-    private Instant processed;
+    private DateTime occurred;
+    private DateTime processed;
     private String offset;
     @SerializedName(DEVICE_INFO_KEY)
     private Optional<DeviceInfo> deviceInfo;
@@ -88,10 +87,10 @@ public class Event {
     private EventBody eventBody;
 
     private Event() {
-        this(null, null, null, null, null, Optional.empty(), null);
+        this(null, null, null, null, null, Optional.<DeviceInfo>absent(), null);
     }
 
-    private Event(String identifier, EventType eventType, Instant occurred, Instant processed, String offset, Optional<DeviceInfo> deviceInfo, EventBody eventBody) {
+    private Event(String identifier, EventType eventType, DateTime occurred, DateTime processed, String offset, Optional<DeviceInfo> deviceInfo, EventBody eventBody) {
         this.identifier = identifier;
         this.eventType = eventType;
         this.occurred = occurred;
@@ -109,11 +108,11 @@ public class Event {
         return eventBody.getType();
     }
 
-    public Instant getOccurred() {
+    public DateTime getOccurred() {
         return occurred;
     }
 
-    public Instant getProcessed() {
+    public DateTime getProcessed() {
         return processed;
     }
 

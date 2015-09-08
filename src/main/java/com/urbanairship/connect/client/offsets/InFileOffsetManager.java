@@ -5,6 +5,7 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.offsets;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -12,7 +13,6 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class InFileOffsetManager implements OffsetManager {
@@ -32,7 +32,7 @@ public class InFileOffsetManager implements OffsetManager {
 
     @Override
     public Optional<String> getLastOffset() {
-        return Optional.ofNullable(offset.get());
+        return Optional.fromNullable(offset.get());
     }
 
     @Override
@@ -48,14 +48,14 @@ public class InFileOffsetManager implements OffsetManager {
     private synchronized Optional<String> loadOffset() {
         if (!offsetFile.exists()) {
             logger.debug("No apps file exists: " + offsetFile.getAbsolutePath());
-            return Optional.empty();
+            return Optional.absent();
         }
         try {
             offset.set(Files.toString(offsetFile, Charsets.UTF_8));
         } catch (IOException e) {
             logger.warn("Failed to read file: " + offsetFile.getName(), e);
         }
-        return Optional.ofNullable(offset.get());
+        return Optional.fromNullable(offset.get());
     }
 
     private synchronized void saveOffset() throws IOException {

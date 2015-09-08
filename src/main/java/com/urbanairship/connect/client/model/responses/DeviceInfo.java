@@ -5,17 +5,16 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.model.responses;
 
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.GsonUtil;
 
-import java.util.Optional;
-
 public class DeviceInfo {
     public static class Builder {
-        private Optional<String> namedUsedId = Optional.<String>empty();
+        private Optional<String> namedUsedId = Optional.<String>absent();
         private String channeId;
         private DeviceFilterType platform;
 

@@ -4,15 +4,14 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
-
-import java.time.Instant;
-import java.util.Optional;
+import org.joda.time.DateTime;
 
 public class InAppMessageResolutionEvent implements EventBody {
 
@@ -33,7 +32,7 @@ public class InAppMessageResolutionEvent implements EventBody {
     private final Optional<Integer> variantId;
 
     @SerializedName("time_sent")
-    private final Optional<Instant> timeSent;
+    private final Optional<DateTime> timeSent;
 
     @SerializedName("triggering_push")
     private final Optional<AssociatedPush> triggeringPush;
@@ -52,7 +51,7 @@ public class InAppMessageResolutionEvent implements EventBody {
     private final long duration;
 
 
-    public InAppMessageResolutionEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<Instant> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<String> buttonId, Optional<String> buttonGroup, Optional<String> buttonDescription, long duration) {
+    public InAppMessageResolutionEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<String> buttonId, Optional<String> buttonGroup, Optional<String> buttonDescription, long duration) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -66,7 +65,7 @@ public class InAppMessageResolutionEvent implements EventBody {
     }
 
     private InAppMessageResolutionEvent() {
-        this(null, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty(), Optional.<AssociatedPush>empty(), null, Optional.<String>empty(), Optional.<String>empty(), Optional.<String>empty(), 0);
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), 0);
     }
 
     public static Builder newBuilder() {
@@ -88,15 +87,15 @@ public class InAppMessageResolutionEvent implements EventBody {
 
     public static class Builder {
         private String pushId;
-        private Optional<String> groupId = Optional.empty();
-        private Optional<Integer> variantId = Optional.empty();
-        private Optional<Instant> timeSent = Optional.empty();
-        private Optional<AssociatedPush> triggeringPush = Optional.empty();
+        private Optional<String> groupId = Optional.absent();
+        private Optional<Integer> variantId = Optional.absent();
+        private Optional<DateTime> timeSent = Optional.absent();
+        private Optional<AssociatedPush> triggeringPush = Optional.absent();
         private String type;
         private long duration;
-        private Optional<String> buttonId = Optional.empty();
-        private Optional<String> buttonGroup = Optional.empty();
-        private Optional<String> buttonDescription = Optional.empty();
+        private Optional<String> buttonId = Optional.absent();
+        private Optional<String> buttonGroup = Optional.absent();
+        private Optional<String> buttonDescription = Optional.absent();
 
         public Builder setPushId(String pushId) {
             this.pushId = pushId;
@@ -113,7 +112,7 @@ public class InAppMessageResolutionEvent implements EventBody {
             return this;
         }
 
-        public Builder setTimeSent(Instant timeSent) {
+        public Builder setTimeSent(DateTime timeSent) {
             this.timeSent = Optional.of(timeSent);
             return this;
         }
@@ -224,7 +223,7 @@ public class InAppMessageResolutionEvent implements EventBody {
         return variantId;
     }
 
-    public Optional<Instant> getTimeSent() {
+    public Optional<DateTime> getTimeSent() {
         return timeSent;
     }
 
