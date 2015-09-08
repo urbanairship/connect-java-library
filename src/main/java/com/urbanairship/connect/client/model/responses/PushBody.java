@@ -5,11 +5,10 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.model.responses;
 
 
+import com.google.common.base.Optional;
 import com.google.gson.JsonObject;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
-
-import java.util.Optional;
 
 public class PushBody implements EventBody {
 
@@ -19,7 +18,7 @@ public class PushBody implements EventBody {
     private final String payload;
 
     private PushBody() {
-        this(null, Optional.<String>empty(), false, null);
+        this(null, Optional.<String>absent(), false, null);
     }
 
     public PushBody(String pushId, Optional<String> groupId, boolean trimmed, String payload) {

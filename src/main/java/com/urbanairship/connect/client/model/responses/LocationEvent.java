@@ -4,13 +4,13 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 public class LocationEvent implements EventBody
 {
@@ -21,7 +21,7 @@ public class LocationEvent implements EventBody
     private final Optional<String> sessionId;
 
     private LocationEvent() {
-        this(0, 0, false, Optional.<String>empty());
+        this(0, 0, false, Optional.<String>absent());
     }
 
     public LocationEvent(double latitude, double longitude, boolean foreground, Optional<String> sessionId) {

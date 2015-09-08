@@ -4,10 +4,9 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.gson.annotations.SerializedName;
-
-import java.time.Instant;
-import java.util.Optional;
+import org.joda.time.DateTime;
 
 public class AssociatedPush {
 
@@ -17,13 +16,13 @@ public class AssociatedPush {
     private Optional<String> groupId;
     @SerializedName("variant_id")
     private final Optional<Integer> variantId;
-    private final Optional<Instant> time;
+    private final Optional<DateTime> time;
 
     private AssociatedPush() {
-        this(null, Optional.empty(), Optional.empty(), Optional.empty());
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent());
     }
 
-    public AssociatedPush(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<Instant> time) {
+    public AssociatedPush(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> time) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -43,7 +42,7 @@ public class AssociatedPush {
         return variantId;
     }
 
-    public Optional<Instant> getTime() {
+    public Optional<DateTime> getTime() {
         return time;
     }
 

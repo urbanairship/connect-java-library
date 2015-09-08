@@ -4,12 +4,11 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
-
-import java.util.Optional;
 
 public class OpenEvent implements EventBody {
 
@@ -21,7 +20,7 @@ public class OpenEvent implements EventBody {
     private final Optional<String> sessionId;
 
     private OpenEvent() {
-        this(Optional.<AssociatedPush>empty(), Optional.<AssociatedPush>empty(), Optional.<String>empty());
+        this(Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent(), Optional.<String>absent());
     }
 
     public OpenEvent(Optional<AssociatedPush> lastDelivered, Optional<AssociatedPush> triggeringPush, Optional<String> sessionId) {

@@ -4,9 +4,8 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-
-import java.util.Optional;
 
 public class Subset {
 
@@ -134,7 +133,7 @@ public class Subset {
                     "Selection must be less than count");
             }
 
-            return new Subset(type, Optional.ofNullable(proportion), Optional.ofNullable(count), Optional.ofNullable(selection));
+            return new Subset(type, Optional.fromNullable(proportion), Optional.fromNullable(count), Optional.fromNullable(selection));
         }
     }
 }

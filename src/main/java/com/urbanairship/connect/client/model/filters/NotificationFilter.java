@@ -4,9 +4,8 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.filters;
 
+import com.google.common.base.Optional;
 import com.google.gson.annotations.SerializedName;
-
-import java.util.Optional;
 
 public class NotificationFilter {
 
@@ -16,11 +15,11 @@ public class NotificationFilter {
     private Optional<String> groupId;
 
     public static NotificationFilter createPushIdFilter(String id) {
-        return new NotificationFilter(Optional.ofNullable(id), Optional.ofNullable(null));
+        return new NotificationFilter(Optional.fromNullable(id), Optional.<String>fromNullable(null));
     }
 
     public static NotificationFilter createGroupIdFilter(String id) {
-        return new NotificationFilter(Optional.<String>empty(), Optional.ofNullable(id));
+        return new NotificationFilter(Optional.<String>absent(), Optional.fromNullable(id));
     }
 
     private NotificationFilter(Optional<String> pushId, Optional<String> groupId) {

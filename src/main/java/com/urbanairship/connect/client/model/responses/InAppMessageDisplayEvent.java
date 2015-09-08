@@ -4,13 +4,12 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
-
-import java.util.Optional;
 
 public class InAppMessageDisplayEvent implements EventBody {
 
@@ -27,7 +26,7 @@ public class InAppMessageDisplayEvent implements EventBody {
     private final Optional<AssociatedPush> triggeringPush;
 
     private InAppMessageDisplayEvent() {
-        this(null, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<AssociatedPush>empty());
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<AssociatedPush>absent());
     }
 
     public InAppMessageDisplayEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<AssociatedPush> triggeringPush) {
@@ -43,9 +42,9 @@ public class InAppMessageDisplayEvent implements EventBody {
 
     public static class Builder {
         private String pushId;
-        private Optional<String> groupId = Optional.empty();
-        private Optional<Integer> variantId = Optional.empty();
-        private Optional<AssociatedPush> triggeringPush = Optional.empty();
+        private Optional<String> groupId = Optional.absent();
+        private Optional<Integer> variantId = Optional.absent();
+        private Optional<AssociatedPush> triggeringPush = Optional.absent();
 
         public Builder setPushId(String pushId) {
             this.pushId = pushId;

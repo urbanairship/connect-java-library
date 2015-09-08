@@ -11,11 +11,12 @@ import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
 import org.apache.commons.lang3.RandomUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -29,8 +30,8 @@ public class EventParsingTest {
         HashMap<String, Object> rawJson = Maps.newHashMap();
         rawJson.put(Event.EVENT_ID_KEY, UUID.randomUUID().toString());
         rawJson.put(Event.TYPE_KEY, EventType.SEND.name());
-        rawJson.put(Event.OCCURRED_KEY, Instant.now().toString());
-        rawJson.put(Event.PROCESSED_KEY, Instant.now().toString());
+        rawJson.put(Event.OCCURRED_KEY, DateTime.now().withZone(DateTimeZone.UTC).toString());
+        rawJson.put(Event.PROCESSED_KEY, DateTime.now().withZone(DateTimeZone.UTC).toString());
         rawJson.put(Event.DEVICE_INFO_KEY,
                 ImmutableMap.<String, String>of(DeviceFilterType.IOS.getKey(), UUID.randomUUID().toString()));
         rawJson.put(Event.EVENT_BODY_KEY,
@@ -47,8 +48,8 @@ public class EventParsingTest {
         rawJson.put(Event.EVENT_ID_KEY, UUID.randomUUID().toString());
         rawJson.put(Event.OFFSET_KEY, RandomUtils.nextLong(0L, 100000L));
         rawJson.put(Event.TYPE_KEY, EventType.OPEN.name());
-        rawJson.put(Event.OCCURRED_KEY, Instant.now().toString());
-        rawJson.put(Event.PROCESSED_KEY, Instant.now().toString());
+        rawJson.put(Event.OCCURRED_KEY, DateTime.now().withZone(DateTimeZone.UTC).toString());
+        rawJson.put(Event.PROCESSED_KEY, DateTime.now().withZone(DateTimeZone.UTC).toString());
         rawJson.put(Event.DEVICE_INFO_KEY,
                 ImmutableMap.<String, String>of(DeviceFilterType.IOS.getKey(), UUID.randomUUID().toString()));
 

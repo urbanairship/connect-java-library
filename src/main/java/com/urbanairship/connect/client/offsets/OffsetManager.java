@@ -4,7 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.offsets;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 /**
  * Interface to manage stream offsets.

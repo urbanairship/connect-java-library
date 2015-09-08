@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model;
 
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
@@ -14,7 +15,6 @@ import com.google.gson.stream.JsonWriter;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Optional;
 
 public class OptionalTypeAdapterFactory implements TypeAdapterFactory {
 
@@ -44,7 +44,7 @@ public class OptionalTypeAdapterFactory implements TypeAdapterFactory {
             }
 
             public Optional<E> read(JsonReader in) throws IOException {
-                return Optional.ofNullable(elementAdapter.read(in));
+                return Optional.fromNullable(elementAdapter.read(in));
             }
         };
     }
