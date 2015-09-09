@@ -4,15 +4,14 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.responses;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
-
-import java.time.Instant;
-import java.util.Optional;
+import org.joda.time.DateTime;
 
 
 public class InAppMessageExpirationEvent implements EventBody {
@@ -34,7 +33,7 @@ public class InAppMessageExpirationEvent implements EventBody {
     private final Optional<Integer> variantId;
 
     @SerializedName("time_sent")
-    private final Optional<Instant> timeSent;
+    private final Optional<DateTime> timeSent;
 
     @SerializedName("triggering_push")
     private final Optional<AssociatedPush> triggeringPush;
@@ -42,13 +41,13 @@ public class InAppMessageExpirationEvent implements EventBody {
     private final String type;
 
     @SerializedName("time_expired")
-    private final Optional<Instant> timeExpired;
+    private final Optional<DateTime> timeExpired;
 
     @SerializedName("replacing_push")
     private final Optional<AssociatedPush> replacingPush;
 
     private InAppMessageExpirationEvent() {
-        this(null, Optional.<String>empty(), Optional.<Integer>empty(), Optional.<Instant>empty(), Optional.<AssociatedPush>empty(), null, null, Optional.<AssociatedPush>empty());
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, null, Optional.<AssociatedPush>absent());
     }
 
     public static InAppMessageExpirationEvent parseJSONfromBytes(byte[] bytes) {
@@ -66,13 +65,13 @@ public class InAppMessageExpirationEvent implements EventBody {
 
     public static class Builder {
         private String pushId;
-        private Optional<String> groupId = Optional.empty();
-        private Optional<Integer> variantId = Optional.empty();
-        private Optional<Instant> timeSent = Optional.empty();
-        private Optional<AssociatedPush> triggeringPush = Optional.empty();
+        private Optional<String> groupId = Optional.absent();
+        private Optional<Integer> variantId = Optional.absent();
+        private Optional<DateTime> timeSent = Optional.absent();
+        private Optional<AssociatedPush> triggeringPush = Optional.absent();
         private String type;
-        private Optional<Instant> timeExpired = Optional.empty();
-        private Optional<AssociatedPush> replacingPush = Optional.empty();
+        private Optional<DateTime> timeExpired = Optional.absent();
+        private Optional<AssociatedPush> replacingPush = Optional.absent();
 
         public Builder setPushId(String pushId) {
             this.pushId = pushId;
@@ -89,7 +88,7 @@ public class InAppMessageExpirationEvent implements EventBody {
             return this;
         }
 
-        public Builder setTimeSent(Instant timeSent) {
+        public Builder setTimeSent(DateTime timeSent) {
             this.timeSent = Optional.of(timeSent);
             return this;
         }
@@ -104,7 +103,7 @@ public class InAppMessageExpirationEvent implements EventBody {
             return this;
         }
 
-        public Builder setTimeExpired(Instant timeExpired) {
+        public Builder setTimeExpired(DateTime timeExpired) {
             this.timeExpired = Optional.of(timeExpired);
             return this;
         }
@@ -122,7 +121,7 @@ public class InAppMessageExpirationEvent implements EventBody {
         }
     }
 
-    public InAppMessageExpirationEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<Instant> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<Instant> timeExpired, Optional<AssociatedPush> replacingPush) {
+    public InAppMessageExpirationEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<DateTime> timeExpired, Optional<AssociatedPush> replacingPush) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -154,7 +153,7 @@ public class InAppMessageExpirationEvent implements EventBody {
         return variantId;
     }
 
-    public Optional<Instant> getTimeSent() {
+    public Optional<DateTime> getTimeSent() {
         return timeSent;
     }
 
@@ -162,7 +161,7 @@ public class InAppMessageExpirationEvent implements EventBody {
         return triggeringPush;
     }
 
-    public Optional<Instant> getTimeExpired() {
+    public Optional<DateTime> getTimeExpired() {
         return timeExpired;
     }
 

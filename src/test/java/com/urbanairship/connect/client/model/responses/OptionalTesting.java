@@ -5,12 +5,11 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.model.responses;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.urbanairship.connect.client.model.OptionalTypeAdapterFactory;
 import org.junit.Test;
-
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -29,7 +28,7 @@ public class OptionalTesting {
         OptionalClass parsed = gson.fromJson(json, OptionalClass.class);
         assertEquals("test", parsed.getValue().get());
 
-        OptionalClass empty = new OptionalClass(Optional.empty());
+        OptionalClass empty = new OptionalClass(Optional.<String>absent());
         json = gson.toJson(empty);
         parsed = gson.fromJson(json, OptionalClass.class);
         assertFalse(parsed.getValue().isPresent());
@@ -40,7 +39,7 @@ public class OptionalTesting {
         private final Optional<String> value;
 
         private OptionalClass() {
-            this(Optional.empty());
+            this(Optional.<String>absent());
         }
 
         public OptionalClass(Optional<String> value) {

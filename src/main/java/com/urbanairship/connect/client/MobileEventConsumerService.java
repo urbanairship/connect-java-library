@@ -7,6 +7,7 @@ package com.urbanairship.connect.client;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.ning.http.client.AsyncHttpClient;
+import com.urbanairship.connect.java8.Consumer;
 import com.urbanairship.connect.client.model.responses.Event;
 import com.urbanairship.connect.client.offsets.OffsetManager;
 import org.apache.commons.configuration.Configuration;
@@ -15,7 +16,6 @@ import org.apache.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 /**
  * A class for handling {@link com.urbanairship.connect.client.MobileEventStream} interactions.

@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonObject;
@@ -16,15 +17,18 @@ import com.sun.net.httpserver.HttpServer;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
+import com.urbanairship.connect.client.model.responses.AssociatedPush;
 import com.urbanairship.connect.client.model.responses.CustomEvent;
 import com.urbanairship.connect.client.model.responses.DeviceInfo;
 import com.urbanairship.connect.client.model.responses.Event;
-import com.urbanairship.connect.client.model.responses.AssociatedPush;
 import com.urbanairship.connect.client.offsets.InMemOffsetManager;
 import com.urbanairship.connect.client.offsets.OffsetManager;
+import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang3.RandomUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -33,13 +37,14 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.net.InetSocketAddress;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,11 +53,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.apache.commons.lang3.RandomUtils.nextLong;
+import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -123,49 +127,62 @@ public class MobileEventConsumerServiceTest {
 
     @Test
     public void testStreamHandler() throws Exception {
-        List<Event> events = new ArrayList<>();
+        final List<Event> events = new ArrayList<>();
         for (int i = 1; i < 10; i++) {
             events.add(createEvent((long) i));
         }
 
-        AtomicReference<String> body = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+        final AtomicReference<String> body = new AtomicReference<>();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
 
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-            exchange.sendResponseHeaders(200, 0L);
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
 
-            for (Event e : events) {
-                String eventJson = GsonUtil.getGson().toJson(e);
-                exchange.getResponseBody().write(eventJson.getBytes(UTF_8));
-                exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                exchange.sendResponseHeaders(200, 0L);
+
+                for (Event e : events) {
+                    String eventJson = GsonUtil.getGson().toJson(e);
+                    exchange.getResponseBody().write(eventJson.getBytes(UTF_8));
+                    exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                }
+                exchange.close();
+
+                return null;
             }
-            exchange.close();
+        };
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
-
-        List<Event> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(events.size());
-        doAnswer(invocationOnMock -> {
-            latch.countDown();
-            Event consumedEvent = (Event) invocationOnMock.getArguments()[0];
-            received.add(consumedEvent);
-            return null;
-        }).when(consumer).accept(any(Event.class));
+        final List<Event> received = new ArrayList<>();
+        final CountDownLatch latch = new CountDownLatch(events.size());
+        Answer consumerAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                latch.countDown();
+                Event consumedEvent = (Event) invocation.getArguments()[0];
+                received.add(consumedEvent);
+                return null;
+            }
+        };
+        doAnswer(consumerAnswer).when(consumer).accept(any(Event.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
         mobileEventConsumerService = createMobileEventConsumerService(offsetManager).build();
         ExecutorService thread = Executors.newSingleThreadExecutor();
-        try {
-            Future<Boolean> future = thread.submit(() -> {
+        Callable<Boolean> task = new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
                 mobileEventConsumerService.run();
                 return Boolean.TRUE;
-            });
+            }
+        };
+        try {
+            Future<Boolean> future = thread.submit(task);
 
             // Wait till we get something from the server
             latch.await(1, TimeUnit.MINUTES);
@@ -196,75 +213,98 @@ public class MobileEventConsumerServiceTest {
 
     @Test
     public void testStreamHandlerReconnects() throws Exception {
-        List<Event> events = new ArrayList<>();
+        final List<Event> events = new ArrayList<>();
         for (int i = 1; i < 10; i++) {
             events.add(createEvent((long) i));
         }
 
-        AtomicReference<String> body = new AtomicReference<>();
+        final AtomicReference<String> body = new AtomicReference<>();
 
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+        Answer firstHttpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
 
-            exchange.sendResponseHeaders(200, 0L);
+                exchange.sendResponseHeaders(200, 0L);
 
-            for (Event e : events.subList(0, 4)) {
-                String eventJson = GsonUtil.getGson().toJson(e);
-                exchange.getResponseBody().write(eventJson.getBytes(UTF_8));
-                exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                for (Event e : events.subList(0, 4)) {
+                    String eventJson = GsonUtil.getGson().toJson(e);
+                    exchange.getResponseBody().write(eventJson.getBytes(UTF_8));
+                    exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                }
+                exchange.close();
+
+                return null;
             }
-            exchange.close();
+        };
 
-            return null;
-        })
-        .doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.sendResponseHeaders(500, 0L);
-            exchange.close();
-            return null;
-        })
-        .doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
-
-            exchange.sendResponseHeaders(200, 0L);
-
-            for (Event e : events.subList(4, events.size())) {
-                String eventJson = GsonUtil.getGson().toJson(e);
-                exchange.getResponseBody().write(eventJson.getBytes(UTF_8));
-                exchange.getResponseBody().write("\n".getBytes(UTF_8));
+        Answer secondHttpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(500, 0L);
+                exchange.close();
+                return null;
             }
-            exchange.close();
+        };
 
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+        Answer thirdHttpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-        List<Event> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(events.size());
-        doAnswer(invocationOnMock -> {
-            latch.countDown();
-            Event consumedEvent = (Event) invocationOnMock.getArguments()[0];
-            received.add(consumedEvent);
-            return null;
-        }).when(consumer).accept(any(Event.class));
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
+
+                exchange.sendResponseHeaders(200, 0L);
+
+                for (Event e : events.subList(4, events.size())) {
+                    String eventJson = GsonUtil.getGson().toJson(e);
+                    exchange.getResponseBody().write(eventJson.getBytes(UTF_8));
+                    exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                }
+                exchange.close();
+                return null;
+            }
+        };
+
+        doAnswer(firstHttpAnswer)
+        .doAnswer(secondHttpAnswer)
+        .doAnswer(thirdHttpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        final List<Event> received = new ArrayList<>();
+        final CountDownLatch latch = new CountDownLatch(events.size());
+        Answer consumerAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                latch.countDown();
+                Event consumedEvent = (Event) invocation.getArguments()[0];
+                received.add(consumedEvent);
+                return null;
+            }
+        };
+
+        doAnswer(consumerAnswer).when(consumer).accept(any(Event.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
         mobileEventConsumerService = createMobileEventConsumerService(offsetManager).build();
         ExecutorService thread = Executors.newSingleThreadExecutor();
-        try {
-            Future<Boolean> future = thread.submit(() -> {
+        Callable<Boolean> task = new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
                 mobileEventConsumerService.run();
                 return Boolean.TRUE;
-            });
+            }
+        };
+        try {
+            Future<Boolean> future = thread.submit(task);
 
             // Wait till we get something from the server
             latch.await(10, TimeUnit.MINUTES);
@@ -293,16 +333,27 @@ public class MobileEventConsumerServiceTest {
 
     @Test
     public void testMaxRetries() throws Exception {
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.sendResponseHeaders(500, 0L);
-            exchange.close();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(500, 0L);
+                exchange.close();
+                return null;
+            }
+        };
 
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        MobileEventStream stream = mock(MobileEventStream.class);
-        doAnswer(invocationMock -> stream).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
+        final MobileEventStream stream = mock(MobileEventStream.class);
+        Answer supplierAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return stream;
+            }
+        };
+
+        doAnswer(supplierAnswer).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
         doThrow(new RuntimeException()).when(stream).connect(anyLong(), any(TimeUnit.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
@@ -314,20 +365,32 @@ public class MobileEventConsumerServiceTest {
     }
     @Test
     public void testInterrupted() throws Exception {
-        MobileEventStream stream = mock(MobileEventStream.class);
-        doAnswer(invocationMock -> stream).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
+        final MobileEventStream stream = mock(MobileEventStream.class);
+        Answer supplierAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return stream;
+            }
+        };
+
+        doAnswer(supplierAnswer).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
         doThrow(new InterruptedException()).when(stream).connect(anyLong(), any(TimeUnit.class));
 
         mobileEventConsumerService = createMobileEventConsumerService(new InMemOffsetManager()).setSupplier(supplier).build();
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicBoolean interrupted = new AtomicBoolean(false);
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicBoolean interrupted = new AtomicBoolean(false);
         ExecutorService thread = Executors.newSingleThreadExecutor();
-        try {
-            thread.execute(() -> {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
                 mobileEventConsumerService.run();
                 interrupted.set(Thread.interrupted());
                 latch.countDown();
-            });
+            }
+        };
+
+        try {
+            thread.execute(runnable);
         } finally {
             thread.shutdown();
         }
@@ -351,7 +414,7 @@ public class MobileEventConsumerServiceTest {
     private MobileEventConsumerService.Builder createMobileEventConsumerService(OffsetManager offsetManager) {
         return MobileEventConsumerService.newBuilder()
             .setClient(http)
-            .setBaseStreamQueryDescriptor(descriptor(Optional.empty()))
+            .setBaseStreamQueryDescriptor(descriptor(Optional.<Long>absent()))
             .setConfig(config)
             .setConsumer(consumer)
             .setOffsetManager(offsetManager)
@@ -367,10 +430,10 @@ public class MobileEventConsumerServiceTest {
         Optional<String> transactionId = Optional.of(randomAlphabetic(10));
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
-        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>empty(), Optional.<Instant>empty());
+        AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
         String triggeringPushPushId = UUID.randomUUID().toString();
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
-        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>empty(), Optional.<Instant>empty());
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
 
         CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
 
@@ -384,8 +447,8 @@ public class MobileEventConsumerServiceTest {
             .setEventBody(customEvent)
             .setDeviceInfo(deviceInfo)
             .setOffset(String.valueOf(offset))
-            .setOccurred(Instant.now())
-            .setProcessed(Instant.now().plusSeconds(nextLong(1, 10)))
+            .setOccurred(DateTime.now().withZone(DateTimeZone.UTC))
+            .setProcessed(DateTime.now().plusSeconds(nextInt(1, 10)).withZone(DateTimeZone.UTC))
             .setIdentifier(UUID.randomUUID().toString())
             .build();
     }

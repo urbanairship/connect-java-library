@@ -10,15 +10,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.urbanairship.connect.client.model.filters.DeviceFilter;
 import com.urbanairship.connect.client.model.filters.DeviceFilterSerializer;
+import com.urbanairship.connect.client.model.responses.DateTimeAdapter;
 import com.urbanairship.connect.client.model.responses.DeviceInfo;
 import com.urbanairship.connect.client.model.responses.DeviceInfoAdapter;
 import com.urbanairship.connect.client.model.responses.Event;
 import com.urbanairship.connect.client.model.responses.EventAdapter;
-import com.urbanairship.connect.client.model.responses.InstantAdapter;
+import org.joda.time.DateTime;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 
 public class GsonUtil {
     private final static JsonParser parser = new JsonParser();
@@ -30,7 +30,7 @@ public class GsonUtil {
         builder.registerTypeAdapterFactory(new OptionalTypeAdapterFactory());
         builder.registerTypeAdapter(Event.class, new EventAdapter());
         builder.registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer());
-        builder.registerTypeAdapter(Instant.class, new InstantAdapter());
+        builder.registerTypeAdapter(DateTime.class, new DateTimeAdapter());
         gson = builder.create();
     }
 

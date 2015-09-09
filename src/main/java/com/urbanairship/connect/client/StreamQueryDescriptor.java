@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
+import com.google.common.base.Optional;
 import com.urbanairship.connect.client.model.Subset;
 import com.urbanairship.connect.client.model.filters.Filter;
 
@@ -11,7 +12,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -176,7 +176,7 @@ public final class StreamQueryDescriptor {
          * @return StreamDescriptor
          */
         public StreamQueryDescriptor build() {
-            return new StreamQueryDescriptor(creds, Optional.ofNullable(offset), Optional.ofNullable(filters), Optional.ofNullable(subset));
+            return new StreamQueryDescriptor(creds, Optional.fromNullable(offset), Optional.fromNullable(filters), Optional.fromNullable(subset));
         }
     }
 }

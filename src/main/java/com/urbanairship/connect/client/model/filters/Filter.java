@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.model.filters;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.DeviceFilterType;
@@ -11,7 +12,6 @@ import com.urbanairship.connect.client.model.EventType;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 public class Filter {
@@ -29,11 +29,11 @@ public class Filter {
 
     private Filter(Set<DeviceFilterType> deviceTypes, Set<NotificationFilter> notifications, Set<DeviceFilter> devices,
                    Set<EventType> types, Integer latency) {
-        this.deviceTypes = Optional.ofNullable(deviceTypes);
-        this.notifications = Optional.ofNullable(notifications);
-        this.devices = Optional.ofNullable(devices);
-        this.types = Optional.ofNullable(types);
-        this.latency = Optional.ofNullable(latency);
+        this.deviceTypes = Optional.fromNullable(deviceTypes);
+        this.notifications = Optional.fromNullable(notifications);
+        this.devices = Optional.fromNullable(devices);
+        this.types = Optional.fromNullable(types);
+        this.latency = Optional.fromNullable(latency);
     }
 
     public Optional<Set<DeviceFilterType>> getDeviceTypes() {

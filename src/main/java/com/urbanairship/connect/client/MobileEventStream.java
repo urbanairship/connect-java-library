@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -14,6 +15,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
+import com.urbanairship.connect.java8.Consumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
@@ -29,13 +31,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 /**
  * Provides the abstraction through which events are streamed from the mobile event stream endpoint to a caller.
@@ -103,7 +103,14 @@ public class MobileEventStream implements AutoCloseable {
             Preconditions.checkState(connection != null && !closed.get());
 
             bodyConsumeLatch = new CountDownLatch(1);
-            connection.future.addListener(bodyConsumeLatch::countDown, MoreExecutors.directExecutor());
+            Runnable bodyConsumeLatchRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    bodyConsumeLatch.countDown();
+                }
+            };
+
+            connection.future.addListener(bodyConsumeLatchRunnable, MoreExecutors.directExecutor());
         }
 
         try {

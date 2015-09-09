@@ -4,10 +4,11 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client.consume;
 
+import com.urbanairship.connect.java8.Consumer;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Receives raw bytes from a stream and handles grouping them together into full lines and thus full events.

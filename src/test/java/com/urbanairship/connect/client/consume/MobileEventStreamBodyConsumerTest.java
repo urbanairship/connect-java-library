@@ -5,17 +5,19 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.consume;
 
 import com.google.common.base.Joiner;
+import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -44,11 +46,16 @@ public class MobileEventStreamBodyConsumerTest {
         }
 
         final List<String> received = new ArrayList<>();
-        doAnswer(invocationOnMock -> {
-            String line = (String) invocationOnMock.getArguments()[0];
-            received.add(line);
-            return null;
-        }).when(handler).accept(anyString());
+        Answer handlerAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                String line = (String) invocation.getArguments()[0];
+                received.add(line);
+                return null;
+            }
+        };
+
+        doAnswer(handlerAnswer).when(handler).accept(anyString());
 
         String everything = Joiner.on("\n").join(strings) + "\n";
         ByteBuffer buffer = ByteBuffer.wrap(everything.getBytes(UTF_8));

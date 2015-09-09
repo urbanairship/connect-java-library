@@ -15,9 +15,11 @@ import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.responses.region.RegionEvent;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 import java.lang.reflect.Type;
-import java.time.Instant;
 
 public class EventAdapter implements JsonDeserializer<Event> {
 
@@ -108,10 +110,11 @@ public class EventAdapter implements JsonDeserializer<Event> {
             throw new JsonParseException("Unable to parse event with missing processed field");
         }
 
+        DateTimeFormatter fmt = ISODateTimeFormat.dateTimeParser().withZoneUTC();
         // validate occurrence string
-        Instant occurred = Instant.parse(occurredJson.getAsString());
+        DateTime occurred = fmt.parseDateTime(occurredJson.getAsString());
         // validate processed string
-        Instant processed = Instant.parse(processedJson.getAsString());
+        DateTime processed = fmt.parseDateTime(processedJson.getAsString());
 
         eventBuilder.setOccurred(occurred);
         eventBuilder.setProcessed(processed);

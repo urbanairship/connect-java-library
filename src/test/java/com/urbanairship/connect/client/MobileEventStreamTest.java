@@ -4,6 +4,7 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
+import com.google.common.base.Optional;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -20,6 +21,7 @@ import com.urbanairship.connect.client.model.Subset;
 import com.urbanairship.connect.client.model.filters.DeviceFilter;
 import com.urbanairship.connect.client.model.filters.Filter;
 import com.urbanairship.connect.client.model.filters.NotificationFilter;
+import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -30,13 +32,15 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,7 +48,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -117,34 +120,44 @@ public class MobileEventStreamTest {
 
     @Test
     public void testStream() throws Exception {
-        StreamQueryDescriptor descriptor = descriptor(Optional.<Long>empty());
+        StreamQueryDescriptor descriptor = descriptor(Optional.<Long>absent());
 
-        String line = randomAlphabetic(15);
+        final String line = randomAlphabetic(15);
 
-        AtomicReference<String> body = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+        final AtomicReference<String> body = new AtomicReference<>();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
 
-            exchange.sendResponseHeaders(200, 0L);
+                exchange.sendResponseHeaders(200, 0L);
 
-            exchange.getResponseBody().write(line.getBytes(UTF_8));
-            exchange.getResponseBody().write("\n".getBytes(UTF_8));
-            exchange.close();
+                exchange.getResponseBody().write(line.getBytes(UTF_8));
+                exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                exchange.close();
 
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+                return null;
+            }
+        };
 
-        List<String> received = new ArrayList<>();
-        doAnswer(invocationOnMock -> {
-            String l = (String) invocationOnMock.getArguments()[0];
-            received.add(l);
-            return null;
-        }).when(consumer).accept(anyString());
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        final List<String> received = new ArrayList<>();
+        Answer consumerAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                String l = (String) invocation.getArguments()[0];
+                received.add(l);
+                return null;
+            }
+        };
+
+        doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
         stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
 
@@ -160,17 +173,23 @@ public class MobileEventStreamTest {
 
     @Test
     public void testAuth() throws Exception {
-        AtomicReference<String> authorization = new AtomicReference<>();
-        AtomicReference<String> appKeyHeader = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            authorization.set(exchange.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION));
-            appKeyHeader.set(exchange.getRequestHeaders().getFirst("X-UA-Appkey"));
-            exchange.sendResponseHeaders(200, 0L);
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+        final AtomicReference<String> authorization = new AtomicReference<>();
+        final AtomicReference<String> appKeyHeader = new AtomicReference<>();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                authorization.set(exchange.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+                appKeyHeader.set(exchange.getRequestHeaders().getFirst("X-UA-Appkey"));
+                exchange.sendResponseHeaders(200, 0L);
 
-        StreamQueryDescriptor descriptor = descriptor(Optional.<Long>empty());
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        StreamQueryDescriptor descriptor = descriptor(Optional.<Long>absent());
         stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -183,18 +202,23 @@ public class MobileEventStreamTest {
 
     @Test
     public void testRequestBodyWithOffset() throws Exception {
-        AtomicReference<String> body = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+        final AtomicReference<String> body = new AtomicReference<>();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
 
-            exchange.sendResponseHeaders(200, 0L);
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+                exchange.sendResponseHeaders(200, 0L);
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         long offset = RandomUtils.nextInt(0, 100000);
         StreamQueryDescriptor descriptor = descriptor(Optional.of(offset));
@@ -208,18 +232,24 @@ public class MobileEventStreamTest {
 
     @Test
     public void testRequestBodyWithFilter() throws Exception {
-        AtomicReference<String> body = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+        final AtomicReference<String> body = new AtomicReference<>();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
 
-            exchange.sendResponseHeaders(200, 0L);
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+                exchange.sendResponseHeaders(200, 0L);
+
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         DeviceFilter device1 = new DeviceFilter(DeviceFilterType.ANDROID, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
         DeviceFilter device2 = new DeviceFilter(DeviceFilterType.IOS, "3d970087-600e-4bb6-8474-5857d438faaa");
@@ -253,18 +283,23 @@ public class MobileEventStreamTest {
 
     @Test
     public void testRequestBodyWithSubset() throws Exception {
-        AtomicReference<String> body = new AtomicReference<>();
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
+        final AtomicReference<String> body = new AtomicReference<>();
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
 
-            int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
-            byte[] bytes = new byte[length];
-            exchange.getRequestBody().read(bytes);
-            body.set(new String(bytes, UTF_8));
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
 
-            exchange.sendResponseHeaders(200, 0L);
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+                exchange.sendResponseHeaders(200, 0L);
+
+                return null;
+            }
+        };
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         Subset subset = Subset.createPartitionSubset(10, 0);
         StreamQueryDescriptor descriptor = subsetDescriptor(subset);
@@ -280,13 +315,18 @@ public class MobileEventStreamTest {
 
     @Test
     public void testConnectionFail() throws Exception {
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.sendResponseHeaders(500, 0L);
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(500, 0L);
+                return null;
+            }
+        };
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
 
         boolean failed = false;
         try {
@@ -301,29 +341,37 @@ public class MobileEventStreamTest {
 
     @Test
     public void testConnectRedirect() throws Exception {
-        String leaderHost = "SRV=" + randomAlphanumeric(15);
+        final String leaderHost = "SRV=" + randomAlphanumeric(15);
 
-        AtomicReference<String> receivedLeaderHost = new AtomicReference<>();
+        final AtomicReference<String> receivedLeaderHost = new AtomicReference<>();
 
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.getResponseHeaders().add("Set-Cookie", leaderHost);
-            exchange.sendResponseHeaders(307, 0L);
-            exchange.close();
-            return null;
-        })
-        .doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            String value = exchange.getRequestHeaders().getFirst("Cookie");
-            receivedLeaderHost.set(value);
+        Answer firstHttpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.getResponseHeaders().add("Set-Cookie", leaderHost);
+                exchange.sendResponseHeaders(307, 0L);
+                exchange.close();
+                return null;
+            }
+        };
+        Answer secondHttpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                String value = exchange.getRequestHeaders().getFirst("Cookie");
+                receivedLeaderHost.set(value);
 
-            exchange.sendResponseHeaders(200, 0L);
-            exchange.close();
-            return null;
-        })
+                exchange.sendResponseHeaders(200, 0L);
+                exchange.close();
+                return null;
+            }
+        };
+        doAnswer(firstHttpAnswer)
+        .doAnswer(secondHttpAnswer)
         .when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -332,18 +380,23 @@ public class MobileEventStreamTest {
 
     @Test
     public void testExceptionDuringConsume() throws Exception {
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.sendResponseHeaders(200, 0L);
-            exchange.getResponseBody().write(randomAlphabetic(10).getBytes(UTF_8));
-            exchange.getResponseBody().write("\n".getBytes(UTF_8));
-            exchange.close();
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(200, 0L);
+                exchange.getResponseBody().write(randomAlphabetic(10).getBytes(UTF_8));
+                exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                exchange.close();
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         doThrow(new RuntimeException("boom")).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -360,33 +413,47 @@ public class MobileEventStreamTest {
 
     @Test
     public void testCloseKillsConsume() throws Exception {
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.sendResponseHeaders(200, 0L);
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(200, 0L);
 
-            // hoping this is enough to force flushing data down the wire
-            exchange.getResponseBody().write(randomAlphabetic(10000).getBytes(UTF_8));
-            exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                // hoping this is enough to force flushing data down the wire
+                exchange.getResponseBody().write(randomAlphabetic(10000).getBytes(UTF_8));
+                exchange.getResponseBody().write("\n".getBytes(UTF_8));
 
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+                return null;
+            }
+        };
 
-        CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocationOnMock -> {
-            latch.countDown();
-            return null;
-        }).when(consumer).accept(anyString());
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Answer consumerAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                latch.countDown();
+                return null;
+            }
+        };
+
+        doAnswer(consumerAnswer).when(consumer).accept(anyString());
+
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
 
         stream.connect(10, TimeUnit.SECONDS);
 
         ExecutorService thread = Executors.newSingleThreadExecutor();
-        try {
-            Future<Boolean> future = thread.submit(() -> {
+        Callable<Boolean> callable = new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
                 stream.consume(10, TimeUnit.MINUTES);
                 return Boolean.TRUE;
-            });
+            }
+        };
+        try {
+            Future<Boolean> future = thread.submit(callable);
 
             // Wait till we get something from the server
             latch.await(1, TimeUnit.MINUTES);
@@ -408,16 +475,21 @@ public class MobileEventStreamTest {
 
     @Test
     public void testConsumeTimesOut() throws Exception {
-        doAnswer(invocationOnMock -> {
-            HttpExchange exchange = (HttpExchange) invocationOnMock.getArguments()[0];
-            exchange.sendResponseHeaders(200, 0L);
-            return null;
-        }).when(serverHandler).handle(Matchers.<HttpExchange>any());
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(200, 0L);
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         // No body is coming, but consume should exit after 1 second without failure
         long consumeTime;
         try {
-            stream = new MobileEventStream(descriptor(Optional.<Long>empty()), http, consumer, url, fatalExceptionHandler);
+            stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
             stream.connect(10, TimeUnit.SECONDS);
 
             long start = System.currentTimeMillis();
