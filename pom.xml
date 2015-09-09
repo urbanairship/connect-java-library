@@ -21,6 +21,18 @@
     <connection>scm:git:git@atlassian.prod.urbanairship.com:2222/cd/connect-client.git</connection>
   </scm>
 
+
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <url>http://nexus.prod.urbanairship.com/content/repositories/releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>releases</id>
+      <url>http://nexus.prod.urbanairship.com/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <build>
     <plugins>
       <plugin>
