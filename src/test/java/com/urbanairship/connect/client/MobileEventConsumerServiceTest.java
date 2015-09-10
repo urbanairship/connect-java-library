@@ -423,7 +423,7 @@ public class MobileEventConsumerServiceTest {
 
     private Event createEvent(Long offset) {
         String name = randomAlphabetic(20);
-        Optional<Integer> value = Optional.of(2);
+        Optional<Double> value = Optional.of(2.00);
         String interactionType = "Landing Page";
         String interactionId = UUID.randomUUID().toString();
         Optional<String> customerId = Optional.of(randomAlphabetic(10));
