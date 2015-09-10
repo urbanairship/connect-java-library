@@ -51,7 +51,7 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
             lastOffset.set(eventObj.getOffset());
             consumer.accept(eventObj);
         } catch (JsonSyntaxException e) {
-            throw new RuntimeException("Failed to parse event: " + event);
+            log.warn("Error parsing  " + event, e);
         } catch (JsonParseException e) {
             log.warn("Error parsing " + event, e);
         }

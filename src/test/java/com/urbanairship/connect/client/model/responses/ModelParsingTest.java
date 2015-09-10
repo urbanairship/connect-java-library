@@ -49,7 +49,7 @@ public class ModelParsingTest {
     @Test
     public void testCustomMaxEventParsing() throws  Exception {
         String name = "event-name";
-        Optional<Integer> value = Optional.of(60);
+        Optional<Double> value = Optional.of(60.00);
         String interactionType = "Landing Page";
         String interactionId = UUID.randomUUID().toString();
         Optional<String> customerId = Optional.of("George@hotmail.com");
@@ -98,7 +98,7 @@ public class ModelParsingTest {
         String triggeringPushGroupId = UUID.randomUUID().toString();
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>absent(), Optional.<DateTime>absent());
 
-        CustomEvent customEvent = new CustomEvent(name, Optional.<Integer>absent(), Optional.<String>absent(), Optional.<String>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, Optional.<Double>absent(), Optional.<String>absent(), Optional.<String>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);

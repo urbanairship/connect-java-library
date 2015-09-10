@@ -13,7 +13,7 @@ import com.urbanairship.connect.client.model.GsonUtil;
 public class CustomEvent implements EventBody {
 
     private final String name;
-    private final Optional<Integer> value;
+    private final Optional<Double> value;
     @SerializedName("transactional_id")
     private final Optional<String> transactionalId;
     @SerializedName("customer_id")
@@ -28,11 +28,11 @@ public class CustomEvent implements EventBody {
     private final Optional<AssociatedPush> triggeringPush;
 
     private CustomEvent() {
-        this(null, Optional.<Integer>absent(), Optional.<String>absent(), Optional.<String>absent(), null, null, Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent());
+        this(null, Optional.<Double>absent(), Optional.<String>absent(), Optional.<String>absent(), null, null, Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent());
     }
 
     public CustomEvent(String name,
-                       Optional<Integer> value,
+                       Optional<Double> value,
                        Optional<String> transactionalId,
                        Optional<String> customerId,
                        String interactionId,
@@ -53,7 +53,7 @@ public class CustomEvent implements EventBody {
         return name;
     }
 
-    public Optional<Integer> getValue() {
+    public Optional<Double> getValue() {
         return value;
     }
 
