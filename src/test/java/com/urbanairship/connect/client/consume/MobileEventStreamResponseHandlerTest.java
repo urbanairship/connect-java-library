@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -160,5 +161,55 @@ public class MobileEventStreamResponseHandlerTest {
 
         assertTrue(error.isPresent());
         assertEquals(exception, error.get());
+    }
+
+    @Test
+    public void testBodyReceivedBeforeBodyConsumeLatchReleasedHandlerClosesProperly() throws Exception {
+        int code = HttpURLConnection.HTTP_PAYMENT_REQUIRED;
+        String message = RandomStringUtils.randomAlphabetic(20);
+        HttpResponseStatus status = mock(HttpResponseStatus.class);
+        when(status.getStatusCode()).thenReturn(code);
+        when(status.getStatusText()).thenReturn(message);
+
+        HttpResponseHeaders headers = mock(HttpResponseHeaders.class);
+        when(headers.getHeaders()).thenReturn(new FluentCaseInsensitiveStringsMap(Collections.<String, Collection<String>>emptyMap()));
+
+        handler.onStatusReceived(status);
+        handler.onHeadersReceived(headers);
+
+        final CountDownLatch bodyReceivedThreadStarted = new CountDownLatch(1);
+        final CountDownLatch bodyReceivedThreadExit = new CountDownLatch(1);
+        final HttpResponseBodyPart part = mock(HttpResponseBodyPart.class);
+
+        ExecutorService bodyReceivedThread = Executors.newSingleThreadExecutor();
+        Runnable bodyReceivedRunnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    bodyReceivedThreadStarted.countDown();
+                    handler.onBodyPartReceived(part);
+                    bodyReceivedThreadExit.countDown();
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        try {
+            bodyReceivedThread.submit(bodyReceivedRunnable);
+
+            assertTrue(bodyReceivedThreadStarted.await(10, TimeUnit.SECONDS));
+
+            // Wait just an exta little bit to try to guarantee the body received call gets made...
+            Thread.sleep(2000L);
+
+            handler.stop();
+
+            assertTrue(bodyReceivedThreadExit.await(10, TimeUnit.SECONDS));
+        }
+        finally {
+            bodyReceivedThread.shutdownNow();
+        }
     }
 }

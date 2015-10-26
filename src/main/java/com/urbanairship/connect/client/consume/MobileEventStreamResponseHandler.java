@@ -58,8 +58,13 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
         }
 
         error.set(t);
-        stop.set(true);
-    }
+        try {
+            stop();
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted stopping handler on error receipt!", e);
+        }    }
 
     @Override
     public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
@@ -116,6 +121,10 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
     public void stop() throws InterruptedException {
         if (stop.compareAndSet(false, true)) {
             consumePermit.acquire();
+
+            // Trip the consume latch in case consumeBody was never called since we may have received a body part
+            // asynchronously, in which case the onBodyPartReceived call will be stuck waiting on the consumeLatch
+            consumeLatch.countDown();
         }
     }
 }
