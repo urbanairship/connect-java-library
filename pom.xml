@@ -18,8 +18,7 @@
   <scm>
     <connection>scm:git:git@github.com:urbanairship/connect-java-library.git</connection>
   </scm>
-
-
+  
   <build>
     <plugins>
       <plugin>
