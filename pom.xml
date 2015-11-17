@@ -4,7 +4,7 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>1.0.0</version>
 
   <name>Connect Client</name>
   <description>The UA Connect Java client library</description>
@@ -18,7 +18,14 @@
   <scm>
     <connection>scm:git:git@github.com:urbanairship/connect-java-library.git</connection>
   </scm>
-  
+
+  <distributionManagement>
+    <repository>
+      <id>bintray-repo-connect-client</id>
+      <url>https://api.bintray.com/maven/urbanairship/java-client/connect-client/;publish=1</url>
+    </repository>
+  </distributionManagement>
+
   <build>
     <plugins>
       <plugin>
