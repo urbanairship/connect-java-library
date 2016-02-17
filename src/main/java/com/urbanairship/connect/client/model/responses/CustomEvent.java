@@ -11,15 +11,10 @@ import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
 
 public class CustomEvent implements EventBody {
-
     private final String name;
     private final Optional<Double> value;
-    @SerializedName("transactional_id")
-    private final Optional<String> transactionalId;
-    @SerializedName("customer_id")
-    private final Optional<String> customerId;
     @SerializedName("interaction_id")
-    private final String interactionId;
+    private final Optional<String> interactionId;
     @SerializedName("interaction_type")
     private final String interactionType;
     @SerializedName("last_delivered")
@@ -28,21 +23,17 @@ public class CustomEvent implements EventBody {
     private final Optional<AssociatedPush> triggeringPush;
 
     private CustomEvent() {
-        this(null, Optional.<Double>absent(), Optional.<String>absent(), Optional.<String>absent(), null, null, Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent());
+        this(null, Optional.<Double>absent(), Optional.<String>absent(), null, Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent());
     }
 
     public CustomEvent(String name,
                        Optional<Double> value,
-                       Optional<String> transactionalId,
-                       Optional<String> customerId,
-                       String interactionId,
+                       Optional<String> interactionId,
                        String interactionType,
                        Optional<AssociatedPush> lastDelivered,
                        Optional<AssociatedPush> triggeringPush) {
         this.name = name;
         this.value = value;
-        this.transactionalId = transactionalId;
-        this.customerId = customerId;
         this.interactionId = interactionId;
         this.interactionType = interactionType;
         this.lastDelivered = lastDelivered;
@@ -57,15 +48,7 @@ public class CustomEvent implements EventBody {
         return value;
     }
 
-    public Optional<String> getTransactionalId() {
-        return transactionalId;
-    }
-
-    public Optional<String> getCustomerId() {
-        return customerId;
-    }
-
-    public String getInteractionId() {
+    public Optional<String> getInteractionId() {
         return interactionId;
     }
 
@@ -97,28 +80,22 @@ public class CustomEvent implements EventBody {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CustomEvent)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        CustomEvent that = (CustomEvent) o;
+        final CustomEvent that = (CustomEvent) o;
 
-        if (!customerId.equals(that.customerId)) return false;
+        if (!name.equals(that.name)) return false;
+        if (!value.equals(that.value)) return false;
         if (!interactionId.equals(that.interactionId)) return false;
         if (!interactionType.equals(that.interactionType)) return false;
         if (!lastDelivered.equals(that.lastDelivered)) return false;
-        if (!name.equals(that.name)) return false;
-        if (!transactionalId.equals(that.transactionalId)) return false;
-        if (!triggeringPush.equals(that.triggeringPush)) return false;
-        if (!value.equals(that.value)) return false;
-
-        return true;
+        return triggeringPush.equals(that.triggeringPush);
     }
 
     @Override
     public int hashCode() {
         int result = name.hashCode();
         result = 31 * result + value.hashCode();
-        result = 31 * result + transactionalId.hashCode();
-        result = 31 * result + customerId.hashCode();
         result = 31 * result + interactionId.hashCode();
         result = 31 * result + interactionType.hashCode();
         result = 31 * result + lastDelivered.hashCode();
@@ -131,8 +108,6 @@ public class CustomEvent implements EventBody {
         return "CustomEvent{" +
             "name='" + name + '\'' +
             ", value=" + value +
-            ", transactionalId=" + transactionalId +
-            ", customerId=" + customerId +
             ", interactionId='" + interactionId + '\'' +
             ", interactionType='" + interactionType + '\'' +
             ", lastDelivered=" + lastDelivered +
