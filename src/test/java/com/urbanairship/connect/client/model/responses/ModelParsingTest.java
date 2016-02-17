@@ -51,7 +51,7 @@ public class ModelParsingTest {
         String name = "event-name";
         Optional<Double> value = Optional.of(60.00);
         String interactionType = "Landing Page";
-        String interactionId = UUID.randomUUID().toString();
+        Optional<String> interactionId = Optional.of(UUID.randomUUID().toString());
         Optional<String> customerId = Optional.of("George@hotmail.com");
         Optional<String> transactionId = Optional.of("selling all the shoes");
         String lastDeliveredPushId = UUID.randomUUID().toString();
@@ -63,7 +63,7 @@ public class ModelParsingTest {
         Optional<DateTime> triggeringPushTime = Optional.of(DateTime.now().withZone(DateTimeZone.UTC));
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), triggeringPushTime);
 
-        CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, value, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
@@ -71,8 +71,6 @@ public class ModelParsingTest {
         assertEquals(value.get(), parsedCustomEvent.getValue().get());
         assertEquals(interactionType, parsedCustomEvent.getInteractionType());
         assertEquals(interactionId, parsedCustomEvent.getInteractionId());
-        assertEquals(customerId.get(), parsedCustomEvent.getCustomerId().get());
-        assertEquals(transactionId.get(), parsedCustomEvent.getTransactionalId().get());
         assertEquals(lastDeliveredPushId, parsedCustomEvent.getLastDelivered().get().getPushId());
         assertEquals(lastDeliveredGroupId.get(), parsedCustomEvent.getLastDelivered().get().getGroupId().get());
         assertEquals(lastDeliveredVariantId.get(), parsedCustomEvent.getLastDelivered().get().getVariantId().get());
@@ -91,20 +89,18 @@ public class ModelParsingTest {
     public void testCustomEventWithNullsParsing() throws Exception {
         String name = "event-name";
         String interactionType = "Landing Page";
-        String interactionId = UUID.randomUUID().toString();
+        Optional<String> interactionId = Optional.of(UUID.randomUUID().toString());
         String lastDeliveredPushId = UUID.randomUUID().toString();
         AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent());
         String triggeringPushPushId = UUID.randomUUID().toString();
         String triggeringPushGroupId = UUID.randomUUID().toString();
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>absent(), Optional.<DateTime>absent());
 
-        CustomEvent customEvent = new CustomEvent(name, Optional.<Double>absent(), Optional.<String>absent(), Optional.<String>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, Optional.<Double>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
         assertEquals(Optional.<Integer>absent(), parsedCustomEvent.getValue());
-        assertEquals(Optional.<String>absent(), parsedCustomEvent.getCustomerId());
-        assertEquals(Optional.<String>absent(), parsedCustomEvent.getTransactionalId());
         assertEquals(name, parsedCustomEvent.getName());
         assertEquals(interactionType, parsedCustomEvent.getInteractionType());
         assertEquals(interactionId, parsedCustomEvent.getInteractionId());

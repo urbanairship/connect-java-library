@@ -425,9 +425,7 @@ public class MobileEventConsumerServiceTest {
         String name = randomAlphabetic(20);
         Optional<Double> value = Optional.of(2.00);
         String interactionType = "Landing Page";
-        String interactionId = UUID.randomUUID().toString();
-        Optional<String> customerId = Optional.of(randomAlphabetic(10));
-        Optional<String> transactionId = Optional.of(randomAlphabetic(10));
+        Optional<String> interactionId = Optional.of(UUID.randomUUID().toString());
         String lastDeliveredPushId = UUID.randomUUID().toString();
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
         AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
@@ -435,7 +433,7 @@ public class MobileEventConsumerServiceTest {
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
 
-        CustomEvent customEvent = new CustomEvent(name, value, transactionId, customerId, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, value, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
 
         DeviceInfo deviceInfo = DeviceInfo.newBuilder()
             .setChanneId(UUID.randomUUID().toString())
