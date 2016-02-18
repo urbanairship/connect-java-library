@@ -1,0 +1,8 @@
+2016-02-17: Released 2.0.0
+
+	Removed unused fields from Custom Event model objects, and switched
+	one of the fields from String to Optional<String>. This will break any
+	code relying on the Custom Event model object, hence the major version
+	bump.
+
+	diff: https://github.com/urbanairship/connect-java-library/compare/b53aa6d86d6df8cd742c657f9e7a7966f1c3ffd0...00942d2e1d37ffca9af0b5cef8c31cfcbc721a29
