@@ -5,9 +5,9 @@
    worry.
 2. [Submit a PR][gh-pr-docs] against this repository.
 3. If accepted, the maintainers will update our private fork, push the update
-   to the master branch of this repository, close your PR, and then signed jars
-   to [jcenter][bintray-respository], [maven central][maven],
-   and [sonatype][sonatype] artifact repositories.
+   to the master branch of this repository, close your PR, and then upload
+   signed jars to [jcenter][bintray-respository], [maven central][maven], and
+   [sonatype][sonatype] artifact repositories.
 
 [contribution agreement]: http://docs.urbanairship.com/contribution-agreement.html
 [gh-pr-docs]: https://help.github.com/articles/using-pull-requests/
