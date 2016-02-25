@@ -17,6 +17,9 @@ public class ControlEvent implements EventBody {
         return EventType.CONTROL;
     }
 
+    private ControlEvent() {
+       this(null, Optional.<String>absent());
+    }
     public ControlEvent(String pushId, Optional<String> groupId) {
         this.pushId = pushId;
         this.groupId = groupId;
