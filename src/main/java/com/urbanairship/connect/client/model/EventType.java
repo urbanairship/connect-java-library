@@ -20,5 +20,6 @@ public enum EventType {
         RICH_READ,
         IN_APP_MESSAGE_EXPIRATION,
         IN_APP_MESSAGE_RESOLUTION,
-        CONTROL, IN_APP_MESSAGE_DISPLAY
+        CONTROL,
+        IN_APP_MESSAGE_DISPLAY
 }
