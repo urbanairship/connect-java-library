@@ -40,6 +40,7 @@ public class EventAdapter implements JsonDeserializer<Event> {
             .put(EventType.IN_APP_MESSAGE_DISPLAY, InAppMessageDisplayEvent.class)
             .put(EventType.IN_APP_MESSAGE_EXPIRATION, InAppMessageExpirationEvent.class)
             .put(EventType.IN_APP_MESSAGE_RESOLUTION, InAppMessageResolutionEvent.class)
+            .put(EventType.CONTROL, ControlEvent.class)
         .build();
 
     private static final ImmutableList<EventType> emptyEventBodyTypes = ImmutableList.<EventType>builder()
