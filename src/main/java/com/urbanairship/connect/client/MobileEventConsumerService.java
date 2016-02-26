@@ -170,7 +170,7 @@ public class MobileEventConsumerService extends AbstractExecutionThreadService {
         /**
          * Set the Event consumer.
          *
-         * @param consumer Consumer<>Event</>
+         * @param consumer {@code Consumer<Event>}
          * @return Builder
          */
         public Builder setConsumer(Consumer<Event> consumer) {

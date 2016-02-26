@@ -28,7 +28,10 @@ public class DeviceInfoAdapter implements JsonDeserializer<DeviceInfo>, JsonSeri
 
         List<Map.Entry<String, JsonElement>> platforms = new ArrayList<>();
         for (Map.Entry<String, JsonElement> entry : deviceJson.entrySet()) {
-            if (DeviceFilterType.getDeviceType(entry.getKey()).isChannelType()) {
+            final Optional<DeviceFilterType> deviceType = Optional.fromNullable(
+                    DeviceFilterType.getDeviceType(entry.getKey()));
+
+            if (deviceType.isPresent() && deviceType.get().isChannelType()) {
                 platforms.add(entry);
             }
         }
@@ -52,6 +55,18 @@ public class DeviceInfoAdapter implements JsonDeserializer<DeviceInfo>, JsonSeri
             deviceInfoBuilder.setPlatform(DeviceFilterType.getDeviceType(platformOptional.get().getKey()));
         }
 
+        if (deviceJson.has("attributes")) {
+            for (Map.Entry<String, JsonElement> entry : deviceJson.getAsJsonObject("attributes").entrySet()) {
+                deviceInfoBuilder.addAttribute(entry.getKey(), entry.getValue().getAsString());
+            }
+        }
+
+        if (deviceJson.has("identifiers")) {
+            for (Map.Entry<String, JsonElement> entry : deviceJson.getAsJsonObject("identifiers").entrySet()) {
+                deviceInfoBuilder.addIdentifier(entry.getKey(), entry.getValue().getAsString());
+            }
+        }
+
         return deviceInfoBuilder.build();
     }
 
@@ -64,6 +79,23 @@ public class DeviceInfoAdapter implements JsonDeserializer<DeviceInfo>, JsonSeri
         if (src.getNamedUsedId().isPresent()) {
             deviceInfo.addProperty(DeviceFilterType.NAMED_USER.getKey(), src.getNamedUsedId().get());
         }
+
+        if (!src.getAttributes().isEmpty()) {
+            JsonObject attributes = new JsonObject();
+            for (Map.Entry<String, String> entry : src.getAttributes().entrySet()) {
+                attributes.addProperty(entry.getKey(), entry.getValue());
+            }
+            deviceInfo.add("attributes", attributes);
+        }
+
+        if(!src.getIdentifiers().isEmpty()) {
+            JsonObject identifiers = new JsonObject();
+            for (Map.Entry<String, String> entry : src.getIdentifiers().entrySet()) {
+                identifiers.addProperty(entry.getKey(), entry.getValue());
+            }
+            deviceInfo.add("identifiers", identifiers);
+        }
+
         return deviceInfo;
     }
 }

@@ -18,8 +18,9 @@ public interface StreamSupplier {
      *
      * @param descriptor StreamDescriptor containing the app credentials and request info.
      * @param client AsyncHttpClient
-     * @param eventConsumer Consumer<>String</> of the API response events.
+     * @param eventConsumer {@code Consumer<String>} of the API response events.
      * @param url The API URL as a String.
+     * @param fatalExceptionHandler see {@link FatalExceptionHandler}.
      * @return MobileEventStream instance.
      */
     MobileEventStream get(StreamQueryDescriptor descriptor,

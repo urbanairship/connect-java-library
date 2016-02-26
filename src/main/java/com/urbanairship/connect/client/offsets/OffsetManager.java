@@ -14,7 +14,7 @@ public interface OffsetManager {
     /**
      * Gets the last stored offset.
      *
-     * @return Optional<>Long</>
+     * @return {@code Optional<Long>}
      */
     Optional<String> getLastOffset();
 

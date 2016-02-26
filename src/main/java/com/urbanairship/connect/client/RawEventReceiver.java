@@ -30,7 +30,7 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
     /**
      * Default constructor
      *
-     * @param consumer Consumer<>Event</> Implemented by a library user to consume response POJOs.
+     * @param consumer {@code Consumer<Event>} Implemented by a library user to consume response POJOs.
      */
     public RawEventReceiver(Consumer<Event> consumer) {
         this.consumer = consumer;

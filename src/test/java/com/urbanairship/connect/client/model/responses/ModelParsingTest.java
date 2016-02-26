@@ -6,6 +6,7 @@ package com.urbanairship.connect.client.model.responses;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -121,6 +122,19 @@ public class ModelParsingTest {
     public void testDeviceInfoParsing() throws Exception {
         String iosChannel = UUID.randomUUID().toString();
         Optional<String> namedUserId = Optional.of(UUID.randomUUID().toString());
+
+        final ImmutableMap<String, String> attributes = ImmutableMap.of(
+                "a", "1",
+                "b", "2",
+                "c", "3"
+        );
+
+        final ImmutableMap<String, String> identifiers = ImmutableMap.of(
+                "a", "4",
+                "b", "5",
+                "c", "6"
+        );
+
         DeviceInfo deviceInfo = DeviceInfo.newBuilder()
                 .setChanneId(iosChannel)
                 .setPlatform(DeviceFilterType.IOS)
@@ -133,6 +147,21 @@ public class ModelParsingTest {
         assertEquals(iosChannel, parsedDeviceInfo.getChannelId());
         assertEquals(namedUserId.get(), parsedDeviceInfo.getNamedUsedId().get());
         assertEquals(DeviceFilterType.IOS, parsedDeviceInfo.getPlatform());
+
+        deviceInfo = DeviceInfo.newBuilder()
+                .setChanneId(iosChannel)
+                .setPlatform(DeviceFilterType.IOS)
+                .addAttributes(attributes)
+                .addIdentifiers(identifiers)
+                .build();
+
+        json = new String(deviceInfo.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        parsedDeviceInfo = DeviceInfo.parseJSON(json);
+
+        assertEquals(iosChannel, parsedDeviceInfo.getChannelId());
+        assertEquals(DeviceFilterType.IOS, parsedDeviceInfo.getPlatform());
+        assertEquals(attributes, parsedDeviceInfo.getAttributes());
+        assertEquals(identifiers, parsedDeviceInfo.getIdentifiers());
     }
 
     @Test(expected = JsonParseException.class)
