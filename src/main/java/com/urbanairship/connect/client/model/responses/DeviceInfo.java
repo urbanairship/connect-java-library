@@ -7,16 +7,43 @@ package com.urbanairship.connect.client.model.responses;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.GsonUtil;
+
+import java.util.Map;
 
 public class DeviceInfo {
     public static class Builder {
         private Optional<String> namedUsedId = Optional.<String>absent();
         private String channeId;
         private DeviceFilterType platform;
+        private ImmutableMap.Builder<String, String> attributesBuilder = ImmutableMap.builder();
+        private ImmutableMap.Builder<String, String> identifiersBuilder = ImmutableMap.builder();
+
+        public Builder() {
+        }
+
+        public Builder addAttribute(String key, String value) {
+            attributesBuilder.put(key, value);
+            return this;
+        }
+
+        public Builder addAttributes(Map<String, String> map) {
+            attributesBuilder.putAll(map);
+            return this;
+        }
+
+        public Builder addIdentifiers(Map<String, String> map) {
+            identifiersBuilder.putAll(map);
+            return this;
+        }
+        public Builder addIdentifier(String key, String value) {
+            identifiersBuilder.put(key, value);
+            return this;
+        }
 
         public Builder setNamedUsedId(Optional<String> namedUsedId) {
             this.namedUsedId = namedUsedId;
@@ -36,7 +63,7 @@ public class DeviceInfo {
         public DeviceInfo build() {
             Preconditions.checkNotNull(platform, "Platform must be specified");
             Preconditions.checkNotNull(channeId, "Channel ID must be specified");
-            return new DeviceInfo(channeId, platform, namedUsedId);
+            return new DeviceInfo(channeId, platform, namedUsedId, identifiersBuilder.build(), attributesBuilder.build());
         }
     }
 
@@ -45,11 +72,16 @@ public class DeviceInfo {
     private final DeviceFilterType platform;
     @SerializedName("named_user_id")
     private final Optional<String> namedUsedId;
+    private final ImmutableMap<String, String> attributes;
+    private final ImmutableMap<String, String> identifiers;
 
-    private DeviceInfo(String channelId, DeviceFilterType platform, Optional<String> namedUsedId) {
+    private DeviceInfo(String channelId, DeviceFilterType platform, Optional<String> namedUsedId,
+                       ImmutableMap<String, String> attributes, ImmutableMap<String, String> identifiers) {
         this.channelId = channelId;
         this.platform = platform;
         this.namedUsedId = namedUsedId;
+        this.attributes = attributes;
+        this.identifiers = identifiers;
     }
 
     public Optional<String> getNamedUsedId() {
@@ -62,6 +94,14 @@ public class DeviceInfo {
 
     public DeviceFilterType getPlatform() {
         return platform;
+    }
+
+    public ImmutableMap<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public ImmutableMap<String, String> getIdentifiers() {
+        return identifiers;
     }
 
     public static DeviceInfo parseJSONfromBytes(byte[] bytes) {
@@ -82,34 +122,38 @@ public class DeviceInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DeviceInfo that = (DeviceInfo) o;
+        final DeviceInfo that = (DeviceInfo) o;
 
-        if (channelId != null ? !channelId.equals(that.channelId) : that.channelId != null) return false;
+        if (!channelId.equals(that.channelId)) return false;
         if (platform != that.platform) return false;
-        return !(namedUsedId != null ? !namedUsedId.equals(that.namedUsedId) : that.namedUsedId != null);
-
+        if (!namedUsedId.equals(that.namedUsedId)) return false;
+        if (!attributes.equals(that.attributes)) return false;
+        return identifiers.equals(that.identifiers);
     }
 
     @Override
     public int hashCode() {
-        int result = channelId != null ? channelId.hashCode() : 0;
-        result = 31 * result + (platform != null ? platform.hashCode() : 0);
-        result = 31 * result + (namedUsedId != null ? namedUsedId.hashCode() : 0);
+        int result = channelId.hashCode();
+        result = 31 * result + platform.hashCode();
+        result = 31 * result + namedUsedId.hashCode();
+        result = 31 * result + attributes.hashCode();
+        result = 31 * result + identifiers.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
         return "DeviceInfo{" +
-            "channelId='" + channelId + '\'' +
-            ", platform=" + platform +
-            ", namedUsedId=" + namedUsedId +
-            '}';
+                "channelId='" + channelId + '\'' +
+                ", platform=" + platform +
+                ", namedUsedId=" + namedUsedId +
+                ", attributes=" + attributes +
+                ", identifiers=" + identifiers +
+                '}';
     }
 
     public static Builder newBuilder() {
         return new Builder();
     }
-
 }
 

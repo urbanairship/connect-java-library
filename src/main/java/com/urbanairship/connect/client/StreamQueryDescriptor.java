@@ -148,7 +148,7 @@ public final class StreamQueryDescriptor {
         /**
          * Add a Collection of filters.
          *
-         * @param value Collection<>Filters</>
+         * @param value {@code Collection<Filters>}
          * @return Builder
          */
         public Builder addFilters(Collection<Filter> value) {
