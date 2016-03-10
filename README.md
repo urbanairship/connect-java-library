@@ -47,6 +47,9 @@ Usage
 
 The client library provides all the components you need to consume a mobile event stream.
 
+_Note that Connect requests with this client may experience SSL handshake failures unless using the
+**Java Cryptography Extension (JCE) Unlimited Strength** package cipher suite._
+
 Example
 -------
 
@@ -107,9 +110,6 @@ Example
         scheduledExecutorService.schedule(stopConsuming, 60, TimeUnit.SECONDS);
         service.run();
 ```
-
-Note that Connect requests with this client may experience SSL handshake failures unless using the JCE Unlimited
- Strength package cipher suite.
 
 StreamQueryDescriptor
 ---------------------
