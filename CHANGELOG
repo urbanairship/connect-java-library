@@ -1,3 +1,9 @@
+2016-03-10: Released 2.1.0
+
+        Adds support for device attributes,  app-defined identifiers, and a
+        new event type. The new event type, Control events, are not yet defined 
+        in the official documentation.
+
 2016-02-17: Released 2.0.0
 
 	Removed unused fields from Custom Event model objects, and switched
