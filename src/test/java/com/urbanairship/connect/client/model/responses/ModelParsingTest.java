@@ -284,6 +284,32 @@ public class ModelParsingTest {
         assertEquals(variantId.get(), parsedSendEvent.getVariantId().get());
     }
 
+    /* Control Event Tests */
+
+    @Test
+    public void testControlEventParsing() throws Exception {
+        String pushId = UUID.randomUUID().toString();
+        Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
+        ControlEvent controlEvent = new ControlEvent(pushId, groupId);
+
+        String json = new String(controlEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        ControlEvent parsedControlEvent = controlEvent.parseJSON(json);
+
+        assertEquals(pushId, parsedControlEvent.getPushId());
+        assertEquals(groupId.get(), parsedControlEvent.getGroupId().get());
+
+        // let's do that again without a group this time.
+        pushId = UUID.randomUUID().toString();
+        controlEvent = new ControlEvent(pushId, Optional.<String>absent());
+
+        json = new String(controlEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
+        parsedControlEvent = controlEvent.parseJSON(json);
+
+        assertEquals(pushId, parsedControlEvent.getPushId());
+        assertFalse(parsedControlEvent.getGroupId().isPresent());
+    }
+
+
     /* Tag Change Tests */
 
     @Test
