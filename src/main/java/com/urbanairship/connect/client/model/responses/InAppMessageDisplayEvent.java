@@ -25,15 +25,20 @@ public class InAppMessageDisplayEvent implements EventBody {
     @SerializedName("triggering_push")
     private final Optional<AssociatedPush> triggeringPush;
 
+    @SerializedName("session_id")
+    private final Optional<String> sessionId;
+
     private InAppMessageDisplayEvent() {
-        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<AssociatedPush>absent());
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<AssociatedPush>absent(), Optional.<String>absent());
     }
 
-    public InAppMessageDisplayEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<AssociatedPush> triggeringPush) {
+    public InAppMessageDisplayEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId,
+                                    Optional<AssociatedPush> triggeringPush, Optional<String> sessionId) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
         this.triggeringPush = triggeringPush;
+        this.sessionId = sessionId;
     }
 
     public static Builder newBuilder() {
@@ -45,6 +50,7 @@ public class InAppMessageDisplayEvent implements EventBody {
         private Optional<String> groupId = Optional.absent();
         private Optional<Integer> variantId = Optional.absent();
         private Optional<AssociatedPush> triggeringPush = Optional.absent();
+        private Optional<String> sessionId = Optional.absent();
 
         public Builder setPushId(String pushId) {
             this.pushId = pushId;
@@ -66,10 +72,19 @@ public class InAppMessageDisplayEvent implements EventBody {
             return this;
         }
 
+        public Builder setSessionId(String sessionId) {
+            this.sessionId = Optional.of(sessionId);
+            return this;
+        }
+
         public InAppMessageDisplayEvent build() {
             Preconditions.checkNotNull(pushId);
-            return new InAppMessageDisplayEvent(pushId, groupId, variantId, triggeringPush);
+            return new InAppMessageDisplayEvent(pushId, groupId, variantId, triggeringPush, sessionId);
         }
+    }
+
+    public Optional<String> getSessionId() {
+        return sessionId;
     }
 
     public String getPushId() {
@@ -113,29 +128,34 @@ public class InAppMessageDisplayEvent implements EventBody {
                 ", groupId=" + groupId +
                 ", variantId=" + variantId +
                 ", triggeringPush=" + triggeringPush +
+                ", sessionId=" + sessionId +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof InAppMessageDisplayEvent)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        InAppMessageDisplayEvent that = (InAppMessageDisplayEvent) o;
+        final InAppMessageDisplayEvent that = (InAppMessageDisplayEvent) o;
 
-        if (pushId != null ? !pushId.equals(that.pushId) : that.pushId != null) return false;
-        if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) return false;
-        if (variantId != null ? !variantId.equals(that.variantId) : that.variantId != null) return false;
-        return !(triggeringPush != null ? !triggeringPush.equals(that.triggeringPush) : that.triggeringPush != null);
+        if (getPushId() != null ? !getPushId().equals(that.getPushId()) : that.getPushId() != null) return false;
+        if (getGroupId() != null ? !getGroupId().equals(that.getGroupId()) : that.getGroupId() != null) return false;
+        if (getVariantId() != null ? !getVariantId().equals(that.getVariantId()) : that.getVariantId() != null)
+            return false;
+        if (getTriggeringPush() != null ? !getTriggeringPush().equals(that.getTriggeringPush()) : that.getTriggeringPush() != null)
+            return false;
+        return getSessionId() != null ? getSessionId().equals(that.getSessionId()) : that.getSessionId() == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = pushId != null ? pushId.hashCode() : 0;
-        result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
-        result = 31 * result + (variantId != null ? variantId.hashCode() : 0);
-        result = 31 * result + (triggeringPush != null ? triggeringPush.hashCode() : 0);
+        int result = getPushId() != null ? getPushId().hashCode() : 0;
+        result = 31 * result + (getGroupId() != null ? getGroupId().hashCode() : 0);
+        result = 31 * result + (getVariantId() != null ? getVariantId().hashCode() : 0);
+        result = 31 * result + (getTriggeringPush() != null ? getTriggeringPush().hashCode() : 0);
+        result = 31 * result + (getSessionId() != null ? getSessionId().hashCode() : 0);
         return result;
     }
 }

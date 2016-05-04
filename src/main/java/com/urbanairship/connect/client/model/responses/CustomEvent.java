@@ -21,9 +21,12 @@ public class CustomEvent implements EventBody {
     private final Optional<AssociatedPush> lastDelivered;
     @SerializedName("triggering_push")
     private final Optional<AssociatedPush> triggeringPush;
+    @SerializedName("sessionId")
+    private final Optional<String> sessionId;
 
     private CustomEvent() {
-        this(null, Optional.<Double>absent(), Optional.<String>absent(), null, Optional.<AssociatedPush>absent(), Optional.<AssociatedPush>absent());
+        this(null, Optional.<Double>absent(), Optional.<String>absent(), null, Optional.<AssociatedPush>absent(),
+                Optional.<AssociatedPush>absent(), Optional.<String>absent());
     }
 
     public CustomEvent(String name,
@@ -31,13 +34,18 @@ public class CustomEvent implements EventBody {
                        Optional<String> interactionId,
                        String interactionType,
                        Optional<AssociatedPush> lastDelivered,
-                       Optional<AssociatedPush> triggeringPush) {
+                       Optional<AssociatedPush> triggeringPush, Optional<String> sessionId) {
         this.name = name;
         this.value = value;
         this.interactionId = interactionId;
         this.interactionType = interactionType;
         this.lastDelivered = lastDelivered;
         this.triggeringPush = triggeringPush;
+        this.sessionId = sessionId;
+    }
+
+    public Optional<String> getSessionId() {
+        return sessionId;
     }
 
     public String getName() {
@@ -78,41 +86,49 @@ public class CustomEvent implements EventBody {
     }
 
     @Override
+    public String toString() {
+        return "CustomEvent{" +
+                "name='" + name + '\'' +
+                ", value=" + value +
+                ", interactionId=" + interactionId +
+                ", interactionType='" + interactionType + '\'' +
+                ", lastDelivered=" + lastDelivered +
+                ", triggeringPush=" + triggeringPush +
+                ", sessionId=" + sessionId +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         final CustomEvent that = (CustomEvent) o;
 
-        if (!name.equals(that.name)) return false;
-        if (!value.equals(that.value)) return false;
-        if (!interactionId.equals(that.interactionId)) return false;
-        if (!interactionType.equals(that.interactionType)) return false;
-        if (!lastDelivered.equals(that.lastDelivered)) return false;
-        return triggeringPush.equals(that.triggeringPush);
+        if (getName() != null ? !getName().equals(that.getName()) : that.getName() != null) return false;
+        if (getValue() != null ? !getValue().equals(that.getValue()) : that.getValue() != null) return false;
+        if (getInteractionId() != null ? !getInteractionId().equals(that.getInteractionId()) : that.getInteractionId() != null)
+            return false;
+        if (getInteractionType() != null ? !getInteractionType().equals(that.getInteractionType()) : that.getInteractionType() != null)
+            return false;
+        if (getLastDelivered() != null ? !getLastDelivered().equals(that.getLastDelivered()) : that.getLastDelivered() != null)
+            return false;
+        if (getTriggeringPush() != null ? !getTriggeringPush().equals(that.getTriggeringPush()) : that.getTriggeringPush() != null)
+            return false;
+        return getSessionId() != null ? getSessionId().equals(that.getSessionId()) : that.getSessionId() == null;
+
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + value.hashCode();
-        result = 31 * result + interactionId.hashCode();
-        result = 31 * result + interactionType.hashCode();
-        result = 31 * result + lastDelivered.hashCode();
-        result = 31 * result + triggeringPush.hashCode();
+        int result = getName() != null ? getName().hashCode() : 0;
+        result = 31 * result + (getValue() != null ? getValue().hashCode() : 0);
+        result = 31 * result + (getInteractionId() != null ? getInteractionId().hashCode() : 0);
+        result = 31 * result + (getInteractionType() != null ? getInteractionType().hashCode() : 0);
+        result = 31 * result + (getLastDelivered() != null ? getLastDelivered().hashCode() : 0);
+        result = 31 * result + (getTriggeringPush() != null ? getTriggeringPush().hashCode() : 0);
+        result = 31 * result + (getSessionId() != null ? getSessionId().hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return "CustomEvent{" +
-            "name='" + name + '\'' +
-            ", value=" + value +
-            ", interactionId='" + interactionId + '\'' +
-            ", interactionType='" + interactionType + '\'' +
-            ", lastDelivered=" + lastDelivered +
-            ", triggeringPush=" + triggeringPush +
-            '}';
     }
 
     @Override

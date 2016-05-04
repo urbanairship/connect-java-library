@@ -48,10 +48,12 @@ public class InAppMessageResolutionEvent implements EventBody {
     @SerializedName("button_description")
     private final Optional<String> buttonDescription;
 
+    @SerializedName("session_id")
+    private final Optional<String> sessionId;
+
     private final long duration;
 
-
-    public InAppMessageResolutionEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<String> buttonId, Optional<String> buttonGroup, Optional<String> buttonDescription, long duration) {
+    public InAppMessageResolutionEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<String> buttonId, Optional<String> buttonGroup, Optional<String> buttonDescription, Optional<String> sessionId, long duration) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -61,11 +63,12 @@ public class InAppMessageResolutionEvent implements EventBody {
         this.buttonId = buttonId;
         this.buttonGroup = buttonGroup;
         this.buttonDescription = buttonDescription;
+        this.sessionId = sessionId;
         this.duration = duration;
     }
 
     private InAppMessageResolutionEvent() {
-        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), 0);
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), 0);
     }
 
     public static Builder newBuilder() {
@@ -96,6 +99,7 @@ public class InAppMessageResolutionEvent implements EventBody {
         private Optional<String> buttonId = Optional.absent();
         private Optional<String> buttonGroup = Optional.absent();
         private Optional<String> buttonDescription = Optional.absent();
+        private Optional<String> sessionId = Optional.absent();
 
         public Builder setPushId(String pushId) {
             this.pushId = pushId;
@@ -132,66 +136,78 @@ public class InAppMessageResolutionEvent implements EventBody {
             return this;
         }
 
+        public Builder setSessionId(String sessionId) {
+            this.sessionId = Optional.of(sessionId);
+            return this;
+        }
+
         public InAppMessageResolutionEvent build() {
             Preconditions.checkNotNull(pushId, "Must give a a pushId");
             Preconditions.checkNotNull(type, "Must give a type");
             Preconditions.checkNotNull(duration, "Must give a duration");
             Preconditions.checkState(VALID_TYPES.contains(type));
-            return new InAppMessageResolutionEvent(pushId, groupId, variantId, timeSent, triggeringPush, type, buttonId, buttonGroup, buttonDescription, duration);
+            return new InAppMessageResolutionEvent(pushId, groupId, variantId, timeSent, triggeringPush, type, buttonId,
+                    buttonGroup, buttonDescription, sessionId, duration);
         }
     }
 
     @Override
     public String toString() {
         return "InAppMessageResolutionEvent{" +
-            "pushId='" + pushId + '\'' +
-            ", groupId=" + groupId +
-            ", variantId=" + variantId +
-            ", timeSent=" + timeSent +
-            ", triggeringPush=" + triggeringPush +
-            ", type='" + type + '\'' +
-            ", buttonId=" + buttonId +
-            ", buttonGroup=" + buttonGroup +
-            ", buttonDescription=" + buttonDescription +
-            ", duration=" + duration +
-            '}';
+                "pushId='" + pushId + '\'' +
+                ", groupId=" + groupId +
+                ", variantId=" + variantId +
+                ", timeSent=" + timeSent +
+                ", triggeringPush=" + triggeringPush +
+                ", type='" + type + '\'' +
+                ", buttonId=" + buttonId +
+                ", buttonGroup=" + buttonGroup +
+                ", buttonDescription=" + buttonDescription +
+                ", sessionId=" + sessionId +
+                ", duration=" + duration +
+                '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof InAppMessageResolutionEvent)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        InAppMessageResolutionEvent that = (InAppMessageResolutionEvent) o;
+        final InAppMessageResolutionEvent that = (InAppMessageResolutionEvent) o;
 
-        if (duration != that.duration) return false;
-        if (buttonDescription != null ? !buttonDescription.equals(that.buttonDescription) : that.buttonDescription != null)
+        if (getDuration() != that.getDuration()) return false;
+        if (getPushId() != null ? !getPushId().equals(that.getPushId()) : that.getPushId() != null) return false;
+        if (getGroupId() != null ? !getGroupId().equals(that.getGroupId()) : that.getGroupId() != null) return false;
+        if (getVariantId() != null ? !getVariantId().equals(that.getVariantId()) : that.getVariantId() != null)
             return false;
-        if (buttonGroup != null ? !buttonGroup.equals(that.buttonGroup) : that.buttonGroup != null) return false;
-        if (buttonId != null ? !buttonId.equals(that.buttonId) : that.buttonId != null) return false;
-        if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) return false;
-        if (pushId != null ? !pushId.equals(that.pushId) : that.pushId != null) return false;
-        if (timeSent != null ? !timeSent.equals(that.timeSent) : that.timeSent != null) return false;
-        if (triggeringPush != null ? !triggeringPush.equals(that.triggeringPush) : that.triggeringPush != null)
+        if (getTimeSent() != null ? !getTimeSent().equals(that.getTimeSent()) : that.getTimeSent() != null)
             return false;
-        if (type != null ? !type.equals(that.type) : that.type != null) return false;
-        if (variantId != null ? !variantId.equals(that.variantId) : that.variantId != null) return false;
+        if (getTriggeringPush() != null ? !getTriggeringPush().equals(that.getTriggeringPush()) : that.getTriggeringPush() != null)
+            return false;
+        if (getType() != null ? !getType().equals(that.getType()) : that.getType() != null) return false;
+        if (getButtonId() != null ? !getButtonId().equals(that.getButtonId()) : that.getButtonId() != null)
+            return false;
+        if (getButtonGroup() != null ? !getButtonGroup().equals(that.getButtonGroup()) : that.getButtonGroup() != null)
+            return false;
+        if (getButtonDescription() != null ? !getButtonDescription().equals(that.getButtonDescription()) : that.getButtonDescription() != null)
+            return false;
+        return getSessionId() != null ? getSessionId().equals(that.getSessionId()) : that.getSessionId() == null;
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = pushId != null ? pushId.hashCode() : 0;
-        result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
-        result = 31 * result + (variantId != null ? variantId.hashCode() : 0);
-        result = 31 * result + (timeSent != null ? timeSent.hashCode() : 0);
-        result = 31 * result + (triggeringPush != null ? triggeringPush.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + (buttonId != null ? buttonId.hashCode() : 0);
-        result = 31 * result + (buttonGroup != null ? buttonGroup.hashCode() : 0);
-        result = 31 * result + (buttonDescription != null ? buttonDescription.hashCode() : 0);
-        result = 31 * result + (int) (duration ^ (duration >>> 32));
+        int result = getPushId() != null ? getPushId().hashCode() : 0;
+        result = 31 * result + (getGroupId() != null ? getGroupId().hashCode() : 0);
+        result = 31 * result + (getVariantId() != null ? getVariantId().hashCode() : 0);
+        result = 31 * result + (getTimeSent() != null ? getTimeSent().hashCode() : 0);
+        result = 31 * result + (getTriggeringPush() != null ? getTriggeringPush().hashCode() : 0);
+        result = 31 * result + (getType() != null ? getType().hashCode() : 0);
+        result = 31 * result + (getButtonId() != null ? getButtonId().hashCode() : 0);
+        result = 31 * result + (getButtonGroup() != null ? getButtonGroup().hashCode() : 0);
+        result = 31 * result + (getButtonDescription() != null ? getButtonDescription().hashCode() : 0);
+        result = 31 * result + (getSessionId() != null ? getSessionId().hashCode() : 0);
+        result = 31 * result + (int) (getDuration() ^ (getDuration() >>> 32));
         return result;
     }
 
@@ -233,6 +249,10 @@ public class InAppMessageResolutionEvent implements EventBody {
 
     public long getDuration() {
         return duration;
+    }
+
+    public Optional<String> getSessionId() {
+        return sessionId;
     }
 
     @Override

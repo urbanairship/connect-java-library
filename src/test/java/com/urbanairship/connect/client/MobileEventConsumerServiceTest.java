@@ -433,7 +433,7 @@ public class MobileEventConsumerServiceTest {
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
 
-        CustomEvent customEvent = new CustomEvent(name, value, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, value, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush), Optional.<String>absent());
 
         DeviceInfo deviceInfo = DeviceInfo.newBuilder()
             .setChanneId(UUID.randomUUID().toString())

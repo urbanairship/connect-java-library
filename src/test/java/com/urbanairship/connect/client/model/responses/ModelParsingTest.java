@@ -63,8 +63,9 @@ public class ModelParsingTest {
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<DateTime> triggeringPushTime = Optional.of(DateTime.now().withZone(DateTimeZone.UTC));
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), triggeringPushTime);
+        Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
 
-        CustomEvent customEvent = new CustomEvent(name, value, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, value, interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush), sessionId);
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
@@ -81,6 +82,7 @@ public class ModelParsingTest {
         assertEquals(triggeringPushTime.get(), parsedCustomEvent.getTriggeringPush().get().getTime().get());
         assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush().get());
         assertEquals(customEvent, parsedCustomEvent);
+        assertEquals(sessionId, parsedCustomEvent.getSessionId());
 
         CustomEvent parsedFromBytesCustomEvent = CustomEvent.parseJSONfromBytes(customEvent.serializeToJSONBytes());
         assertEquals(customEvent, parsedFromBytesCustomEvent);
@@ -97,7 +99,7 @@ public class ModelParsingTest {
         String triggeringPushGroupId = UUID.randomUUID().toString();
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>absent(), Optional.<DateTime>absent());
 
-        CustomEvent customEvent = new CustomEvent(name, Optional.<Double>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush));
+        CustomEvent customEvent = new CustomEvent(name, Optional.<Double>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush), Optional.<String>absent());
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
 
         CustomEvent parsedCustomEvent = CustomEvent.parseJSON(json);
@@ -110,6 +112,7 @@ public class ModelParsingTest {
         assertEquals(triggeringPushPushId, parsedCustomEvent.getTriggeringPush().get().getPushId());
         assertEquals(triggeringPushGroupId, parsedCustomEvent.getTriggeringPush().get().getGroupId().get());
         assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush().get());
+        assertEquals(Optional.absent(), parsedCustomEvent.getSessionId());
         assertEquals(customEvent, parsedCustomEvent);
 
         CustomEvent parsedFromBytesCustomEvent = CustomEvent.parseJSONfromBytes(customEvent.serializeToJSONBytes());
@@ -443,7 +446,7 @@ public class ModelParsingTest {
         String pushId = UUID.randomUUID().toString();
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> variantId = Optional.of(1);
-        InAppMessageDisplayEvent inAppMessageDisplayEvent = new InAppMessageDisplayEvent(pushId, groupId, variantId, Optional.of(triggeringPush));
+        InAppMessageDisplayEvent inAppMessageDisplayEvent = new InAppMessageDisplayEvent(pushId, groupId, variantId, Optional.of(triggeringPush), Optional.<String>absent());
         String json = new String(inAppMessageDisplayEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageDisplayEvent parsedInAppMessageDisplayEvent = InAppMessageDisplayEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageDisplayEvent.getPushId());
@@ -466,7 +469,7 @@ public class ModelParsingTest {
         Optional<String> buttonGroup = Optional.of(UUID.randomUUID().toString());
         Optional<String> buttonDescription = Optional.of(UUID.randomUUID().toString());
         long duration = 9001;
-        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<DateTime>absent(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, duration);
+        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<DateTime>absent(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, Optional.<String>absent(), duration);
         String json = new String(inAppMessageResolutionEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageResolutionEvent parsedInAppMessageResolution = InAppMessageResolutionEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageResolution.getPushId());
@@ -499,7 +502,8 @@ public class ModelParsingTest {
 
         String type = InAppMessageExpirationEvent.ALREADY_DISPLAYED;
 
-        InAppMessageExpirationEvent inAppMessageExpirationEvent = new InAppMessageExpirationEvent(pushId, groupId, variantId, Optional.<DateTime>absent(), triggeringPush, type, Optional.<DateTime>absent(), replacingPush);
+        InAppMessageExpirationEvent inAppMessageExpirationEvent = new InAppMessageExpirationEvent(pushId, groupId, variantId,
+                Optional.<DateTime>absent(), triggeringPush, type, Optional.<DateTime>absent(), replacingPush, Optional.<String>absent());
         String json = new String(inAppMessageExpirationEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageExpirationEvent parsedInAppMessageExpirationEvent = InAppMessageExpirationEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageExpirationEvent.getPushId());
@@ -518,6 +522,42 @@ public class ModelParsingTest {
 
         String serialized = GsonUtil.getGson().toJson(parsed);
         assertEquals(serialized, timestamp);
+    }
+
+    @Test
+    public void testScreenViewedRoundTrip() {
+        final String sessionId = UUID.randomUUID().toString();
+        final String viewedScreen = "what a beautiful screen";
+        final Optional<String> previousScreen = Optional.of("that screen was not as hot");
+        final long duration = 10000;
+
+        ScreenViewedEvent screenViewedEvent = new ScreenViewedEvent(duration, viewedScreen, previousScreen, sessionId);
+
+        String json = new String(screenViewedEvent.serializeToJSONBytes());
+        final ScreenViewedEvent parsedScreenViewEvent = ScreenViewedEvent.parseJSON(json);
+
+        assertEquals(sessionId, parsedScreenViewEvent.getSessionId());
+        assertEquals(viewedScreen, parsedScreenViewEvent.getViewedScreen());
+        assertEquals(previousScreen, parsedScreenViewEvent.getPreviousScreen());
+        assertEquals(duration, parsedScreenViewEvent.getDuration());
+    }
+
+
+    @Test
+    public void testScreenViewedFromString() {
+        final String raw = "{\n" +
+                "        \"duration\": 3095,\n" +
+                "        \"previous_screen\": \"PreferencesActivity\",\n" +
+                "        \"session_id\": \"496c48e5-af4c-40c1-ba65-a0b18e0bed98\",\n" +
+                "        \"viewed_screen\": \"MainActivity\"\n" +
+                "    }";
+
+        final ScreenViewedEvent screenViewedEvent = ScreenViewedEvent.parseJSON(raw);
+
+        assertEquals(3095, screenViewedEvent.getDuration());
+        assertEquals("PreferencesActivity", screenViewedEvent.getPreviousScreen().get());
+        assertEquals("496c48e5-af4c-40c1-ba65-a0b18e0bed98", screenViewedEvent.getSessionId());
+        assertEquals("MainActivity", screenViewedEvent.getViewedScreen());
     }
 
 }

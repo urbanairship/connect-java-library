@@ -21,5 +21,6 @@ public enum EventType {
         IN_APP_MESSAGE_EXPIRATION,
         IN_APP_MESSAGE_RESOLUTION,
         CONTROL,
+        SCREEN_VIEWED,
         IN_APP_MESSAGE_DISPLAY
 }
