@@ -13,7 +13,9 @@ public class ScreenViewedEvent implements EventBody {
     private final long duration;
     @SerializedName("viewed_screen")
     private final String viewedScreen;
+    @SerializedName("previous_screen")
     private final Optional<String> previousScreen;
+    @SerializedName("session_id")
     private final String sessionId;
 
     private ScreenViewedEvent() {

@@ -525,7 +525,7 @@ public class ModelParsingTest {
     }
 
     @Test
-    public void testScreenViewed() {
+    public void testScreenViewedRoundTrip() {
         final String sessionId = UUID.randomUUID().toString();
         final String viewedScreen = "what a beautiful screen";
         final Optional<String> previousScreen = Optional.of("that screen was not as hot");
@@ -540,6 +540,24 @@ public class ModelParsingTest {
         assertEquals(viewedScreen, parsedScreenViewEvent.getViewedScreen());
         assertEquals(previousScreen, parsedScreenViewEvent.getPreviousScreen());
         assertEquals(duration, parsedScreenViewEvent.getDuration());
+    }
+
+
+    @Test
+    public void testScreenViewedFromString() {
+        final String raw = "{\n" +
+                "        \"duration\": 3095,\n" +
+                "        \"previous_screen\": \"PreferencesActivity\",\n" +
+                "        \"session_id\": \"496c48e5-af4c-40c1-ba65-a0b18e0bed98\",\n" +
+                "        \"viewed_screen\": \"MainActivity\"\n" +
+                "    }";
+
+        final ScreenViewedEvent screenViewedEvent = ScreenViewedEvent.parseJSON(raw);
+
+        assertEquals(3095, screenViewedEvent.getDuration());
+        assertEquals("PreferencesActivity", screenViewedEvent.getPreviousScreen().get());
+        assertEquals("496c48e5-af4c-40c1-ba65-a0b18e0bed98", screenViewedEvent.getSessionId());
+        assertEquals("MainActivity", screenViewedEvent.getViewedScreen());
     }
 
 }
