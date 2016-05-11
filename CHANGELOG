@@ -1,7 +1,12 @@
+2016-05-11: Released 2.2.0
+
+	Screen View are now supported in the client. Also adds session_ids to
+	the events for custom events and in app messages.
+
 2016-03-10: Released 2.1.0
 
         Adds support for device attributes,  app-defined identifiers, and a
-        new event type. The new event type, Control events, are not yet defined 
+        new event type. The new event type, Control events, are not yet defined
         in the official documentation.
 
 2016-02-17: Released 2.0.0
