@@ -49,11 +49,6 @@ public class InAppMessageExpirationEvent implements EventBody {
     @SerializedName("session_id")
     private final Optional<String> sessionId;
 
-    private InAppMessageExpirationEvent() {
-        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, null,
-                Optional.<AssociatedPush>absent(), Optional.<String>absent());
-    }
-
     public static InAppMessageExpirationEvent parseJSONfromBytes(byte[] bytes) {
         JsonObject jsonObject = GsonUtil.parseJSONfromBytes(bytes);
         return parseJSON(jsonObject.toString());
@@ -142,6 +137,12 @@ public class InAppMessageExpirationEvent implements EventBody {
         this.replacingPush = replacingPush;
         this.sessionId = sessionId;
     }
+
+    private InAppMessageExpirationEvent() {
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, Optional.<DateTime>absent(),
+                Optional.<AssociatedPush>absent(), Optional.<String>absent());
+    }
+
 
     @Override
     public EventType getType() {

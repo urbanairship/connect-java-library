@@ -558,6 +558,19 @@ public class ModelParsingTest {
         assertEquals("PreferencesActivity", screenViewedEvent.getPreviousScreen().get());
         assertEquals("496c48e5-af4c-40c1-ba65-a0b18e0bed98", screenViewedEvent.getSessionId());
         assertEquals("MainActivity", screenViewedEvent.getViewedScreen());
+
+        final String noPrevScreenRaw = "{\n" +
+                "        \"duration\": 3095,\n" +
+                "        \"session_id\": \"496c48e5-af4c-40c1-ba65-a0b18e0bed98\",\n" +
+                "        \"viewed_screen\": \"MainActivity\"\n" +
+                "    }";
+
+        final ScreenViewedEvent noPrevScreen = ScreenViewedEvent.parseJSON(noPrevScreenRaw);
+
+        assertEquals(3095, noPrevScreen.getDuration());
+        assertFalse(noPrevScreen.getPreviousScreen().isPresent());
+        assertEquals("496c48e5-af4c-40c1-ba65-a0b18e0bed98", noPrevScreen.getSessionId());
+        assertEquals("MainActivity", noPrevScreen.getViewedScreen());
     }
 
 }
