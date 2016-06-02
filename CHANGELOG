@@ -1,3 +1,11 @@
+2016-06-02: Release 2.2.4
+
+	Caught an error where device info attributes and identifiers were
+	reversed.
+
+	Skipping a few patch versions due to churn while we figured out some
+	internal distribution logic.
+
 2016-05-23: Released 2.2.1
 
 	Screen View were not parsing properly, in app message expiration events
