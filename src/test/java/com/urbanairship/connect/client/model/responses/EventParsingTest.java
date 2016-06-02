@@ -128,9 +128,15 @@ public class EventParsingTest {
                 "     type: 'EXPIRED' },\n" +
                 "  type: 'IN_APP_MESSAGE_EXPIRATION' }";
 
-        GsonUtil.getGson().fromJson(screenViewed, Event.class);
+        final Event event = GsonUtil.getGson().fromJson(screenViewed, Event.class);
+        GsonUtil.getGson().fromJson(GsonUtil.getGson().toJson(event), Event.class);
+
         final Event inAppMessageEvent = GsonUtil.getGson().fromJson(inAppMessage, Event.class);
 
         final String s = GsonUtil.getGson().toJson(inAppMessageEvent);
+
+        System.out.println(s);
+
+
     }
 }
