@@ -134,9 +134,5 @@ public class EventParsingTest {
         final Event inAppMessageEvent = GsonUtil.getGson().fromJson(inAppMessage, Event.class);
 
         final String s = GsonUtil.getGson().toJson(inAppMessageEvent);
-
-        System.out.println(s);
-
-
     }
 }
