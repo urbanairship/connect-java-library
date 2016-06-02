@@ -63,7 +63,7 @@ public class DeviceInfo {
         public DeviceInfo build() {
             Preconditions.checkNotNull(platform, "Platform must be specified");
             Preconditions.checkNotNull(channeId, "Channel ID must be specified");
-            return new DeviceInfo(channeId, platform, namedUsedId, identifiersBuilder.build(), attributesBuilder.build());
+            return new DeviceInfo(channeId, platform, namedUsedId, attributesBuilder.build(), identifiersBuilder.build());
         }
     }
 
