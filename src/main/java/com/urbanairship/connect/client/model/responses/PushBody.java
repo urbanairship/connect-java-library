@@ -7,12 +7,15 @@ package com.urbanairship.connect.client.model.responses;
 
 import com.google.common.base.Optional;
 import com.google.gson.JsonObject;
+import com.google.gson.annotations.SerializedName;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
 
 public class PushBody implements EventBody {
 
-    private final String pushId;
+    @SerializedName("push_id")
+    private final Optional<String> pushId;
+    @SerializedName("group_id")
     private final Optional<String> groupId;
     private final boolean trimmed;
     private final String payload;
@@ -21,14 +24,14 @@ public class PushBody implements EventBody {
         this(null, Optional.<String>absent(), false, null);
     }
 
-    public PushBody(String pushId, Optional<String> groupId, boolean trimmed, String payload) {
+    public PushBody(Optional<String> pushId, Optional<String> groupId, boolean trimmed, String payload) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.trimmed = trimmed;
         this.payload = payload;
     }
 
-    public String getPushId() {
+    public Optional<String> getPushId() {
         return pushId;
     }
 

@@ -426,10 +426,10 @@ public class MobileEventConsumerServiceTest {
         Optional<Double> value = Optional.of(2.00);
         String interactionType = "Landing Page";
         Optional<String> interactionId = Optional.of(UUID.randomUUID().toString());
-        String lastDeliveredPushId = UUID.randomUUID().toString();
+        Optional<String> lastDeliveredPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
         AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
-        String triggeringPushPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringPushPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
 

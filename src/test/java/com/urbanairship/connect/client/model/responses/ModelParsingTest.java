@@ -55,11 +55,11 @@ public class ModelParsingTest {
         Optional<String> interactionId = Optional.of(UUID.randomUUID().toString());
         Optional<String> customerId = Optional.of("George@hotmail.com");
         Optional<String> transactionId = Optional.of("selling all the shoes");
-        String lastDeliveredPushId = UUID.randomUUID().toString();
+        Optional<String> lastDeliveredPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> lastDeliveredVariantId = Optional.of(2);
         AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, lastDeliveredVariantId, Optional.<DateTime>absent());
-        String triggeringPushPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringPushPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<DateTime> triggeringPushTime = Optional.of(DateTime.now().withZone(DateTimeZone.UTC));
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), triggeringPushTime);
@@ -93,11 +93,11 @@ public class ModelParsingTest {
         String name = "event-name";
         String interactionType = "Landing Page";
         Optional<String> interactionId = Optional.of(UUID.randomUUID().toString());
-        String lastDeliveredPushId = UUID.randomUUID().toString();
+        Optional<String> lastDeliveredPushId = Optional.of(UUID.randomUUID().toString());
         AssociatedPush lastDelivered = new AssociatedPush(lastDeliveredPushId, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent());
-        String triggeringPushPushId = UUID.randomUUID().toString();
-        String triggeringPushGroupId = UUID.randomUUID().toString();
-        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, Optional.of(triggeringPushGroupId), Optional.<Integer>absent(), Optional.<DateTime>absent());
+        Optional<String> triggeringPushPushId = Optional.of(UUID.randomUUID().toString());
+        Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
+        AssociatedPush triggeringPush = new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent());
 
         CustomEvent customEvent = new CustomEvent(name, Optional.<Double>absent(), interactionId, interactionType, Optional.of(lastDelivered), Optional.of(triggeringPush), Optional.<String>absent());
         String json = new String(customEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
@@ -110,7 +110,7 @@ public class ModelParsingTest {
         assertEquals(lastDeliveredPushId, parsedCustomEvent.getLastDelivered().get().getPushId());
         assertEquals(lastDelivered, parsedCustomEvent.getLastDelivered().get());
         assertEquals(triggeringPushPushId, parsedCustomEvent.getTriggeringPush().get().getPushId());
-        assertEquals(triggeringPushGroupId, parsedCustomEvent.getTriggeringPush().get().getGroupId().get());
+        assertEquals(triggeringPushGroupId, parsedCustomEvent.getTriggeringPush().get().getGroupId());
         assertEquals(triggeringPush, parsedCustomEvent.getTriggeringPush().get());
         assertEquals(Optional.absent(), parsedCustomEvent.getSessionId());
         assertEquals(customEvent, parsedCustomEvent);
@@ -203,10 +203,10 @@ public class ModelParsingTest {
 
     @Test
     public void testMaxOpenEventParsing() throws Exception {
-        String lastDeliveredPushId = UUID.randomUUID().toString();
+        Optional<String> lastDeliveredPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> lastDeliveredGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, lastDeliveredGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent()));
-        String triggeringPushPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringPushPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> triggeringPushGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushPushId, triggeringPushGroupId, Optional.<Integer>absent(), Optional.<DateTime>absent()));
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
@@ -226,7 +226,7 @@ public class ModelParsingTest {
 
     @Test
     public void testOpenEventWithNullsParsing() throws Exception {
-        String lastDeliveredPushId = UUID.randomUUID().toString();
+        Optional<String> lastDeliveredPushId = Optional.of(UUID.randomUUID().toString());
         Optional<AssociatedPush> lastDelivered = Optional.of(new AssociatedPush(lastDeliveredPushId, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent()));
         Optional<String> sessionId = Optional.of(UUID.randomUUID().toString());
         OpenEvent openEvent = new OpenEvent(lastDelivered, Optional.<AssociatedPush>absent(), sessionId);
@@ -255,7 +255,7 @@ public class ModelParsingTest {
 
     @Test
     public void testPushBodyParsing() throws Exception {
-        String pushId = UUID.randomUUID().toString();
+        Optional<String> pushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> groupId = Optional.of(UUID.randomUUID().toString());
         boolean trimmed = false;
         String payload = "eyJkZXZpY2VfdHlwZXMiOiBbImFuZHJvaWQiLCAiaW9zIl0sICJub3RpZmljYXRpb24iOiB7ImFuZHJvaWQiOiB7fSwgImlvcyI6IHsiYmFkZ2UiOiAiKzEifSwgImFsZXJ0IjogIklUIFdJTEwgV09SSyEifSwgImF1ZGllbmNlIjogImFsbCJ9";
@@ -439,7 +439,7 @@ public class ModelParsingTest {
 
     @Test
     public void testInAppMessageDisplayEventParsing() throws Exception {
-        String triggeringPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> triggeringVariantId = Optional.of(1);
         AssociatedPush triggeringPush = new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<DateTime>absent());
@@ -457,7 +457,7 @@ public class ModelParsingTest {
 
     @Test
     public void testInAppMessageResolutionEventParsing() throws Exception {
-        String triggeringPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> triggeringVariantId = Optional.of(1);
         Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<DateTime>absent()));
@@ -485,13 +485,13 @@ public class ModelParsingTest {
 
     @Test
     public void testInAppMessageExpirationEventParsing() throws Exception {
-        String triggeringPushId = UUID.randomUUID().toString();
+        Optional<String> triggeringPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> triggeringGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> triggeringVariantId = Optional.of(1);
         Optional<AssociatedPush> triggeringPush = Optional.of(new AssociatedPush(triggeringPushId, triggeringGroupId, triggeringVariantId, Optional.<DateTime>absent()));
 
 
-        String replacingPushId = UUID.randomUUID().toString();
+        Optional<String> replacingPushId = Optional.of(UUID.randomUUID().toString());
         Optional<String> replacingGroupId = Optional.of(UUID.randomUUID().toString());
         Optional<Integer> replacingVariantId = Optional.of(2);
         Optional<AssociatedPush> replacingPush = Optional.of(new AssociatedPush(replacingPushId, replacingGroupId, replacingVariantId, Optional.<DateTime>absent()));

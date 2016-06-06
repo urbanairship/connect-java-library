@@ -11,7 +11,7 @@ import org.joda.time.DateTime;
 public class AssociatedPush {
 
     @SerializedName("push_id")
-    private String pushId;
+    private Optional<String> pushId;
     @SerializedName("group_id")
     private Optional<String> groupId;
     @SerializedName("variant_id")
@@ -22,7 +22,7 @@ public class AssociatedPush {
         this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent());
     }
 
-    public AssociatedPush(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> time) {
+    public AssociatedPush(Optional<String> pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> time) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -30,7 +30,7 @@ public class AssociatedPush {
     }
 
 
-    public String getPushId() {
+    public Optional<String> getPushId() {
         return pushId;
     }
 
