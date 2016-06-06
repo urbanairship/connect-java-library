@@ -1,3 +1,10 @@
+2016-06-06: Release 3.0.0
+
+	Caught an error where push and group identifiers would not be set on
+	push body events. Push ids are also optional on many events, so they
+	were changed to Guava Optionals on associated pushes, which is the
+	breaking change requiring the major version bump.
+
 2016-06-02: Release 2.2.4
 
 	Caught an error where device info attributes and identifiers were
