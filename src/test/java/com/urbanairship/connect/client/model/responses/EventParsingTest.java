@@ -6,6 +6,7 @@ package com.urbanairship.connect.client.model.responses;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
@@ -117,8 +118,11 @@ public class EventParsingTest {
         assertEquals(expectedGroupId, pushBody.getGroupId().get());
         assertEquals(expectedPayload, pushBody.getPayload());
         assertTrue(expectedTrimmed);
-        String raw = GsonUtil.getGson().toJson(foundEvent);
-        System.out.println(raw);
+        JsonObject tree = GsonUtil.getGson().toJsonTree(foundEvent).getAsJsonObject();
+
+        assertEquals(expectedGroupId, tree.get("body").getAsJsonObject().get("group_id").getAsString());
+        assertEquals(expectedPayload, tree.get("body").getAsJsonObject().get("payload").getAsString());
+        assertEquals(expectedTrimmed, tree.get("body").getAsJsonObject().get("trimmed").getAsBoolean());
 
     }
 
