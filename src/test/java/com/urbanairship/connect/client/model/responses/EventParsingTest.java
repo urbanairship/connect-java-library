@@ -6,6 +6,7 @@ package com.urbanairship.connect.client.model.responses;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
@@ -67,13 +68,11 @@ public class EventParsingTest {
 
     @Test
     public void canParsePushBody() {
-        String expectedGroupId = "0073e881-ae01-4770-943a-6e9ef340fb23";
         String expectedPushId = "5cc00974-ebab-480a-9324-06f8d8fc2ae4";
         String expectedPayload = "aGk=";
         boolean expectedTrimmed = true;
         String pushBodyRaw = "{\n" +
                 "    \"body\": {\n" +
-                "        \"group_id\": \"0073e881-ae01-4770-943a-6e9ef340fb23\",\n" +
                 "        \"payload\": \"aGk=\",\n" +
                 "        \"push_id\": \"5cc00974-ebab-480a-9324-06f8d8fc2ae4\",\n" +
                 "        \"trimmed\": true\n" +
@@ -89,10 +88,42 @@ public class EventParsingTest {
                 "}";
         Event foundEvent = GsonUtil.getGson().fromJson(pushBodyRaw, Event.class);
         PushBody pushBody = (PushBody) foundEvent.getEventBody();
-        assertEquals(expectedGroupId, pushBody.getGroupId().get());
         assertEquals(expectedPushId, pushBody.getPushId().get());
         assertEquals(expectedPayload, pushBody.getPayload());
         assertTrue(expectedTrimmed);
+    }
+
+    @Test
+    public void canParsePushBodyWithGroupId() {
+        String expectedGroupId = "0073e881-ae01-4770-943a-6e9ef340fb23";
+        String expectedPayload = "aGk=";
+        boolean expectedTrimmed = true;
+        String pushBodyRaw = "{\n" +
+                "    \"body\": {\n" +
+                "        \"group_id\": \"0073e881-ae01-4770-943a-6e9ef340fb23\",\n" +
+                "        \"payload\": \"aGk=\",\n" +
+                "        \"trimmed\": true\n" +
+                "    },\n" +
+                "    \"device\": {\n" +
+                "        \"ios_channel\": \"f6b36ef3-3271-40c2-a7a4-efb17d9a512f\"\n" +
+                "    },\n" +
+                "    \"id\": \"ef4ffe00-874d-4589-9401-6a34c43dd342\",\n" +
+                "    \"occurred\": \"2016-06-06T19:03:30.189Z\",\n" +
+                "    \"offset\": \"0\",\n" +
+                "    \"processed\": \"2016-06-06T19:03:30.189Z\",\n" +
+                "    \"type\": \"PUSH_BODY\"\n" +
+                "}";
+        Event foundEvent = GsonUtil.getGson().fromJson(pushBodyRaw, Event.class);
+        PushBody pushBody = (PushBody) foundEvent.getEventBody();
+        assertEquals(expectedGroupId, pushBody.getGroupId().get());
+        assertEquals(expectedPayload, pushBody.getPayload());
+        assertTrue(expectedTrimmed);
+        JsonObject tree = GsonUtil.getGson().toJsonTree(foundEvent).getAsJsonObject();
+
+        assertEquals(expectedGroupId, tree.get("body").getAsJsonObject().get("group_id").getAsString());
+        assertEquals(expectedPayload, tree.get("body").getAsJsonObject().get("payload").getAsString());
+        assertEquals(expectedTrimmed, tree.get("body").getAsJsonObject().get("trimmed").getAsBoolean());
+
     }
 
     @Test
