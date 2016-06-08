@@ -36,7 +36,7 @@ public class OptionalTypeAdapterFactory implements TypeAdapterFactory {
         return new TypeAdapter<Optional<E>>() {
 
             public void write(JsonWriter out, Optional<E> value) throws IOException {
-                if (value.isPresent()) {
+                if (value != null && value.isPresent()) {
                     elementAdapter.write(out, value.get());
                 } else {
                     out.nullValue();
