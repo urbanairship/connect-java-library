@@ -21,7 +21,7 @@ public class PushBody implements EventBody {
     private final String payload;
 
     private PushBody() {
-        this(null, Optional.<String>absent(), false, null);
+        this(Optional.<String>absent(), Optional.<String>absent(), false, null);
     }
 
     public PushBody(Optional<String> pushId, Optional<String> groupId, boolean trimmed, String payload) {
