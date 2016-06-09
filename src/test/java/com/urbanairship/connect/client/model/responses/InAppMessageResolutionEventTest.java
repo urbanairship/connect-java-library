@@ -10,6 +10,8 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 
 public class InAppMessageResolutionEventTest {
@@ -297,5 +299,35 @@ public class InAppMessageResolutionEventTest {
         assertEquals(pushId, triggering_push.get("push_id").getAsString());
         assertEquals(groupdId, triggering_push.get("group_id").getAsString());
         assertEquals(variant, triggering_push.get("variant_id").getAsInt());
+    }
+
+    @Test
+    public void testBuilder() throws Exception {
+        final String pushId = UUID.randomUUID().toString();
+        final int variantID = 1;
+        final DateTime timeSent = DateTime.now();
+        final long duration = 1000L;
+        final String type = "USER_DISMISSED";
+        final String sessionId = UUID.randomUUID().toString();
+
+        final InAppMessageResolutionEvent event = InAppMessageResolutionEvent.newBuilder()
+                .setPushId(pushId)
+                .setVariantId(variantID)
+                .setTimeSent(timeSent)
+                .setDuration(duration)
+                .setType(type)
+                .setSessionId(sessionId).build();
+
+        assertEquals(Optional.<String>absent(), event.getButtonDescription());
+        assertEquals(Optional.<String>absent(), event.getButtonGroup());
+        assertEquals(Optional.<String>absent(), event.getButtonId());
+        assertEquals(Optional.absent(), event.getTriggeringPush());
+        assertEquals(Optional.<String>absent(), event.getGroupId());
+        assertEquals(duration, event.getDuration().get().longValue());
+        assertEquals(pushId, event.getPushId());
+        assertEquals(variantID, event.getVariantId().get().intValue());
+        assertEquals(type, event.getResolutionType());
+        assertEquals(sessionId, event.getSessionId().get());
+        assertEquals(timeSent, event.getTimeSent().get());
     }
 }

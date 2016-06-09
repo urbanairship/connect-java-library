@@ -131,8 +131,8 @@ public class InAppMessageResolutionEvent implements EventBody {
             return this;
         }
 
-        public Builder setDuration(Optional<Long> duration) {
-            this.duration = duration;
+        public Builder setDuration(long duration) {
+            this.duration = Optional.of(duration);
             return this;
         }
 
