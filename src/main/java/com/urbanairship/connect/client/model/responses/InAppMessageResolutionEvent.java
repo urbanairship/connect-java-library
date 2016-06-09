@@ -95,7 +95,7 @@ public class InAppMessageResolutionEvent implements EventBody {
         private Optional<DateTime> timeSent = Optional.absent();
         private Optional<AssociatedPush> triggeringPush = Optional.absent();
         private String type;
-        private Optional<Long> duration;
+        private Optional<Long> duration = Optional.absent();
         private Optional<String> buttonId = Optional.absent();
         private Optional<String> buttonGroup = Optional.absent();
         private Optional<String> buttonDescription = Optional.absent();
