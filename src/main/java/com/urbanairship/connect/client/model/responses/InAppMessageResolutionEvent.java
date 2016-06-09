@@ -51,9 +51,9 @@ public class InAppMessageResolutionEvent implements EventBody {
     @SerializedName("session_id")
     private final Optional<String> sessionId;
 
-    private final long duration;
+    private final Optional<Long> duration;
 
-    public InAppMessageResolutionEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<String> buttonId, Optional<String> buttonGroup, Optional<String> buttonDescription, Optional<String> sessionId, long duration) {
+    public InAppMessageResolutionEvent(String pushId, Optional<String> groupId, Optional<Integer> variantId, Optional<DateTime> timeSent, Optional<AssociatedPush> triggeringPush, String type, Optional<String> buttonId, Optional<String> buttonGroup, Optional<String> buttonDescription, Optional<String> sessionId, Optional<Long> duration) {
         this.pushId = pushId;
         this.groupId = groupId;
         this.variantId = variantId;
@@ -68,7 +68,7 @@ public class InAppMessageResolutionEvent implements EventBody {
     }
 
     private InAppMessageResolutionEvent() {
-        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), 0);
+        this(null, Optional.<String>absent(), Optional.<Integer>absent(), Optional.<DateTime>absent(), Optional.<AssociatedPush>absent(), null, Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), Optional.<String>absent(), Optional.<Long>absent());
     }
 
     public static Builder newBuilder() {
@@ -95,7 +95,7 @@ public class InAppMessageResolutionEvent implements EventBody {
         private Optional<DateTime> timeSent = Optional.absent();
         private Optional<AssociatedPush> triggeringPush = Optional.absent();
         private String type;
-        private long duration;
+        private Optional<Long> duration;
         private Optional<String> buttonId = Optional.absent();
         private Optional<String> buttonGroup = Optional.absent();
         private Optional<String> buttonDescription = Optional.absent();
@@ -131,7 +131,7 @@ public class InAppMessageResolutionEvent implements EventBody {
             return this;
         }
 
-        public Builder setDuration(long duration) {
+        public Builder setDuration(Optional<Long> duration) {
             this.duration = duration;
             return this;
         }
@@ -175,7 +175,6 @@ public class InAppMessageResolutionEvent implements EventBody {
 
         final InAppMessageResolutionEvent that = (InAppMessageResolutionEvent) o;
 
-        if (getDuration() != that.getDuration()) return false;
         if (getPushId() != null ? !getPushId().equals(that.getPushId()) : that.getPushId() != null) return false;
         if (getGroupId() != null ? !getGroupId().equals(that.getGroupId()) : that.getGroupId() != null) return false;
         if (getVariantId() != null ? !getVariantId().equals(that.getVariantId()) : that.getVariantId() != null)
@@ -191,7 +190,9 @@ public class InAppMessageResolutionEvent implements EventBody {
             return false;
         if (getButtonDescription() != null ? !getButtonDescription().equals(that.getButtonDescription()) : that.getButtonDescription() != null)
             return false;
-        return getSessionId() != null ? getSessionId().equals(that.getSessionId()) : that.getSessionId() == null;
+        if (getSessionId() != null ? !getSessionId().equals(that.getSessionId()) : that.getSessionId() != null)
+            return false;
+        return getDuration() != null ? getDuration().equals(that.getDuration()) : that.getDuration() == null;
 
     }
 
@@ -207,7 +208,7 @@ public class InAppMessageResolutionEvent implements EventBody {
         result = 31 * result + (getButtonGroup() != null ? getButtonGroup().hashCode() : 0);
         result = 31 * result + (getButtonDescription() != null ? getButtonDescription().hashCode() : 0);
         result = 31 * result + (getSessionId() != null ? getSessionId().hashCode() : 0);
-        result = 31 * result + (int) (getDuration() ^ (getDuration() >>> 32));
+        result = 31 * result + (getDuration() != null ? getDuration().hashCode() : 0);
         return result;
     }
 
@@ -247,7 +248,7 @@ public class InAppMessageResolutionEvent implements EventBody {
         return triggeringPush;
     }
 
-    public long getDuration() {
+    public Optional<Long> getDuration() {
         return duration;
     }
 
