@@ -469,7 +469,7 @@ public class ModelParsingTest {
         Optional<String> buttonGroup = Optional.of(UUID.randomUUID().toString());
         Optional<String> buttonDescription = Optional.of(UUID.randomUUID().toString());
         long duration = 9001;
-        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<DateTime>absent(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, Optional.<String>absent(), duration);
+        InAppMessageResolutionEvent inAppMessageResolutionEvent = new InAppMessageResolutionEvent(pushId,groupId,variantId, Optional.<DateTime>absent(), triggeringPush, type, buttonId, buttonGroup, buttonDescription, Optional.<String>absent(), Optional.of(duration));
         String json = new String(inAppMessageResolutionEvent.serializeToJSONBytes(), StandardCharsets.UTF_8);
         InAppMessageResolutionEvent parsedInAppMessageResolution = InAppMessageResolutionEvent.parseJSON(json);
         assertEquals(pushId, parsedInAppMessageResolution.getPushId());
@@ -480,7 +480,7 @@ public class ModelParsingTest {
         assertEquals(buttonDescription.get(), parsedInAppMessageResolution.getButtonDescription().get());
         assertEquals(buttonGroup.get(), parsedInAppMessageResolution.getButtonGroup().get());
         assertEquals(buttonId.get(), parsedInAppMessageResolution.getButtonId().get());
-        assertEquals(duration, parsedInAppMessageResolution.getDuration());
+        assertEquals(duration, parsedInAppMessageResolution.getDuration().get().longValue());
     }
 
     @Test
