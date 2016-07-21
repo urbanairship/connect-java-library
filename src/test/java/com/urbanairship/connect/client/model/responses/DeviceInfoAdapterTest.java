@@ -30,7 +30,6 @@ public class DeviceInfoAdapterTest {
 
         final DeviceInfo deserialized = deviceInfoAdapter.deserialize(deviceInfo, DeviceInfo.class, null);
 
-        System.out.println(deserialized);
         assertEquals(deserialized.getAttributes().get("yes"), "no");
         assertEquals(deserialized.getIdentifiers().get("balooga"), "whale");
         assertEquals(deserialized.getPlatform(), DeviceFilterType.ANDROID);
