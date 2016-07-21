@@ -20,12 +20,10 @@ public interface StreamSupplier {
      * @param client AsyncHttpClient
      * @param eventConsumer {@code Consumer<String>} of the API response events.
      * @param url The API URL as a String.
-     * @param fatalExceptionHandler see {@link FatalExceptionHandler}.
      * @return MobileEventStream instance.
      */
     MobileEventStream get(StreamQueryDescriptor descriptor,
                           AsyncHttpClient client,
                           Consumer<String> eventConsumer,
-                          String url,
-                          FatalExceptionHandler fatalExceptionHandler);
+                          String url);
 }

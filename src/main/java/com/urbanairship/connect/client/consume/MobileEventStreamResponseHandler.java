@@ -64,7 +64,8 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted stopping handler on error receipt!", e);
-        }    }
+        }
+    }
 
     @Override
     public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {

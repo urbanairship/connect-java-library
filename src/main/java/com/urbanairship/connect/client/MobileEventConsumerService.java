@@ -5,59 +5,53 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.ning.http.client.AsyncHttpClient;
 import com.urbanairship.connect.java8.Consumer;
-import com.urbanairship.connect.client.model.responses.Event;
-import com.urbanairship.connect.client.offsets.OffsetManager;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A class for handling {@link com.urbanairship.connect.client.MobileEventStream} interactions.
  * Includes basic stream connection/consumption, reconnection, and offset tracking.
  */
-public class MobileEventConsumerService extends AbstractExecutionThreadService {
+public final class MobileEventConsumerService extends AbstractExecutionThreadService {
 
     private static final Logger log = LogManager.getLogger(MobileEventConsumerService.class);
 
-    private final OffsetManager offsetManager;
+    private final Supplier<Optional<String>> latestOffsetProvider;
     private final ConnectClientConfiguration config;
     private final AtomicBoolean doConsume;
     private final AsyncHttpClient asyncClient;
-    private final RawEventReceiver rawEventReceiver;
-    private final StreamQueryDescriptor baseStreamQueryDescriptor;
+    private final Consumer<String> eventReceiver;
+    private final StreamQueryDescriptor streamQueryDescriptor;
     private final StreamSupplier supplier;
-    private final FatalExceptionHandler fatalExceptionHandler;
-    private MobileEventStream mobileEventStream;
 
-    /**
-     * StreamHandler builder
-     * @return Builder
-     */
+    private volatile MobileEventStream mobileEventStream;
+
     public static Builder newBuilder() {
         return new Builder();
     }
 
-    private MobileEventConsumerService(Consumer<Event> consumer,
+    private MobileEventConsumerService(Consumer<String> consumer,
                                        AsyncHttpClient client,
-                                       OffsetManager offsetManager,
-                                       StreamQueryDescriptor baseStreamQueryDescriptor,
+                                       Supplier<Optional<String>> latestOffsetProvider,
+                                       StreamQueryDescriptor streamQueryDescriptor,
                                        Configuration config,
-                                       StreamSupplier supplier,
-                                       FatalExceptionHandler fatalExceptionHandler) {
-        this.offsetManager = offsetManager;
+                                       StreamSupplier supplier) {
+        this.latestOffsetProvider = latestOffsetProvider;
         this.config = new ConnectClientConfiguration(config);
         this.asyncClient = client;
         this.doConsume = new AtomicBoolean(true);
-        this.rawEventReceiver = new RawEventReceiver(consumer);
-        this.baseStreamQueryDescriptor = baseStreamQueryDescriptor;
+        this.eventReceiver = consumer;
+        this.streamQueryDescriptor = streamQueryDescriptor;
         this.supplier = supplier;
-        this.fatalExceptionHandler = fatalExceptionHandler;
     }
 
     /**
@@ -66,7 +60,8 @@ public class MobileEventConsumerService extends AbstractExecutionThreadService {
      *
      * @return AtomicBoolean
      */
-    public AtomicBoolean getDoConsume() {
+    @VisibleForTesting
+    AtomicBoolean getDoConsume() {
         return doConsume;
     }
 
@@ -74,77 +69,44 @@ public class MobileEventConsumerService extends AbstractExecutionThreadService {
      * Runs the stream handler by setting doConsume to {@code true} and creating a
      * {@link com.urbanairship.connect.client.MobileEventStream} instance.  The handler will
      * continue to consume or create new {@link com.urbanairship.connect.client.MobileEventStream} instances
-     * until either the handler is stopped or the reconnect attempt limit is reached.
+     * until the handler is stopped.
      */
     @Override
-    public void run() {
+    protected void run() {
         doConsume.set(true);
-        stream();
-    }
-
-    private void stream() {
-
-        int consumptionAttempt = 0;
-
         try {
-            while (doConsume.get()) {
-                boolean connected = false;
-
-                // if this is not the original consumption attempt, create a new StreamDescriptor with the most recent offset
-                final StreamQueryDescriptor descriptor;
-                if (consumptionAttempt == 0) {
-                    descriptor = baseStreamQueryDescriptor;
-                } else {
-                    descriptor = StreamUtils.buildNewDescriptor(baseStreamQueryDescriptor, offsetManager);
-                }
-
-                // create a new MobileEventStream
-                try (MobileEventStream newMobileEventStream = supplier.get(descriptor, asyncClient, rawEventReceiver, config.mesUrl, fatalExceptionHandler)) {
-                    mobileEventStream = newMobileEventStream;
-
-                    // connect to the MobileEventStream
-                    log.info("Connecting to stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
-                    connected = StreamUtils.connectWithRetries(mobileEventStream, config, baseStreamQueryDescriptor.getCreds().getAppKey());
-
-                    // if connection attempts fail, exit the consumption loop.
-                    if (!connected) {
-                        fatalExceptionHandler.handle(new RuntimeException("Could not connect to stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey()));
-                        break;
-                    }
-
-                    // consume from the MobileEventStream
-                    log.info("Consuming from stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
-                    mobileEventStream.consume(config.maxAppStreamConsumeTime, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                } catch (Throwable throwable) {
-                    log.error("Error encountered while consuming stream for app " + baseStreamQueryDescriptor.getCreds().getAppKey(), throwable);
-                } finally {
-                    log.info("Ending stream handling for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
-
-                    // update consumption attempt
-                    consumptionAttempt += 1;
-
-                    if (connected) {
-                        // update offset
-                        log.debug("Updating offset for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
-                        offsetManager.update(rawEventReceiver.get());
-                    }
-                }
-            }
-        } finally {
-            // close the HTTP client
+            stream();
+        }
+        finally {
             asyncClient.close();
         }
     }
 
-    /**
-     * Stops any stream handling by setting doConsume to {@code false}.
-     */
+    private void stream() {
+        String appKey = streamQueryDescriptor.getCreds().getAppKey();
+        while (doConsume.get()) {
+
+            Optional<String> startingOffset = latestOffsetProvider.get();
+            try (MobileEventStream newMobileEventStream = supplier.get(streamQueryDescriptor, asyncClient, eventReceiver, config.mesUrl)) {
+                mobileEventStream = newMobileEventStream;
+                mobileEventStream.read(startingOffset);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            catch (ConnectionException e) {
+                throw e;
+            }
+            catch (Throwable throwable) {
+                log.error("Error encountered while consuming stream for app " + appKey, throwable);
+            }
+        }
+    }
+
     @Override
     public void triggerShutdown() {
-        log.info("Shutting down stream handler for app " + baseStreamQueryDescriptor.getCreds().getAppKey());
+        log.info("Shutting down stream handler for app " + streamQueryDescriptor.getCreds().getAppKey());
         doConsume.set(false);
 
         if (mobileEventStream != null) {
@@ -157,119 +119,78 @@ public class MobileEventConsumerService extends AbstractExecutionThreadService {
     }
 
     public static final class Builder{
-        private Consumer<Event> consumer;
-        private AsyncHttpClient client;
-        private OffsetManager offsetManager;
-        private StreamQueryDescriptor baseStreamQueryDescriptor;
-        private Configuration config;
+
         private StreamSupplier supplier = new MobileEventStreamSupplier();
-        private FatalExceptionHandler fatalExceptionHandler;
+        private AsyncHttpClient client = null;
+
+        private Consumer<String> consumer;
+        private Supplier<Optional<String>> latestOffsetProvider;
+        private StreamQueryDescriptor streamQueryDescriptor;
+        private Configuration config;
 
         private Builder() {}
 
-        /**
-         * Set the Event consumer.
-         *
-         * @param consumer {@code Consumer<Event>}
-         * @return Builder
-         */
-        public Builder setConsumer(Consumer<Event> consumer) {
+        public Builder setConsumer(Consumer<String> consumer) {
             this.consumer = consumer;
             return this;
         }
 
-        /**
-         * Set the HTTP client.
-         *
-         * @param client AsyncHttpClient
-         * @return Builder
-         */
-        public Builder setClient(AsyncHttpClient client) {
-            this.client = client;
+        public Builder setLatestOffsetProvider(Supplier<Optional<String>> latestOffsetProvider) {
+            this.latestOffsetProvider = latestOffsetProvider;
             return this;
         }
 
-        /**
-         * Set the offset manager.
-         *
-         * @param offsetManager OffsetManager
-         * @return Builder
-         */
-        public Builder setOffsetManager(OffsetManager offsetManager) {
-            this.offsetManager = offsetManager;
+        public Builder setStreamQueryDescriptor(StreamQueryDescriptor descriptor) {
+            this.streamQueryDescriptor = descriptor;
             return this;
         }
 
-        /**
-         * Set the base stream descriptor.
-         *
-         * @param descriptor StreamDescriptor
-         * @return Builder
-         */
-        public Builder setBaseStreamQueryDescriptor(StreamQueryDescriptor descriptor) {
-            this.baseStreamQueryDescriptor = descriptor;
-            return this;
-        }
-
-        /**
-         * Set any config overrides.
-         *
-         * @param config Configuration
-         * @return Builder
-         */
         public Builder setConfig(Configuration config) {
             this.config = config;
             return this;
         }
 
-        /**
-         * Set the stream supplier.  Not intended for non-testing use.
-         *
-         * @param supplier Supplier
-         * @return Builder
-         */
         @VisibleForTesting
-        public Builder setSupplier(StreamSupplier supplier) {
+        Builder setSupplier(StreamSupplier supplier) {
             this.supplier = supplier;
             return this;
         }
 
-        /**
-         * Set the fatal exception handler for connection failures.
-         *
-         * @param handler FatalExceptionHandler
-         * @return Builder
-         */
-        public Builder setFatalExceptionHandler(FatalExceptionHandler handler){
-            this.fatalExceptionHandler = handler;
+        @VisibleForTesting
+        Builder setClient(AsyncHttpClient client) {
+            this.client = client;
             return this;
         }
 
-        /**
-         * Build the StreamHandler object.
-         *
-         * @return StreamHandler
-         */
         public MobileEventConsumerService build() {
-            return new MobileEventConsumerService(consumer,
-                client,
-                offsetManager,
-                baseStreamQueryDescriptor,
-                config,
-                supplier,
-                fatalExceptionHandler);
+            Preconditions.checkNotNull(consumer, "Event consumer must be provided");
+            Preconditions.checkNotNull(latestOffsetProvider, "Offset manager must be provided");
+            Preconditions.checkNotNull(streamQueryDescriptor, "Stream query descriptor must be provided");
+            Preconditions.checkNotNull(config, "Configuration must be provided");
+
+            if (client == null) {
+                client = StreamUtils.buildHttpClient(new ConnectClientConfiguration(config));
+            }
+
+            return new MobileEventConsumerService(
+                    consumer,
+                    client,
+                    latestOffsetProvider,
+                    streamQueryDescriptor,
+                    config,
+                    supplier
+            );
         }
     }
 
-    // Straightforward Supplier implementation
+    // Default Supplier implementation
     private static class MobileEventStreamSupplier implements StreamSupplier {
         @Override
         public MobileEventStream get(StreamQueryDescriptor descriptor,
-                    AsyncHttpClient client,
-                    Consumer<String> eventConsumer,
-                    String url,
-                    FatalExceptionHandler fatalExceptionHandler) {
-            return new MobileEventStream(descriptor, client, eventConsumer, url, fatalExceptionHandler);
+                                     AsyncHttpClient client,
+                                     Consumer<String> eventConsumer,
+                                     String url) {
+            return new MobileEventStream(descriptor, client, eventConsumer, url);
         }
     }
 }

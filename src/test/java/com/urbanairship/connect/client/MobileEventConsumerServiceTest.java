@@ -361,7 +361,7 @@ public class MobileEventConsumerServiceTest {
         mobileEventConsumerService.run();
 
         verify(stream, never()).consume(anyLong(), any(TimeUnit.class));
-        verify(fatalExceptionHandler).handle(any(RuntimeException.class));
+        verify(fatalExceptionHandler).accept(any(RuntimeException.class));
     }
     @Test
     public void testInterrupted() throws Exception {
@@ -414,10 +414,10 @@ public class MobileEventConsumerServiceTest {
     private MobileEventConsumerService.Builder createMobileEventConsumerService(OffsetManager offsetManager) {
         return MobileEventConsumerService.newBuilder()
             .setClient(http)
-            .setBaseStreamQueryDescriptor(descriptor(Optional.<Long>absent()))
+            .setStreamQueryDescriptor(descriptor(Optional.<Long>absent()))
             .setConfig(config)
             .setConsumer(consumer)
-            .setOffsetManager(offsetManager)
+            .setLatestOffsetProvider(offsetManager)
             .setFatalExceptionHandler(fatalExceptionHandler);
     }
 

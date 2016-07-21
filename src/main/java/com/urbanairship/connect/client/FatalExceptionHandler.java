@@ -10,5 +10,6 @@ package com.urbanairship.connect.client;
  */
 public interface FatalExceptionHandler {
 
-    public void handle(Exception e);
+    void accept(Exception e);
+
 }

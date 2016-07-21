@@ -4,12 +4,9 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
-import com.google.common.base.Supplier;
 import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonObject;
 import com.urbanairship.connect.client.model.GsonUtil;
-import com.urbanairship.connect.client.model.responses.Event;
 import com.urbanairship.connect.java8.Consumer;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -19,42 +16,48 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Class that consumes and parses the API response while tracking the stream offset.
  */
-public class RawEventReceiver implements Consumer<String>, Supplier<String> {
+public final class RawEventReceiver implements Consumer<String> {
 
     private static final Logger log = LogManager.getLogger(RawEventReceiver.class);
 
+    public static final String OFFSET_KEY = "offset";
+
     private static final Gson gson = GsonUtil.getGson();
-    private AtomicReference<String> lastOffset = new AtomicReference<>("0");
-    private final Consumer<Event> consumer;
+
+    private final AtomicReference<String> lastOffset = new AtomicReference<>("0");
+
+    private final Consumer<String> consumer;
 
     /**
      * Default constructor
      *
-     * @param consumer {@code Consumer<Event>} Implemented by a library user to consume response POJOs.
+     * @param consumer {@code Consumer<String>} Implemented by a library user to consume events.
      */
-    public RawEventReceiver(Consumer<Event> consumer) {
+    public RawEventReceiver(Consumer<String> consumer) {
         this.consumer = consumer;
     }
 
     /**
-     * Accepts an API response entry and parses it into an {@link com.urbanairship.connect.client.model.responses.Event}.
-     * The offset is then retrieved from the parsed response, which then gets passed into the Event consumer.
+     * Accepts an API response entry and passes it on to the the wrapped consumer. The offset of the event is parsed
+     * and tracked on each receipt and internal state is updated to provide that offset to the outside world via
+     * {@link #getLastOffset()}.
      *
      * @param event String a single event from the API response.
      */
     @Override
     public void accept(String event) {
         try {
-            Event eventObj = gson.fromJson(event, Event.class);
-            log.debug("Parsing event " + eventObj.getIdentifier());
+            JsonObject obj = gson.fromJson(event, JsonObject.class);
+            String offset = obj.get(OFFSET_KEY).getAsString();
 
-            lastOffset.set(eventObj.getOffset());
-            consumer.accept(eventObj);
-        } catch (JsonSyntaxException e) {
-            log.warn("Error parsing  " + event, e);
-        } catch (JsonParseException e) {
-            log.warn("Error parsing " + event, e);
+            lastOffset.set(offset);
         }
+        catch (Exception e) {
+            log.error("Error extracting offset from event " + event, e);
+            return;
+        }
+
+        consumer.accept(event);
     }
 
     /**
@@ -62,8 +65,7 @@ public class RawEventReceiver implements Consumer<String>, Supplier<String> {
      *
      * @return offset
      */
-    @Override
-    public String get() {
+    public String getLastOffset() {
         return lastOffset.get();
     }
 

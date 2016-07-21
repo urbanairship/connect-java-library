@@ -5,7 +5,6 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
@@ -15,14 +14,12 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
-import com.urbanairship.connect.java8.Consumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
 import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import com.urbanairship.connect.client.model.GsonUtil;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import com.urbanairship.connect.java8.Consumer;
 import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.nio.charset.StandardCharsets;
@@ -33,27 +30,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Provides the abstraction through which events are streamed from the mobile event stream endpoint to a caller.
+ * Provides the abstraction through which events are stream from the mobile event stream endpoint to a caller.
  *
  * Usage should follow the pattern:
  * <pre>
  *    try (MobileEventStream stream = new MobileEventStream(...)) {
- *        stream.connect(...);
- *        stream.consume(...);
+ *        stream.read()
  *    }
  * </pre>
  */
 public class MobileEventStream implements AutoCloseable {
 
-    private static final Logger log = LogManager.getLogger(MobileEventStream.class);
-
     public static final String X_UA_APPKEY = "X-UA-Appkey";
-    private static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
+    public static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
 
     private static final Gson GSON = GsonUtil.getGson();
 
@@ -61,9 +53,8 @@ public class MobileEventStream implements AutoCloseable {
     private final AsyncHttpClient client;
     private final Consumer<String> eventConsumer;
     private final String url;
-    private final FatalExceptionHandler fatalExceptionHandler;
 
-    private final Object stateLock = new Object();
+    private final AtomicBoolean gate = new AtomicBoolean(false);
 
     private volatile Connection connection = null;
     private volatile CountDownLatch bodyConsumeLatch = null;
@@ -73,53 +64,39 @@ public class MobileEventStream implements AutoCloseable {
     public MobileEventStream(StreamQueryDescriptor descriptor,
                              AsyncHttpClient client,
                              Consumer<String> eventConsumer,
-                             String url,
-                             FatalExceptionHandler fatalExceptionHandler) {
+                             String url) {
         this.descriptor = descriptor;
         this.client = client;
         this.eventConsumer = eventConsumer;
         this.url = url;
-        this.fatalExceptionHandler = fatalExceptionHandler;
     }
 
-    public void connect(long maxConnectWaitTime, TimeUnit unit) throws InterruptedException {
-        synchronized (stateLock) {
-            Preconditions.checkState(connection == null);
+    public void read(Optional<String> startingOffset) throws ConnectionException, InterruptedException {
+        if (!gate.compareAndSet(false, true)) {
+            throw new IllegalStateException("Stream is already consuming!");
+        }
 
-            try {
-                connection = connect(maxConnectWaitTime, unit, Collections.<Cookie>emptyList());
-            }
-            catch (ExecutionException e) {
-                throw new RuntimeException("Failure attempting to connect to mobile event stream for app " + getAppKey(), e);
-            }
-            catch (TimeoutException e) {
-                throw new RuntimeException("Timed out waiting to establish connection to mobile event stream for app " + getAppKey());
-            }
+        connect(startingOffset);
+        consume();
+    }
+
+    private void connect(Optional<String> startingOffset) throws InterruptedException {
+        try {
+            connection = connect(Collections.<Cookie>emptyList(), startingOffset);
+        }
+        catch (ExecutionException e) {
+            throw new RuntimeException("Failure attempting to connect to mobile event stream for app " + getAppKey(), e);
         }
     }
 
-    public void consume(long maxConsumeTime, TimeUnit unit) throws InterruptedException {
-        synchronized (stateLock) {
-            Preconditions.checkState(connection != null && !closed.get());
-
-            bodyConsumeLatch = new CountDownLatch(1);
-            Runnable bodyConsumeLatchRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    bodyConsumeLatch.countDown();
-                }
-            };
-
-            connection.future.addListener(bodyConsumeLatchRunnable, MoreExecutors.directExecutor());
-        }
+    private void consume() throws InterruptedException {
+        bodyConsumeLatch = new CountDownLatch(1);
+        connection.consume(bodyConsumeLatch);
 
         try {
-            connection.handler.consumeBody();
-            if (!bodyConsumeLatch.await(maxConsumeTime, unit)) {
-                log.debug("Hit max consume time for stream for app " + getAppKey());
-            }
+            bodyConsumeLatch.await();
 
-            Optional<Throwable> error = connection.handler.getError();
+            Optional<Throwable> error = connection.getConsumeError();
             if (error.isPresent()) {
                 throw new RuntimeException("Error occurred consuming stream for app " + getAppKey(), error.get());
             }
@@ -130,25 +107,16 @@ public class MobileEventStream implements AutoCloseable {
     }
 
     private void cleanup() {
-        synchronized (stateLock) {
-            if (!closed.compareAndSet(false, true)) {
-                return;
-            }
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
 
-            if (bodyConsumeLatch != null) {
-                bodyConsumeLatch.countDown();
-            }
+        if (bodyConsumeLatch != null) {
+            bodyConsumeLatch.countDown();
+        }
 
-            if (connection != null) {
-                try {
-                    connection.handler.stop();
-                }
-                catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-
-                connection.future.done();
-            }
+        if (connection != null) {
+            connection.close();
         }
     }
 
@@ -157,10 +125,9 @@ public class MobileEventStream implements AutoCloseable {
         cleanup();
     }
 
-    private Connection connect(long maxConnectTime, TimeUnit unit, Collection<Cookie> cookies)
-            throws InterruptedException, ExecutionException, TimeoutException {
+    private Connection connect(Collection<Cookie> cookies, Optional<String> startingOffset) throws InterruptedException, ExecutionException {
 
-        AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies);
+        AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies, startingOffset);
 
         MobileEventStreamConnectFuture connectFuture = new MobileEventStreamConnectFuture();
         Consumer<byte[]> consumer = new MobileEventStreamBodyConsumer(eventConsumer);
@@ -168,7 +135,15 @@ public class MobileEventStream implements AutoCloseable {
 
         ListenableFuture<Boolean> future = request.execute(responseHandler);
 
-        StatusAndHeaders statusAndHeaders = connectFuture.get(maxConnectTime, unit);
+        StatusAndHeaders statusAndHeaders;
+        try {
+            statusAndHeaders = connectFuture.get();
+        }
+        catch (InterruptedException | ExecutionException e) {
+            responseHandler.stop();
+            future.done();
+            throw e;
+        }
 
         int status = statusAndHeaders.getStatusCode();
         if (status == HttpURLConnection.HTTP_OK) {
@@ -179,21 +154,20 @@ public class MobileEventStream implements AutoCloseable {
         responseHandler.stop();
         future.done();
 
-        // 400s indicate a bad request, don't want to cause unnecessary connection retries in the MobileEventConsumerService
+        // 400s indicate a bad request
         if (399 < status && status < 500) {
-            fatalExceptionHandler.handle(new RuntimeException(String.format("Received status code (%d) from a bad request for app %s", status, getAppKey())));
+            throw new ConnectionException(String.format("Received status code (%d) from a bad request for app %s", status, getAppKey()));
         }
 
         if (status != 307) {
-            throw new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
+            throw new ConnectionException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
         }
 
-        // TODO: should probably handle possibility of infinite recursion with this path...
-        return handleRedirect(maxConnectTime, unit, statusAndHeaders);
+        return handleRedirect(statusAndHeaders, startingOffset);
     }
 
-    private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies) {
-        byte[] query = getQuery();
+    private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<String> startingOffset) {
+        byte[] query = getQuery(startingOffset);
 
         AsyncHttpClient.BoundRequestBuilder request = client.preparePost(url)
                 .addHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER)
@@ -213,22 +187,21 @@ public class MobileEventStream implements AutoCloseable {
         return request;
     }
 
-    private Connection handleRedirect(long maxConnectTime, TimeUnit unit, StatusAndHeaders statusAndHeaders)
-            throws InterruptedException, ExecutionException, TimeoutException {
+    private Connection handleRedirect(StatusAndHeaders statusAndHeaders, Optional<String> startingOffset) throws InterruptedException, ExecutionException {
 
         List<String> values = statusAndHeaders.getHeaders().get("Set-Cookie");
         if (values == null || values.isEmpty()) {
-            throw new RuntimeException("Received redirect response with no 'Set-Cookie' header in response!");
+            throw new ConnectionException("Received redirect response with no 'Set-Cookie' header in response!");
         }
 
         String value = values.get(0);
         Cookie cookie = CookieDecoder.decode(value);
 
         if (cookie == null) {
-            throw new RuntimeException("Received redirect response with unparsable 'Set-Cookie' value - " + value);
+            throw new ConnectionException("Received redirect response with unparsable 'Set-Cookie' value - " + value);
         }
 
-        return connect(maxConnectTime, unit, ImmutableList.of(cookie));
+        return connect(ImmutableList.of(cookie), startingOffset);
     }
 
     private Map<String, String> getAuthHeaders(Creds creds) {
@@ -238,17 +211,17 @@ public class MobileEventStream implements AutoCloseable {
         );
     }
 
-    private byte[] getQuery() {
+    private byte[] getQuery(Optional<String> startOffset) {
         Map<String, Object> body = new HashMap<>();
 
-        if (!descriptor.getOffset().isPresent()) {
+        if (!startOffset.isPresent()) {
             body.put("start", "LATEST");
         }
-        else if (descriptor.getOffset().get().equals("EARLIEST") || descriptor.getOffset().get().equals("LATEST")) {
-            body.put("start", descriptor.getOffset().get());
+        else if ("EARLIEST".equals(startOffset.get()) || "LATEST".equals(startOffset.get())) {
+            body.put("start", startOffset.get());
         }
         else {
-            body.put("resume_offset", descriptor.getOffset().get());
+            body.put("resume_offset", startOffset.get());
         }
 
         if (descriptor.getSubset().isPresent()) {
@@ -272,9 +245,36 @@ public class MobileEventStream implements AutoCloseable {
         private final ListenableFuture<Boolean> future;
         private final MobileEventStreamResponseHandler handler;
 
-        public Connection(ListenableFuture<Boolean> future, MobileEventStreamResponseHandler handler) {
+        private Connection(ListenableFuture<Boolean> future, MobileEventStreamResponseHandler handler) {
             this.future = future;
             this.handler = handler;
+        }
+
+        public void consume(final CountDownLatch doneLatch) {
+            Runnable doneLatchCountDownRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    doneLatch.countDown();
+                }
+            };
+
+            future.addListener(doneLatchCountDownRunnable, MoreExecutors.directExecutor());
+            handler.consumeBody();
+        }
+
+        public Optional<Throwable> getConsumeError() {
+            return handler.getError();
+        }
+
+        public void close() {
+            try {
+                handler.stop();
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            future.done();
         }
     }
 }
