@@ -132,7 +132,7 @@ public final class MobileEventConsumeTask implements Runnable {
                     mobileEventStream.close();
                 }
                 catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Failed to shutdown stream and stop gracefully", e);
                 }
             }
         }
@@ -180,12 +180,6 @@ public final class MobileEventConsumeTask implements Runnable {
         @VisibleForTesting
         Builder setStreamSupplier(StreamSupplier supplier) {
             this.supplier = supplier;
-            return this;
-        }
-
-        @VisibleForTesting
-        Builder setHttpClient(AsyncHttpClient client) {
-            this.client = client;
             return this;
         }
 
