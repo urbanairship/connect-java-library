@@ -8,7 +8,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.urbanairship.connect.java8.Consumer;
 
 /**
- * Interface for supplying the {@link MobileEventConsumerService} with
+ * Interface for supplying the {@link MobileEventConsumeTask} with
  * a {@link com.urbanairship.connect.client.MobileEventStream} instance.
  */
 public interface StreamSupplier {

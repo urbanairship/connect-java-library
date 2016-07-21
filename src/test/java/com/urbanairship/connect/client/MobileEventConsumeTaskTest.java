@@ -69,7 +69,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-public class MobileEventConsumerServiceTest {
+public class MobileEventConsumeTaskTest {
 
     private static final int PORT = 10000 + RandomUtils.nextInt(0, 50000);
     private static final String PATH = "/test";
@@ -79,7 +79,7 @@ public class MobileEventConsumerServiceTest {
     private static HttpServer server;
     private static HttpHandler serverHandler;
     private static Configuration config;
-    private static MobileEventConsumerService mobileEventConsumerService;
+    private static MobileEventConsumeTask mobileEventConsumeTask;
 
     private AsyncHttpClient http;
 
@@ -87,8 +87,6 @@ public class MobileEventConsumerServiceTest {
     private Consumer<Event> consumer;
     @Mock
     private StreamSupplier supplier;
-    @Mock
-    private FatalExceptionHandler fatalExceptionHandler;
 
     @BeforeClass
     public static void serverStart() throws Exception {
@@ -113,7 +111,7 @@ public class MobileEventConsumerServiceTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         Mockito.reset(serverHandler);
-        mobileEventConsumerService = null;
+        mobileEventConsumeTask = null;
 
         AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
             .setUserAgent("Connect Client")
@@ -172,12 +170,12 @@ public class MobileEventConsumerServiceTest {
         doAnswer(consumerAnswer).when(consumer).accept(any(Event.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
-        mobileEventConsumerService = createMobileEventConsumerService(offsetManager).build();
+        mobileEventConsumeTask = createMobileEventConsumerService(offsetManager).build();
         ExecutorService thread = Executors.newSingleThreadExecutor();
         Callable<Boolean> task = new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                mobileEventConsumerService.run();
+                mobileEventConsumeTask.run();
                 return Boolean.TRUE;
             }
         };
@@ -187,8 +185,8 @@ public class MobileEventConsumerServiceTest {
             // Wait till we get something from the server
             latch.await(1, TimeUnit.MINUTES);
 
-            // Now kill the mobileEventConsumerService connection
-            mobileEventConsumerService.triggerShutdown();
+            // Now kill the mobileEventConsumeTask connection
+            mobileEventConsumeTask.triggerShutdown();
 
             // Consume future should return without issue now
             try {
@@ -208,7 +206,7 @@ public class MobileEventConsumerServiceTest {
         assertEquals("LATEST", bodyObj.get("start").getAsString());
         assertEquals(String.valueOf(events.get(events.size() - 1).getOffset()), offsetManager.getLastOffset().get());
 
-        assertFalse(mobileEventConsumerService.getDoConsume().get());
+        assertFalse(mobileEventConsumeTask.getActive().get());
     }
 
     @Test
@@ -294,12 +292,12 @@ public class MobileEventConsumerServiceTest {
         doAnswer(consumerAnswer).when(consumer).accept(any(Event.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
-        mobileEventConsumerService = createMobileEventConsumerService(offsetManager).build();
+        mobileEventConsumeTask = createMobileEventConsumerService(offsetManager).build();
         ExecutorService thread = Executors.newSingleThreadExecutor();
         Callable<Boolean> task = new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                mobileEventConsumerService.run();
+                mobileEventConsumeTask.run();
                 return Boolean.TRUE;
             }
         };
@@ -309,8 +307,8 @@ public class MobileEventConsumerServiceTest {
             // Wait till we get something from the server
             latch.await(10, TimeUnit.MINUTES);
 
-            // Now kill the mobileEventConsumerService connection
-            mobileEventConsumerService.triggerShutdown();
+            // Now kill the mobileEventConsumeTask connection
+            mobileEventConsumeTask.triggerShutdown();
 
             // Consume future should return without issue now
             try {
@@ -353,12 +351,12 @@ public class MobileEventConsumerServiceTest {
             }
         };
 
-        doAnswer(supplierAnswer).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
+        doAnswer(supplierAnswer).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class));
         doThrow(new RuntimeException()).when(stream).connect(anyLong(), any(TimeUnit.class));
 
         OffsetManager offsetManager = new InMemOffsetManager();
-        mobileEventConsumerService = createMobileEventConsumerService(offsetManager).setSupplier(supplier).build();
-        mobileEventConsumerService.run();
+        mobileEventConsumeTask = createMobileEventConsumerService(offsetManager).setStreamSupplier(supplier).build();
+        mobileEventConsumeTask.run();
 
         verify(stream, never()).consume(anyLong(), any(TimeUnit.class));
         verify(fatalExceptionHandler).accept(any(RuntimeException.class));
@@ -373,17 +371,17 @@ public class MobileEventConsumerServiceTest {
             }
         };
 
-        doAnswer(supplierAnswer).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class), any(FatalExceptionHandler.class));
+        doAnswer(supplierAnswer).when(supplier).get(any(StreamQueryDescriptor.class), any(AsyncHttpClient.class), Matchers.<Consumer<String>>any(), any(String.class));
         doThrow(new InterruptedException()).when(stream).connect(anyLong(), any(TimeUnit.class));
 
-        mobileEventConsumerService = createMobileEventConsumerService(new InMemOffsetManager()).setSupplier(supplier).build();
+        mobileEventConsumeTask = createMobileEventConsumerService(new InMemOffsetManager()).setStreamSupplier(supplier).build();
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean interrupted = new AtomicBoolean(false);
         ExecutorService thread = Executors.newSingleThreadExecutor();
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                mobileEventConsumerService.run();
+                mobileEventConsumeTask.run();
                 interrupted.set(Thread.interrupted());
                 latch.countDown();
             }
@@ -411,14 +409,13 @@ public class MobileEventConsumerServiceTest {
         return builder.build();
     }
 
-    private MobileEventConsumerService.Builder createMobileEventConsumerService(OffsetManager offsetManager) {
-        return MobileEventConsumerService.newBuilder()
-            .setClient(http)
+    private MobileEventConsumeTask.Builder createMobileEventConsumerService(OffsetManager offsetManager) {
+        return MobileEventConsumeTask.newBuilder()
+            .setHttpClient(http)
             .setStreamQueryDescriptor(descriptor(Optional.<Long>absent()))
             .setConfig(config)
             .setConsumer(consumer)
-            .setLatestOffsetProvider(offsetManager)
-            .setFatalExceptionHandler(fatalExceptionHandler);
+            .setLatestOffsetProvider(offsetManager);
     }
 
     private Event createEvent(Long offset) {

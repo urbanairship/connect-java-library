@@ -74,7 +74,6 @@ public class MobileEventStreamTest {
     private AsyncHttpClient http;
 
     @Mock private Consumer<String> consumer;
-    @Mock private FatalExceptionHandler fatalExceptionHandler;
 
     private MobileEventStream stream;
 
@@ -159,7 +158,7 @@ public class MobileEventStreamTest {
 
         doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor, http, consumer, url);
 
         stream.connect(10, TimeUnit.SECONDS);
         stream.consume(10, TimeUnit.SECONDS);
@@ -190,7 +189,7 @@ public class MobileEventStreamTest {
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         StreamQueryDescriptor descriptor = descriptor(Optional.<Long>absent());
-        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
 
         assertTrue(authorization.get().toLowerCase().startsWith("bearer"));
@@ -223,7 +222,7 @@ public class MobileEventStreamTest {
         long offset = RandomUtils.nextInt(0, 100000);
         StreamQueryDescriptor descriptor = descriptor(Optional.of(offset));
 
-        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
@@ -272,7 +271,7 @@ public class MobileEventStreamTest {
 
         StreamQueryDescriptor descriptor = filterDescriptor(filter1, filter2);
 
-        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
 
         Gson gson = GsonUtil.getGson();
@@ -304,7 +303,7 @@ public class MobileEventStreamTest {
         Subset subset = Subset.createPartitionSubset(10, 0);
         StreamQueryDescriptor descriptor = subsetDescriptor(subset);
 
-        stream = new MobileEventStream(descriptor, http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor, http, consumer, url);
         stream.connect(10, TimeUnit.SECONDS);
 
         Gson gson = GsonUtil.getGson();
@@ -326,7 +325,7 @@ public class MobileEventStreamTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url);
 
         boolean failed = false;
         try {
@@ -371,7 +370,7 @@ public class MobileEventStreamTest {
         .doAnswer(secondHttpAnswer)
         .when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -396,7 +395,7 @@ public class MobileEventStreamTest {
 
         doThrow(new RuntimeException("boom")).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -440,7 +439,7 @@ public class MobileEventStreamTest {
 
         doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
+        stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url);
 
         stream.connect(10, TimeUnit.SECONDS);
 
@@ -489,7 +488,7 @@ public class MobileEventStreamTest {
         // No body is coming, but consume should exit after 1 second without failure
         long consumeTime;
         try {
-            stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url, fatalExceptionHandler);
+            stream = new MobileEventStream(descriptor(Optional.<Long>absent()), http, consumer, url);
             stream.connect(10, TimeUnit.SECONDS);
 
             long start = System.currentTimeMillis();

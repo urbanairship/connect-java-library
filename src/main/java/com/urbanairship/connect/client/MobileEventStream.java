@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Provides the abstraction through which events are stream from the mobile event stream endpoint to a caller.
+ * Provides the abstraction through which events are streamed from the Urban Airship Connect endpoint to a caller.
  *
  * Usage should follow the pattern:
  * <pre>
@@ -41,6 +41,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *        stream.read()
  *    }
  * </pre>
+ *
+ * Proper use of this class means that only a single thread will call {@link #read(Optional)} and a call will only be
+ * made once. A call to {@link #close()} can be made by any other thread and at any time and resources will be appropriately
+ * cleaned up and cause any call to {@link #read(Optional)} to exit.
  */
 public class MobileEventStream implements AutoCloseable {
 
@@ -59,7 +63,9 @@ public class MobileEventStream implements AutoCloseable {
     private volatile Connection connection = null;
     private volatile CountDownLatch bodyConsumeLatch = null;
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private volatile boolean closed = false;
+
+    private final Object transitionLock = new Object();
 
     public MobileEventStream(StreamQueryDescriptor descriptor,
                              AsyncHttpClient client,
@@ -71,28 +77,61 @@ public class MobileEventStream implements AutoCloseable {
         this.url = url;
     }
 
+    /**
+     * Opens up a connection to Urban Airship Connect and begins consuming data and passing it to the configured consumer
+     * starting at the point specified by the startingOffset parameter.
+     *
+     * The value provided in startingOffset will be used to set either the "resume_offset" or "start" field value in the
+     * stream object sent to the Connect API. For more information on these fields, see the documentation for the
+     * Urban Airship Connect API.
+     *
+     * If the provided value is {@link Optional#absent()}, the stream will be connected with a "start" field value of "LATEST".
+     *
+     * If the value provided is present and either "LATEST" or "EARLIEST", the specified value is set as the "start" field value.
+     *
+     * If the value provided is present and is a value other than "LATEST" or "EARLIEST" the value will be set as the
+     * "resume_offset" field value.
+     *
+     * @param startingOffset optionally specifies the starting position to consume from. See documentation on the
+     *                       "resume_offset" and "start" fields of the stream object in the Urban Airship Connect API
+     *                       documentation.
+     *
+     *
+     * @throws ConnectionException thrown if a connection cannot be successfully made and indicates a problem with either
+     * the request or unexpected behavior from the API.
+     * @throws InterruptedException this method is blocking and this will be thrown if the underlying blocking calls are
+     * interrupted.
+     */
     public void read(Optional<String> startingOffset) throws ConnectionException, InterruptedException {
         if (!gate.compareAndSet(false, true)) {
             throw new IllegalStateException("Stream is already consuming!");
         }
 
-        connect(startingOffset);
+        // The sync is shared with the cleanup method and ensures we don't miss a "close" signal and potentially setup
+        // resources after the close and thus don't have those resources cleaned up in the case of a race between a call
+        // to cleanup and this method.
+        synchronized (transitionLock) {
+            if (!closed) {
+                begin(startingOffset);
+            }
+        }
+
         consume();
     }
 
-    private void connect(Optional<String> startingOffset) throws InterruptedException {
+    private void begin(Optional<String> startingOffset) throws InterruptedException {
         try {
             connection = connect(Collections.<Cookie>emptyList(), startingOffset);
         }
         catch (ExecutionException e) {
             throw new RuntimeException("Failure attempting to connect to mobile event stream for app " + getAppKey(), e);
         }
+
+        bodyConsumeLatch = new CountDownLatch(1);
+        connection.consume(bodyConsumeLatch);
     }
 
     private void consume() throws InterruptedException {
-        bodyConsumeLatch = new CountDownLatch(1);
-        connection.consume(bodyConsumeLatch);
-
         try {
             bodyConsumeLatch.await();
 
@@ -107,8 +146,15 @@ public class MobileEventStream implements AutoCloseable {
     }
 
     private void cleanup() {
-        if (!closed.compareAndSet(false, true)) {
-            return;
+        // The sync ensures consistency in read of "closed" between the cleanup a potential call to read (the method).
+        // We need to ensure that in a race between a call to close and a call to read, it's not possible for the close
+        // to miss the setup of the latch and connection.
+        synchronized (transitionLock) {
+            if (closed) {
+                return;
+            }
+
+            closed = true;
         }
 
         if (bodyConsumeLatch != null) {
