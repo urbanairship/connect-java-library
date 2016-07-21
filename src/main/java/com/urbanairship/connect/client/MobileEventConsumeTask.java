@@ -98,23 +98,20 @@ public final class MobileEventConsumeTask implements Runnable {
     }
 
     private void transitionToReading(Optional<String> startingOffset, MobileEventStream newMobileEventStream) throws InterruptedException {
-        boolean swapped = false;
-
         // The streamLock sync is used to ensure consistency between the stop method and the swap of the mobileEventStream
         // resource in the case of a race. We want to ensure we only active and begin reading from the stream if a
         // stop signal has not been received. Note, it's ok to call MobileEventStream.read() even if the MobileEventStream
         // has been closed. Therefore, the possible race where we get in the sync block, swap the stream resource and
         // between exiting the sync block and the read call, a stop call occurs and closes the stream resource is ok.
         synchronized (streamLock) {
-            if (active.get()) {
-                mobileEventStream = newMobileEventStream;
-                swapped = true;
+            if (!active.get()) {
+                return;
             }
+
+            mobileEventStream = newMobileEventStream;
         }
 
-        if (swapped) {
-            mobileEventStream.read(startingOffset);
-        }
+        mobileEventStream.read(startingOffset);
     }
 
     /**

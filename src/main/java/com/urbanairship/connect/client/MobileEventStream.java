@@ -111,9 +111,11 @@ public class MobileEventStream implements AutoCloseable {
         // resources after the close and thus don't have those resources cleaned up in the case of a race between a call
         // to cleanup and this method.
         synchronized (transitionLock) {
-            if (!closed) {
-                begin(startingOffset);
+            if (closed) {
+                return;
             }
+
+            begin(startingOffset);
         }
 
         consume();
