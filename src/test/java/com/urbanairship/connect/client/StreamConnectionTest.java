@@ -55,6 +55,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
@@ -167,7 +168,8 @@ public class StreamConnectionTest {
         assertEquals(line, received.get(0));
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals("LATEST", bodyObj.get("start").getAsString());
+        assertFalse(bodyObj.has("start"));
+        assertFalse(bodyObj.has("resume_offset"));
     }
 
     @Test

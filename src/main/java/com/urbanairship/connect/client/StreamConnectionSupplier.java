@@ -10,7 +10,7 @@ import com.urbanairship.connect.java8.Consumer;
 /**
  * Interface for supplying the {@link StreamConsumeTask} with a {@link StreamConnection} instance.
  */
-public interface StreamConnectionSupplier {
+interface StreamConnectionSupplier {
 
     /**
      * Get a {@link StreamConnection} instance.
