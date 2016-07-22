@@ -19,6 +19,7 @@ import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
 import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import com.urbanairship.connect.client.model.GsonUtil;
+import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
 import sun.net.www.protocol.http.HttpURLConnection;
 
@@ -37,8 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * Usage should follow the pattern:
  * <pre>
- *    try (MobileEventStream stream = new MobileEventStream(...)) {
- *        stream.read()
+ *    try (StreamConnection conn = new StreamConnection(...)) {
+ *        conn.read(...)
  *    }
  * </pre>
  *
@@ -46,7 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * made once. A call to {@link #close()} can be made by any other thread and at any time and resources will be appropriately
  * cleaned up and cause any call to {@link #read(Optional)} to exit.
  */
-public class MobileEventStream implements AutoCloseable {
+public class StreamConnection implements AutoCloseable {
 
     public static final String X_UA_APPKEY = "X-UA-Appkey";
     public static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
@@ -67,10 +68,10 @@ public class MobileEventStream implements AutoCloseable {
 
     private final Object transitionLock = new Object();
 
-    public MobileEventStream(StreamQueryDescriptor descriptor,
-                             AsyncHttpClient client,
-                             Consumer<String> eventConsumer,
-                             String url) {
+    public StreamConnection(StreamQueryDescriptor descriptor,
+                            AsyncHttpClient client,
+                            Consumer<String> eventConsumer,
+                            String url) {
         this.descriptor = descriptor;
         this.client = client;
         this.eventConsumer = eventConsumer;
@@ -79,30 +80,16 @@ public class MobileEventStream implements AutoCloseable {
 
     /**
      * Opens up a connection to Urban Airship Connect and begins consuming data and passing it to the configured consumer
-     * starting at the point specified by the startingOffset parameter.
+     * starting at the position specified by the startPosition parameter.
      *
-     * The value provided in startingOffset will be used to set either the "resume_offset" or "start" field value in the
-     * stream object sent to the Connect API. For more information on these fields, see the documentation for the
-     * Urban Airship Connect API.
-     *
-     * If the provided value is {@link Optional#absent()}, the stream will be connected with a "start" field value of "LATEST".
-     *
-     * If the value provided is present and either "LATEST" or "EARLIEST", the specified value is set as the "start" field value.
-     *
-     * If the value provided is present and is a value other than "LATEST" or "EARLIEST" the value will be set as the
-     * "resume_offset" field value.
-     *
-     * @param startingOffset optionally specifies the starting position to consume from. See documentation on the
-     *                       "resume_offset" and "start" fields of the stream object in the Urban Airship Connect API
-     *                       documentation.
-     *
+     * @param startPosition optionally specifies the starting position to consume from.
      *
      * @throws ConnectionException thrown if a connection cannot be successfully made and indicates a problem with either
      * the request or unexpected behavior from the API.
      * @throws InterruptedException this method is blocking and this will be thrown if the underlying blocking calls are
      * interrupted.
      */
-    public void read(Optional<String> startingOffset) throws ConnectionException, InterruptedException {
+    public void read(Optional<StartPosition> startPosition) throws ConnectionException, InterruptedException {
         if (!gate.compareAndSet(false, true)) {
             throw new IllegalStateException("Stream is already consuming!");
         }
@@ -115,15 +102,15 @@ public class MobileEventStream implements AutoCloseable {
                 return;
             }
 
-            begin(startingOffset);
+            begin(startPosition);
         }
 
         consume();
     }
 
-    private void begin(Optional<String> startingOffset) throws InterruptedException {
+    private void begin(Optional<StartPosition> startPosition) throws InterruptedException {
         try {
-            connection = connect(Collections.<Cookie>emptyList(), startingOffset);
+            connection = connect(Collections.<Cookie>emptyList(), startPosition);
         }
         catch (ExecutionException e) {
             throw new RuntimeException("Failure attempting to connect to mobile event stream for app " + getAppKey(), e);
@@ -173,9 +160,9 @@ public class MobileEventStream implements AutoCloseable {
         cleanup();
     }
 
-    private Connection connect(Collection<Cookie> cookies, Optional<String> startingOffset) throws InterruptedException, ExecutionException {
+    private Connection connect(Collection<Cookie> cookies, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException {
 
-        AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies, startingOffset);
+        AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies, startPosition);
 
         MobileEventStreamConnectFuture connectFuture = new MobileEventStreamConnectFuture();
         Consumer<byte[]> consumer = new MobileEventStreamBodyConsumer(eventConsumer);
@@ -211,11 +198,11 @@ public class MobileEventStream implements AutoCloseable {
             throw new ConnectionException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
         }
 
-        return handleRedirect(statusAndHeaders, startingOffset);
+        return handleRedirect(statusAndHeaders, startPosition);
     }
 
-    private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<String> startingOffset) {
-        byte[] query = getQuery(startingOffset);
+    private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<StartPosition> startPosition) {
+        byte[] query = getQuery(startPosition);
 
         AsyncHttpClient.BoundRequestBuilder request = client.preparePost(url)
                 .addHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER)
@@ -235,7 +222,7 @@ public class MobileEventStream implements AutoCloseable {
         return request;
     }
 
-    private Connection handleRedirect(StatusAndHeaders statusAndHeaders, Optional<String> startingOffset) throws InterruptedException, ExecutionException {
+    private Connection handleRedirect(StatusAndHeaders statusAndHeaders, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException {
 
         List<String> values = statusAndHeaders.getHeaders().get("Set-Cookie");
         if (values == null || values.isEmpty()) {
@@ -249,7 +236,7 @@ public class MobileEventStream implements AutoCloseable {
             throw new ConnectionException("Received redirect response with unparsable 'Set-Cookie' value - " + value);
         }
 
-        return connect(ImmutableList.of(cookie), startingOffset);
+        return connect(ImmutableList.of(cookie), startPosition);
     }
 
     private Map<String, String> getAuthHeaders(Creds creds) {
@@ -259,17 +246,17 @@ public class MobileEventStream implements AutoCloseable {
         );
     }
 
-    private byte[] getQuery(Optional<String> startOffset) {
+    private byte[] getQuery(Optional<StartPosition> position) {
         Map<String, Object> body = new HashMap<>();
 
-        if (!startOffset.isPresent()) {
-            body.put("start", "LATEST");
-        }
-        else if ("EARLIEST".equals(startOffset.get()) || "LATEST".equals(startOffset.get())) {
-            body.put("start", startOffset.get());
-        }
-        else {
-            body.put("resume_offset", startOffset.get());
+        if (position.isPresent()) {
+            StartPosition startAt = position.get();
+            if (startAt.isRelative()) {
+                body.put("start", startAt.getRelativePosition().getId());
+            }
+            else {
+                body.put("resume_offset", startAt.getOffset());
+            }
         }
 
         if (descriptor.getSubset().isPresent()) {

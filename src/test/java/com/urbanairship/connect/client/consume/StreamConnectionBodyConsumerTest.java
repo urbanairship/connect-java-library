@@ -25,7 +25,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class MobileEventStreamBodyConsumerTest {
+public class StreamConnectionBodyConsumerTest {
 
     @Mock private Consumer<String> handler;
 

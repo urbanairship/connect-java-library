@@ -17,6 +17,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
+import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.client.model.Subset;
 import com.urbanairship.connect.client.model.filters.DeviceFilter;
 import com.urbanairship.connect.client.model.filters.Filter;
@@ -61,7 +62,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
-public class MobileEventStreamTest {
+public class StreamConnectionTest {
 
     private static final int PORT = 10000 + RandomUtils.nextInt(0, 50000);
     private static final String PATH = "/test";
@@ -76,7 +77,7 @@ public class MobileEventStreamTest {
 
     @Mock private Consumer<String> consumer;
 
-    private MobileEventStream stream;
+    private StreamConnection stream;
 
     @BeforeClass
     public static void serverStart() throws Exception {
@@ -159,8 +160,8 @@ public class MobileEventStreamTest {
 
         doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.<String>absent(), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.<StartPosition>absent(), 10);
 
         assertEquals(1, received.size());
         assertEquals(line, received.get(0));
@@ -188,8 +189,8 @@ public class MobileEventStreamTest {
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         StreamQueryDescriptor descriptor = descriptor();
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.<String>absent(), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.<StartPosition>absent(), 10);
 
         assertTrue(authorization.get().toLowerCase().startsWith("bearer"));
         String token = authorization.get().substring("bearer ".length());
@@ -218,14 +219,14 @@ public class MobileEventStreamTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        String offset = Long.toString(RandomUtils.nextInt(0, 100000));
+        long offset = RandomUtils.nextInt(0, 100000);
         StreamQueryDescriptor descriptor = descriptor();
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.of(offset), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.of(StartPosition.offset(offset)), 10);
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals(offset, bodyObj.get("resume_offset").getAsString());
+        assertEquals(offset, bodyObj.get("resume_offset").getAsLong());
     }
 
     @Test
@@ -248,14 +249,13 @@ public class MobileEventStreamTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        String offset = "LATEST";
         StreamQueryDescriptor descriptor = descriptor();
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.of(offset), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.of(StartPosition.relative(StartPosition.RelativePosition.LATEST)), 10);
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals(offset, bodyObj.get("start").getAsString());
+        assertEquals("LATEST", bodyObj.get("start").getAsString());
     }
 
     @Test
@@ -278,14 +278,13 @@ public class MobileEventStreamTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        String offset = "EARLIEST";
         StreamQueryDescriptor descriptor = descriptor();
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.of(offset), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST)), 10);
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals(offset, bodyObj.get("start").getAsString());
+        assertEquals("EARLIEST", bodyObj.get("start").getAsString());
     }
 
     @Test
@@ -330,8 +329,8 @@ public class MobileEventStreamTest {
 
         StreamQueryDescriptor descriptor = filterDescriptor(filter1, filter2);
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.<String>absent(), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.<StartPosition>absent(), 10);
 
         Gson gson = GsonUtil.getGson();
 
@@ -362,8 +361,8 @@ public class MobileEventStreamTest {
         Subset subset = Subset.createPartitionSubset(10, 0);
         StreamQueryDescriptor descriptor = subsetDescriptor(subset);
 
-        stream = new MobileEventStream(descriptor, http, consumer, url);
-        read(stream, Optional.<String>absent(), 10);
+        stream = new StreamConnection(descriptor, http, consumer, url);
+        read(stream, Optional.<StartPosition>absent(), 10);
 
         Gson gson = GsonUtil.getGson();
 
@@ -384,11 +383,11 @@ public class MobileEventStreamTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, consumer, url);
 
         boolean failed = false;
         try {
-            read(stream, Optional.<String>absent(), 10);
+            read(stream, Optional.<StartPosition>absent(), 10);
         }
         catch (ConnectionException e) {
             failed = true;
@@ -410,11 +409,11 @@ public class MobileEventStreamTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, consumer, url);
 
         boolean failed = false;
         try {
-            read(stream, Optional.<String>absent(), 10);
+            read(stream, Optional.<StartPosition>absent(), 10);
         }
         catch (ConnectionException e) {
             failed = true;
@@ -455,9 +454,9 @@ public class MobileEventStreamTest {
         .doAnswer(secondHttpAnswer)
         .when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new MobileEventStream(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, consumer, url);
 
-        read(stream, Optional.<String>absent(), 10);
+        read(stream, Optional.<StartPosition>absent(), 10);
 
         assertEquals(leaderHost, receivedLeaderHost.get());
     }
@@ -480,11 +479,11 @@ public class MobileEventStreamTest {
 
         doThrow(new RuntimeException("boom")).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, consumer, url);
 
         boolean excepted = false;
         try {
-            read(stream, Optional.<String>absent(), 10);
+            read(stream, Optional.<StartPosition>absent(), 10);
         }
         catch (Exception e) {
             excepted = true;
@@ -522,13 +521,13 @@ public class MobileEventStreamTest {
 
         doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
-        stream = new MobileEventStream(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, consumer, url);
 
         ExecutorService thread = Executors.newSingleThreadExecutor();
         Callable<Boolean> callable = new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                stream.read(Optional.<String>absent());
+                stream.read(Optional.<StartPosition>absent());
                 return Boolean.TRUE;
             }
         };
@@ -555,7 +554,7 @@ public class MobileEventStreamTest {
 
     @Test
     public void testCloseBeforeRead() throws Exception {
-        stream = new MobileEventStream(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, consumer, url);
 
         stream.close();
 
@@ -566,7 +565,7 @@ public class MobileEventStreamTest {
                 @Override
                 public void run() {
                     try {
-                        stream.read(Optional.<String>absent());
+                        stream.read(Optional.<StartPosition>absent());
                         latch.countDown();
                     }
                     catch (InterruptedException e) {
@@ -582,8 +581,8 @@ public class MobileEventStreamTest {
         }
     }
 
-    private void read(final MobileEventStream mes,
-                      final Optional<String> offset,
+    private void read(final StreamConnection mes,
+                      final Optional<StartPosition> position,
                       final int consumeSeconds) throws Exception {
 
         ExecutorService thread = Executors.newFixedThreadPool(2);
@@ -591,7 +590,7 @@ public class MobileEventStreamTest {
             @Override
             public void run() {
                 try {
-                    mes.read(offset);
+                    mes.read(position);
                 }
                 catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

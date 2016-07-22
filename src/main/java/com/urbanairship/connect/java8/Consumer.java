@@ -5,5 +5,6 @@ package com.urbanairship.connect.java8;
  */
 public interface Consumer<T> {
 
-    public void accept(T event);
+    void accept(T event);
+
 }

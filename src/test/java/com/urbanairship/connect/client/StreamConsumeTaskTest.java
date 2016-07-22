@@ -5,13 +5,9 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.ning.http.client.AsyncHttpClient;
+import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.MapConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,35 +27,25 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class MobileEventConsumeTaskTest {
+public class StreamConsumeTaskTest {
 
-    private static final String MES_URL = "https://test/api/endpoint";
-    private static final Configuration CONFIG = new MapConfiguration(ImmutableMap.of(
-            ConnectClientConfiguration.MES_URL_PROP, MES_URL
-    ));
-
-    private MobileEventConsumeTask task;
+    private StreamConsumeTask task;
 
     @Mock private Consumer<String> consumer;
-    @Mock private Supplier<Optional<String>> offsetProvider;
 
-    @Mock private StreamSupplier supplier;
-    @Mock private MobileEventStream stream;
+    @Mock private StreamConnectionSupplier supplier;
+    @Mock private StreamConnection stream;
 
-    @Captor private ArgumentCaptor<Optional<String>> offsetCaptor;
+    @Captor private ArgumentCaptor<Optional<StartPosition>> positionCaptor;
 
     private ExecutorService readThread;
 
@@ -67,7 +53,7 @@ public class MobileEventConsumeTaskTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        when(supplier.get(Matchers.<StreamQueryDescriptor>any(), Matchers.<AsyncHttpClient>any(), Matchers.<Consumer<String>>any(), anyString()))
+        when(supplier.get(Matchers.<StreamQueryDescriptor>any(), Matchers.<AsyncHttpClient>any(), Matchers.<Consumer<String>>any()))
                 .thenReturn(stream);
 
         readThread = Executors.newSingleThreadExecutor();
@@ -85,9 +71,6 @@ public class MobileEventConsumeTaskTest {
 
         task = task(descriptor);
 
-        String offset = randomAlphanumeric(10);
-        when(offsetProvider.get()).thenReturn(Optional.of(offset));
-
         final CountDownLatch readCalled = new CountDownLatch(1);
         final CountDownLatch release = new CountDownLatch(1);
         doAnswer(new Answer() {
@@ -99,7 +82,7 @@ public class MobileEventConsumeTaskTest {
             }
         })
         .doNothing()
-        .when(stream).read(Matchers.<Optional<String>>any());
+        .when(stream).read(Matchers.<Optional<StartPosition>>any());
 
         readThread.submit(task);
 
@@ -109,23 +92,14 @@ public class MobileEventConsumeTaskTest {
 
         task.stop();
 
-        verify(supplier, atLeastOnce()).get(eq(descriptor), Matchers.<AsyncHttpClient>any(), eq(consumer), eq(MES_URL));
-        verify(stream, atLeastOnce()).read(Optional.of(offset));
+        verify(supplier, atLeastOnce()).get(eq(descriptor), Matchers.<AsyncHttpClient>any(), eq(consumer));
+        verify(stream, atLeastOnce()).read(Optional.<StartPosition>absent());
     }
 
     @Test
     public void testRetriesOnException() throws Exception {
         StreamQueryDescriptor descriptor = descriptor();
         task = task(descriptor);
-
-        String offset1 = randomAlphabetic(10);
-        String offset2 = randomAlphabetic(10);
-        String offset3 = randomAlphabetic(10);
-        when(offsetProvider.get())
-                .thenReturn(Optional.of(offset1))
-                .thenReturn(Optional.of(offset2))
-                .thenReturn(Optional.of(offset3))
-                .thenReturn(Optional.<String>absent());
 
         final CountDownLatch done = new CountDownLatch(1);
 
@@ -139,27 +113,20 @@ public class MobileEventConsumeTaskTest {
                 return null;
             }
         })
-        .when(stream).read(Matchers.<Optional<String>>any());
+        .when(stream).read(Matchers.<Optional<StartPosition>>any());
 
         readThread.submit(task);
 
         assertTrue(done.await(10, TimeUnit.SECONDS));
 
         task.stop();
-
-        verify(stream, atLeast(3)).read(offsetCaptor.capture());
-
-        assertEquals(ImmutableList.of(
-                Optional.of(offset1), Optional.of(offset2), Optional.of(offset3)
-        ), offsetCaptor.getAllValues().subList(0, 3));
     }
 
     @Test
     public void testConnectionException() throws Exception {
         task = task(descriptor());
 
-        when(offsetProvider.get()).thenReturn(Optional.<String>absent());
-        doThrow(new ConnectionException("boom")).when(stream).read(Matchers.<Optional<String>>any());
+        doThrow(new ConnectionException("boom")).when(stream).read(Matchers.<Optional<StartPosition>>any());
 
         Future<?> future = readThread.submit(task);
 
@@ -175,11 +142,8 @@ public class MobileEventConsumeTaskTest {
         assertTrue(failure instanceof ConnectionException);
     }
 
-    private MobileEventConsumeTask task(StreamQueryDescriptor descriptor) {
-        return MobileEventConsumeTask.newBuilder()
-                .setConsumer(consumer)
-                .setConfig(CONFIG)
-                .setLatestOffsetProvider(offsetProvider)
+    private StreamConsumeTask task(StreamQueryDescriptor descriptor) {
+        return StreamConsumeTask.newBuilder()
                 .setStreamQueryDescriptor(descriptor)
                 .setStreamSupplier(supplier)
                 .build();

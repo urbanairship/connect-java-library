@@ -7,24 +7,24 @@ package com.urbanairship.connect.client;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 
-/**
- * A class of util methods for {@link MobileEventConsumeTask}.
- */
-public final class StreamUtils {
+import java.util.concurrent.TimeUnit;
 
-    private StreamUtils() {}
+public final class HttpClientUtil {
+
+    public static final int HTTP_CONNECT_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(10L);
+    public static final int HTTP_READ_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(5L);
+
+    private HttpClientUtil() {}
 
     /**
-     * Builds an AsyncHttpClient.
-     *
-     * @param config ConnectClientConfiguration with timeout settings.
+     * Builds an AsyncHttpClient with default settings
      * @return An AsyncHttpClient instance.
      */
-    public static AsyncHttpClient buildHttpClient(ConnectClientConfiguration config) {
+    public static AsyncHttpClient defaultHttpClient() {
         AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
-            .setConnectTimeout(config.mesHttpConnectTimeout)
-            .setReadTimeout(config.mesHttpReadTimeout)
-            .setUserAgent("Connect Client")
+            .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
+            .setReadTimeout(HTTP_READ_TIMEOUT)
+            .setUserAgent("UA Java Connect Client")
             .setRequestTimeout(-1)
             .setAllowPoolingConnections(false)
             .setAllowPoolingSslConnections(false)

@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Object containing app credentials and API request details for the {@link com.urbanairship.connect.client.MobileEventStream}.
+ * Object containing app credentials and API request details for the {@link StreamConnection}.
  */
 public final class StreamQueryDescriptor {
 
