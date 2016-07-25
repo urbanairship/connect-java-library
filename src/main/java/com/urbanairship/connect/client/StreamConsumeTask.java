@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -137,10 +138,12 @@ public final class StreamConsumeTask implements Runnable {
      * Stops the task and causes the {@link #run()} method to exit.
      */
     public void stop() {
-        log.info("Shutting down stream handler for app " + streamQueryDescriptor.getCreds().getAppKey());
         if (!active.compareAndSet(true, false)) {
+            log.debug("Ignoring call to stop as initial call has already occurred");
             return;
         }
+
+        log.info("Shutting down stream handler for app " + streamQueryDescriptor.getCreds().getAppKey());
 
         // The streamLock sync is used to guard the potential race between a call to stop and an iteration inside the
         // stream method. We want to ensure that if the streamConnection resource is setup, we close it. The streamLock
@@ -154,13 +157,6 @@ public final class StreamConsumeTask implements Runnable {
                     throw new RuntimeException("Failed to shutdown stream and stop gracefully", e);
                 }
             }
-        }
-
-        try {
-            done.await();
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -262,7 +258,7 @@ public final class StreamConsumeTask implements Runnable {
         }
     }
 
-    private static final class EnqueuingConsumer implements Consumer<String>, Supplier<Optional<Long>> {
+    private final class EnqueuingConsumer implements Consumer<String>, Supplier<Optional<Long>> {
 
         private final AtomicLong lastOffset = new AtomicLong(-1L);
 
@@ -285,8 +281,13 @@ public final class StreamConsumeTask implements Runnable {
             }
 
             try {
-                targetQueue.put(event);
-                lastOffset.set(offset);
+                while (active.get()) {
+                    if (targetQueue.offer(event, 1, TimeUnit.SECONDS)) {
+                        lastOffset.set(offset);
+                        break;
+                    }
+
+                }
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
