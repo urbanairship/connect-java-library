@@ -24,7 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A class for handling {@link StreamConnection} interactions. Includes basic stream connection/consumption and
+ * A class for handling {@link StreamConnection} interactions and expose the data received from the Urban Airship Connect
+ * API out through a {@link BlockingQueue} provided by the user. Includes basic stream connection/consumption and
  * reconnection on retryable errors.
  *
  * Proper use of this class requires that only a single call ever be made to the {@link #run()} method. The {@link #stop()}

@@ -17,6 +17,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Wraps up the the low level classes that interact with the Urban Airship Connect API and exposes the data received
+ * from the API as an {@link java.util.Iterator} that is open ended and behaves conceptually as a "stream" of events.
+ *
+ * Note this class is {@link AutoCloseable} and so proper use should look something like:
+ * <pre>
+ *     try (Stream stream = new Stream(...)) {
+ *         while (stream.hasNext()) {
+ *              String event = stream.next();
+ *         }
+ *     }
+ * </pre>
+ */
 public final class Stream extends AbstractIterator<String> implements AutoCloseable {
 
     private static final Logger log = LogManager.getLogger(Stream.class);
