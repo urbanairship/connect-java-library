@@ -222,7 +222,7 @@ public final class StreamConsumeTask implements Runnable {
         }
 
         @VisibleForTesting
-        Builder setStreamSupplier(StreamConnectionSupplier supplier) {
+        Builder setStreamConnectionSupplier(StreamConnectionSupplier supplier) {
             this.supplier = supplier;
             return this;
         }

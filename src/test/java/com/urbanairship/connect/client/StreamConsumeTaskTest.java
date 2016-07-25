@@ -7,7 +7,6 @@ package com.urbanairship.connect.client;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.AbstractFuture;
 import com.google.gson.JsonObject;
 import com.ning.http.client.AsyncHttpClient;
 import com.urbanairship.connect.client.model.GsonUtil;
@@ -35,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
@@ -80,7 +80,7 @@ public class StreamConsumeTaskTest {
 
     @Test
     public void testRun() throws Exception {
-        final Future<Consumer<String>> hook = hookStream();
+        final AtomicReference<Consumer<String>> hook = hookStream();
 
         StreamQueryDescriptor descriptor = descriptor();
         BlockingQueue<String> queue = new LinkedBlockingQueue<>();
@@ -122,7 +122,7 @@ public class StreamConsumeTaskTest {
         final List<TestEvent> batch2 = events(3);
         final List<TestEvent> batch3 = events(1);
 
-        final Future<Consumer<String>> hook = hookStream();
+        final AtomicReference<Consumer<String>> hook = hookStream();
 
         final CountDownLatch iterationsDone = new CountDownLatch(1);
         final CountDownLatch assertionDone = new CountDownLatch(1);
@@ -190,7 +190,7 @@ public class StreamConsumeTaskTest {
         StartPosition position = StartPosition.offset(12355L);
         task = StreamConsumeTask.newBuilder()
                 .setStreamQueryDescriptor(descriptor())
-                .setStreamSupplier(supplier)
+                .setStreamConnectionSupplier(supplier)
                 .setTargetQueue(new LinkedBlockingQueue<String>())
                 .setStartingPosition(position)
                 .build();
@@ -243,7 +243,7 @@ public class StreamConsumeTaskTest {
         final List<TestEvent> batch1 = events(2);
         final List<TestEvent> batch2 = events(3);
 
-        final Future<Consumer<String>> hook = hookStream();
+        final AtomicReference<Consumer<String>> hook = hookStream();
 
         final CountDownLatch iterationsDone = new CountDownLatch(1);
         final CountDownLatch assertionDone = new CountDownLatch(1);
@@ -293,7 +293,7 @@ public class StreamConsumeTaskTest {
         BlockingQueue<String> queue = new LinkedBlockingQueue<>(1);
         task = task(descriptor(), queue);
 
-        final Future<Consumer<String>> hook = hookStream();
+        final AtomicReference<Consumer<String>> hook = hookStream();
 
         final List<TestEvent> events = events(5);
 
@@ -361,14 +361,8 @@ public class StreamConsumeTaskTest {
     }
 
     @SuppressWarnings("unchecked")
-    private Future<Consumer<String>> hookStream() {
-        class Hook extends AbstractFuture<Consumer<String>> {
-            void signal(Consumer<String> consumer) {
-                set(consumer);
-            }
-        }
-
-        final Hook hook = new Hook();
+    private AtomicReference<Consumer<String>> hookStream() {
+        final AtomicReference<Consumer<String>> hook = new AtomicReference<>();
 
         final AtomicBoolean first = new AtomicBoolean(true);
         when(supplier.get(Matchers.<StreamQueryDescriptor>any(), Matchers.<AsyncHttpClient>any(), Matchers.<Consumer<String>>any()))
@@ -377,7 +371,7 @@ public class StreamConsumeTaskTest {
                 public StreamConnection answer(InvocationOnMock invocation) throws Throwable {
                     if (first.compareAndSet(true, false)) {
                         Consumer<String> consumer = (Consumer<String>) invocation.getArguments()[2];
-                        hook.signal(consumer);
+                        hook.set(consumer);
                     }
 
                     return stream;
@@ -412,7 +406,7 @@ public class StreamConsumeTaskTest {
     private StreamConsumeTask task(StreamQueryDescriptor descriptor, BlockingQueue<String> queue) {
         return StreamConsumeTask.newBuilder()
                 .setStreamQueryDescriptor(descriptor)
-                .setStreamSupplier(supplier)
+                .setStreamConnectionSupplier(supplier)
                 .setTargetQueue(queue)
                 .build();
     }

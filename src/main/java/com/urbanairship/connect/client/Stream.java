@@ -1,13 +1,13 @@
 package com.urbanairship.connect.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.collect.UnmodifiableIterator;
+import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.urbanairship.connect.client.model.StartPosition;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -17,7 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class Stream extends UnmodifiableIterator<String> implements AutoCloseable {
+public final class Stream extends AbstractIterator<String> implements AutoCloseable {
 
     private static final Logger log = LogManager.getLogger(Stream.class);
 
@@ -27,9 +27,14 @@ public final class Stream extends UnmodifiableIterator<String> implements AutoCl
     private final BlockingQueue<String> eventQueue;
     private final StreamConsumeTask consumeTask;
 
-    private String next = null;
-
     public Stream(StreamQueryDescriptor descriptor, Optional<StartPosition> startingPosition) {
+        this(descriptor, startingPosition, Optional.<StreamConnectionSupplier>absent());
+    }
+
+    @VisibleForTesting
+    public Stream(StreamQueryDescriptor descriptor,
+                  Optional<StartPosition> startingPosition,
+                  Optional<StreamConnectionSupplier> connSupplier) {
         // TODO: size limit configured?
         eventQueue = new LinkedBlockingQueue<>(100);
         threads = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
@@ -45,32 +50,13 @@ public final class Stream extends UnmodifiableIterator<String> implements AutoCl
             builder.setStartingPosition(startingPosition.get());
         }
 
+        if (connSupplier.isPresent()) {
+            builder.setStreamConnectionSupplier(connSupplier.get());
+        }
+
         consumeTask = builder.build();
         Future<?> handle = threads.submit(consumeTask);
         threads.submit(new SourceWatcher(handle));
-    }
-
-    @Override
-    public boolean hasNext() {
-        if (next != null) {
-            return true;
-        }
-
-        Optional<String> result = computeNext();
-        if (result.isPresent()) {
-            next = result.get();
-        }
-
-        return next != null;
-    }
-
-    @Override
-    public String next() {
-        if (next == null) {
-            throw new NoSuchElementException();
-        }
-
-        return next;
     }
 
     @Override
@@ -83,7 +69,8 @@ public final class Stream extends UnmodifiableIterator<String> implements AutoCl
         }
     }
 
-    private Optional<String> computeNext() {
+    @Override
+    public String computeNext() {
         String event = null;
         while (event == null) {
 
@@ -106,7 +93,7 @@ public final class Stream extends UnmodifiableIterator<String> implements AutoCl
             }
         }
 
-        return Optional.fromNullable(event);
+        return event == null ? endOfData() : event;
     }
 
     private static final class SourceExit {
