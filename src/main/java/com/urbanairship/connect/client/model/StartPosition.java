@@ -5,10 +5,22 @@ import com.google.common.base.Preconditions;
 
 import java.util.Objects;
 
+/**
+ * Identifies a position - either relative or absolute - within a stream of events sourced from the Urban Airship Connect API.
+ */
 public final class StartPosition {
 
     public enum RelativePosition {
-        EARLIEST("EARLIEST"), LATEST("LATEST");
+        /**
+         * Specifies a position as being the earliest event available for a particular stream.
+         */
+        EARLIEST("EARLIEST"),
+
+        /**
+         * Specifies a position as being the end of the available events in a particular stream at the point it is
+         * requested and thus implies that only events received after that point in time be included.
+         */
+        LATEST("LATEST");
 
         private final String id;
 
@@ -21,11 +33,22 @@ public final class StartPosition {
         }
     }
 
+    /**
+     * Create a position specified by an exact offset.
+     *
+     * @param offset the offset specifying the position. An offset can be retrieved from the body of an event received from
+     *               the Urban Airship Connect API and specifies that event's position in the overall stream.
+     */
     public static StartPosition offset(long offset) {
         Preconditions.checkArgument(offset >= 0, "Offset cannot be negative");
         return new StartPosition(null, offset);
     }
 
+    /**
+     * Create a position specified by a relative position.
+     *
+     * @param position the relative position in the stream.
+     */
     public static StartPosition relative(RelativePosition position) {
         Preconditions.checkNotNull(position);
         return new StartPosition(position, -1L);
