@@ -7,8 +7,8 @@ package com.urbanairship.connect.client.offsets;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class InFileOffsetManager implements OffsetManager {
 
-    private static final Logger logger = LogManager.getLogger(InFileOffsetManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(InFileOffsetManager.class);
 
     private final File offsetFile;
     private final AtomicReference<String> offset = new AtomicReference<>(null);

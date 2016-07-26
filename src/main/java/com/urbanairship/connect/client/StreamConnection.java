@@ -22,8 +22,8 @@ import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.nio.charset.StandardCharsets;
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class StreamConnection implements AutoCloseable {
 
-    private static final Logger log = LogManager.getLogger(StreamConnection.class);
+    private static final Logger log = LoggerFactory.getLogger(StreamConnection.class);
 
     public static final String X_UA_APPKEY = "X-UA-Appkey";
     public static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
