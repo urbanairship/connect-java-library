@@ -12,7 +12,7 @@ public class DeviceInfoAdapterTest {
 
 
     @Test
-    public void deserialize() throws Exception {
+    public void testDeserialize() throws Exception {
         final DeviceInfoAdapter deviceInfoAdapter = new DeviceInfoAdapter();
 
         final JsonObject deviceInfo = new JsonObject();
@@ -37,7 +37,7 @@ public class DeviceInfoAdapterTest {
     }
 
     @Test
-    public void serialize() throws Exception {
+    public void testSerialize() throws Exception {
 
     }
 

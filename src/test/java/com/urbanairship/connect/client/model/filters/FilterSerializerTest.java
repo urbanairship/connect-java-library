@@ -15,7 +15,8 @@ import static org.junit.Assert.assertEquals;
 
 public class FilterSerializerTest {
 
-    Gson gson = GsonUtil.getGson();
+    private static final Gson gson = GsonUtil.getGson();
+
     @Test
     public void testMaxFilter() throws Exception {
 

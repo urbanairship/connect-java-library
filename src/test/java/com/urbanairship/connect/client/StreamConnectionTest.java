@@ -24,11 +24,14 @@ import com.urbanairship.connect.client.model.filters.Filter;
 import com.urbanairship.connect.client.model.filters.NotificationFilter;
 import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.lang3.RandomUtils;
+import org.hamcrest.core.Is;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -372,6 +375,18 @@ public class StreamConnectionTest {
         assertEquals(gson.toJson(subset), gson.toJson(bodyObj.get("subset")));
     }
 
+    @Rule public ExpectedException expectedException = ExpectedException.none();
+
+    @Test
+    public void testConnectionRefused() throws Exception {
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectCause(Is.isA(ExecutionException.class));
+
+        stream = new StreamConnection(descriptor(), http, consumer, String.format("https://localhost:%d%s", PORT, PATH));
+
+        stream.read(Optional.<StartPosition>absent());
+    }
+
     @Test
     public void testConnectionFail() throws Exception {
         Answer httpAnswer = new Answer() {
@@ -385,17 +400,11 @@ public class StreamConnectionTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
+        expectedException.expect(ConnectionException.class);
+
         stream = new StreamConnection(descriptor(), http, consumer, url);
 
-        boolean failed = false;
-        try {
-            read(stream, Optional.<StartPosition>absent(), 10);
-        }
-        catch (ConnectionException e) {
-            failed = true;
-        }
-
-        assertTrue(failed);
+        read(stream, Optional.<StartPosition>absent(), 10);
     }
 
     @Test
@@ -411,17 +420,11 @@ public class StreamConnectionTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
+        expectedException.expect(ConnectionException.class);
+
         stream = new StreamConnection(descriptor(), http, consumer, url);
 
-        boolean failed = false;
-        try {
-            read(stream, Optional.<StartPosition>absent(), 10);
-        }
-        catch (ConnectionException e) {
-            failed = true;
-        }
-
-        assertTrue(failed);
+        read(stream, Optional.<StartPosition>absent(), 10);
     }
 
     @Test
@@ -483,15 +486,9 @@ public class StreamConnectionTest {
 
         stream = new StreamConnection(descriptor(), http, consumer, url);
 
-        boolean excepted = false;
-        try {
-            read(stream, Optional.<StartPosition>absent(), 10);
-        }
-        catch (Exception e) {
-            excepted = true;
-        }
+        expectedException.expect(RuntimeException.class);
 
-        assertTrue(excepted);
+        read(stream, Optional.<StartPosition>absent(), 10);
     }
 
     @Test

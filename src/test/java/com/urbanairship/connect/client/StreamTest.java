@@ -6,8 +6,11 @@ import com.ning.http.client.AsyncHttpClient;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
+import org.hamcrest.core.Is;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -22,8 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -76,6 +77,8 @@ public class StreamTest {
         verify(conn, atLeastOnce()).close();
     }
 
+    @Rule public ExpectedException expectedException = ExpectedException.none();
+
     @Test
     public void testExceptionBubblesOut() throws Exception {
         when(connSupplier.get(Matchers.<StreamQueryDescriptor>any(), Matchers.<AsyncHttpClient>any(), Matchers.<Consumer<String>>any()))
@@ -83,18 +86,14 @@ public class StreamTest {
 
         doThrow(new ConnectionException("boom")).when(conn).read(Matchers.<Optional<StartPosition>>any());
 
-        Throwable ce = null;
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectCause(Is.isA(ConnectionException.class));
+
         try (Stream stream = new Stream(descriptor(), Optional.<StartPosition>absent(), Optional.of(connSupplier))){
             while (stream.hasNext()) {
                 stream.next();
             }
         }
-        catch (RuntimeException e) {
-            ce = e.getCause();
-        }
-
-        assertNotNull(ce);
-        assertTrue(ce instanceof ConnectionException);
     }
 
     @Test

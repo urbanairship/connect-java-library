@@ -18,7 +18,7 @@ public class InAppMessageResolutionEventTest {
     private static final JsonParser parser = new JsonParser();
 
     @Test
-    public void parseJSONUserDismissed() throws Exception {
+    public void testParseJSONUserDismissed() throws Exception {
         final String pushId = "0e9c711a-bf9d-4b2c-8309-2c5b9e3a5d69";
         final String groupdId = "0e9c711a-bf9d-4b2c-8309-2c5b9e3a5d69";
         final String sessionId = "e65e56a0-8e32-4d26-bba4-43541fff0ec5";
@@ -102,7 +102,7 @@ public class InAppMessageResolutionEventTest {
     }
 
     @Test
-    public void parseJSONExpired() throws Exception {
+    public void testParseJSONExpired() throws Exception {
         final String pushId = "0e9c711a-bf9d-4b2c-8309-2c5b9e3a5d69";
         final String groupdId = "0e9c711a-bf9d-4b2c-8309-2c5b9e3a5d69";
         final String sessionId = "e65e56a0-8e32-4d26-bba4-43541fff0ec5";
@@ -198,7 +198,7 @@ public class InAppMessageResolutionEventTest {
     }
 
     @Test
-    public void parseJSONButton() throws Exception {
+    public void testParseJSONButton() throws Exception {
         final String pushId = "0e9c711a-bf9d-4b2c-8309-2c5b9e3a5d69";
         final String groupdId = "0e9c711a-bf9d-4b2c-8309-2c5b9e3a5d69";
         final String sessionId = "e65e56a0-8e32-4d26-bba4-43541fff0ec5";
