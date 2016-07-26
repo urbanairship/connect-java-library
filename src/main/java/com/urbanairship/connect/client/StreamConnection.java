@@ -141,7 +141,7 @@ public class StreamConnection implements AutoCloseable {
         try {
             connection = connect(Collections.<Cookie>emptyList(), startPosition);
         }
-        catch (ConnectionException e) {
+        catch (InterruptedException | ConnectionException e) {
             throw e;
         }
         catch (Exception e) {
