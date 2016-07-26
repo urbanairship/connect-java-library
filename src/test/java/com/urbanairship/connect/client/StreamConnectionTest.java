@@ -5,7 +5,11 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.net.HttpHeaders;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -14,6 +18,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
 import com.urbanairship.connect.client.model.DeviceFilterType;
 import com.urbanairship.connect.client.model.EventType;
 import com.urbanairship.connect.client.model.GsonUtil;
@@ -24,7 +29,6 @@ import com.urbanairship.connect.client.model.filters.Filter;
 import com.urbanairship.connect.client.model.filters.NotificationFilter;
 import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.lang3.RandomUtils;
-import org.hamcrest.core.Is;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -32,6 +36,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -46,7 +51,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -61,10 +65,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class StreamConnectionTest {
 
@@ -80,6 +88,7 @@ public class StreamConnectionTest {
     private AsyncHttpClient http;
 
     @Mock private Consumer<String> consumer;
+    @Mock private ConnectionRetryStrategy connectionRetryStrategy;
 
     private StreamConnection stream;
 
@@ -115,6 +124,9 @@ public class StreamConnectionTest {
                 .build();
 
         http = new AsyncHttpClient(clientConfig);
+
+        when(connectionRetryStrategy.shouldRetry(anyInt())).thenReturn(false);
+        when(connectionRetryStrategy.getPauseMillis(anyInt())).thenReturn(0L);
     }
 
     @After
@@ -164,8 +176,8 @@ public class StreamConnectionTest {
 
         doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.<StartPosition>absent(), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        stream.read(Optional.<StartPosition>absent());
 
         assertEquals(1, received.size());
         assertEquals(line, received.get(0));
@@ -179,6 +191,7 @@ public class StreamConnectionTest {
     public void testAuth() throws Exception {
         final AtomicReference<String> authorization = new AtomicReference<>();
         final AtomicReference<String> appKeyHeader = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -186,7 +199,7 @@ public class StreamConnectionTest {
                 authorization.set(exchange.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION));
                 appKeyHeader.set(exchange.getRequestHeaders().getFirst("X-UA-Appkey"));
                 exchange.sendResponseHeaders(200, 0L);
-
+                received.countDown();
                 return null;
             }
         };
@@ -194,8 +207,10 @@ public class StreamConnectionTest {
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         StreamQueryDescriptor descriptor = descriptor();
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.<StartPosition>absent(), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.<StartPosition>absent());
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
 
         assertTrue(authorization.get().toLowerCase().startsWith("bearer"));
         String token = authorization.get().substring("bearer ".length());
@@ -207,6 +222,7 @@ public class StreamConnectionTest {
     @Test
     public void testRequestBodyWithOffset() throws Exception {
         final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -218,6 +234,8 @@ public class StreamConnectionTest {
                 body.set(new String(bytes, UTF_8));
 
                 exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
+
                 return null;
             }
         };
@@ -227,8 +245,10 @@ public class StreamConnectionTest {
         long offset = RandomUtils.nextInt(0, 100000);
         StreamQueryDescriptor descriptor = descriptor();
 
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.of(StartPosition.offset(offset)), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.of(StartPosition.offset(offset)));
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals(offset, bodyObj.get("resume_offset").getAsLong());
@@ -237,6 +257,7 @@ public class StreamConnectionTest {
     @Test
     public void testRequestWithRelativeOffsetLatest() throws Exception {
         final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -248,6 +269,8 @@ public class StreamConnectionTest {
                 body.set(new String(bytes, UTF_8));
 
                 exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
+
                 return null;
             }
         };
@@ -256,8 +279,10 @@ public class StreamConnectionTest {
 
         StreamQueryDescriptor descriptor = descriptor();
 
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.of(StartPosition.relative(StartPosition.RelativePosition.LATEST)), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.of(StartPosition.relative(StartPosition.RelativePosition.LATEST)));
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals("LATEST", bodyObj.get("start").getAsString());
@@ -266,6 +291,7 @@ public class StreamConnectionTest {
     @Test
     public void testRequestWithRelativeOffsetEarliest() throws Exception {
         final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -277,6 +303,8 @@ public class StreamConnectionTest {
                 body.set(new String(bytes, UTF_8));
 
                 exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
+
                 return null;
             }
         };
@@ -285,8 +313,10 @@ public class StreamConnectionTest {
 
         StreamQueryDescriptor descriptor = descriptor();
 
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST)), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST)));
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals("EARLIEST", bodyObj.get("start").getAsString());
@@ -295,6 +325,7 @@ public class StreamConnectionTest {
     @Test
     public void testRequestBodyWithFilter() throws Exception {
         final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -306,6 +337,7 @@ public class StreamConnectionTest {
                 body.set(new String(bytes, UTF_8));
 
                 exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
 
                 return null;
             }
@@ -334,8 +366,10 @@ public class StreamConnectionTest {
 
         StreamQueryDescriptor descriptor = filterDescriptor(filter1, filter2);
 
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.<StartPosition>absent(), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.<StartPosition>absent());
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
 
         Gson gson = GsonUtil.getGson();
 
@@ -346,6 +380,7 @@ public class StreamConnectionTest {
     @Test
     public void testRequestBodyWithSubset() throws Exception {
         final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -357,6 +392,7 @@ public class StreamConnectionTest {
                 body.set(new String(bytes, UTF_8));
 
                 exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
 
                 return null;
             }
@@ -366,8 +402,10 @@ public class StreamConnectionTest {
         Subset subset = Subset.createPartitionSubset(10, 0);
         StreamQueryDescriptor descriptor = subsetDescriptor(subset);
 
-        stream = new StreamConnection(descriptor, http, consumer, url);
-        read(stream, Optional.<StartPosition>absent(), 10);
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.<StartPosition>absent());
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
 
         Gson gson = GsonUtil.getGson();
 
@@ -380,9 +418,9 @@ public class StreamConnectionTest {
     @Test
     public void testConnectionRefused() throws Exception {
         expectedException.expect(RuntimeException.class);
-        expectedException.expectCause(Is.isA(ExecutionException.class));
+        expectedException.expectMessage("Failed to establish connection");
 
-        stream = new StreamConnection(descriptor(), http, consumer, String.format("https://localhost:%d%s", PORT, PATH));
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, String.format("https://localhost:%d%s", PORT, PATH));
 
         stream.read(Optional.<StartPosition>absent());
     }
@@ -393,7 +431,7 @@ public class StreamConnectionTest {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
-                exchange.sendResponseHeaders(500, 0L);
+                exchange.sendResponseHeaders(403, 0L);
                 return null;
             }
         };
@@ -402,9 +440,74 @@ public class StreamConnectionTest {
 
         expectedException.expect(ConnectionException.class);
 
-        stream = new StreamConnection(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
+        stream.read(Optional.<StartPosition>absent());
+    }
 
-        read(stream, Optional.<StartPosition>absent(), 10);
+    @Test
+    public void testConnectionRetry() throws Exception {
+        Answer errorAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(500, 0L);
+                return null;
+            }
+        };
+
+        final CountDownLatch successAnswerLatch = new CountDownLatch(1);
+        Answer successAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(200, 0L);
+
+                successAnswerLatch.countDown();
+                return null;
+            }
+        };
+
+        doAnswer(errorAnswer)
+        .doAnswer(errorAnswer)
+        .doAnswer(successAnswer)
+        .when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        ConnectionRetryStrategy strat = mock(ConnectionRetryStrategy.class);
+        when(strat.shouldRetry(anyInt())).thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                Integer i = (Integer) invocation.getArguments()[0];
+                return i < 3;
+            }
+        });
+        when(strat.getPauseMillis(anyInt())).thenReturn(0L);
+
+        ExecutorService thread = Executors.newSingleThreadExecutor();
+        stream = new StreamConnection(descriptor(), http, strat, consumer, url);
+        try {
+            thread.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        stream.read(Optional.<StartPosition>absent());
+                    }
+                    catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+
+            assertTrue(successAnswerLatch.await(10, TimeUnit.SECONDS));
+
+            ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+            verify(strat, times(2)).shouldRetry(captor.capture());
+
+            assertEquals(ImmutableList.of(1, 2), captor.getAllValues());
+        }
+        finally {
+            stream.close();
+            thread.shutdownNow();
+        }
     }
 
     @Test
@@ -422,9 +525,8 @@ public class StreamConnectionTest {
 
         expectedException.expect(ConnectionException.class);
 
-        stream = new StreamConnection(descriptor(), http, consumer, url);
-
-        read(stream, Optional.<StartPosition>absent(), 10);
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
+        stream.read(Optional.<StartPosition>absent());
     }
 
     @Test
@@ -432,6 +534,7 @@ public class StreamConnectionTest {
         final String leaderHost = "SRV=" + randomAlphanumeric(15);
 
         final AtomicReference<String> receivedLeaderHost = new AtomicReference<>();
+        final CountDownLatch latch = new CountDownLatch(1);
 
         Answer firstHttpAnswer = new Answer() {
             @Override
@@ -452,6 +555,8 @@ public class StreamConnectionTest {
 
                 exchange.sendResponseHeaders(200, 0L);
                 exchange.close();
+
+                latch.countDown();
                 return null;
             }
         };
@@ -459,9 +564,10 @@ public class StreamConnectionTest {
         .doAnswer(secondHttpAnswer)
         .when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        stream = new StreamConnection(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.<StartPosition>absent());
 
-        read(stream, Optional.<StartPosition>absent(), 10);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
 
         assertEquals(leaderHost, receivedLeaderHost.get());
     }
@@ -475,7 +581,8 @@ public class StreamConnectionTest {
                 exchange.sendResponseHeaders(200, 0L);
                 exchange.getResponseBody().write(randomAlphabetic(10).getBytes(UTF_8));
                 exchange.getResponseBody().write("\n".getBytes(UTF_8));
-                exchange.close();
+                exchange.getResponseBody().flush();
+
                 return null;
             }
         };
@@ -484,11 +591,10 @@ public class StreamConnectionTest {
 
         doThrow(new RuntimeException("boom")).when(consumer).accept(anyString());
 
-        stream = new StreamConnection(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
 
         expectedException.expect(RuntimeException.class);
-
-        read(stream, Optional.<StartPosition>absent(), 10);
+        stream.read(Optional.<StartPosition>absent());
     }
 
     @Test
@@ -521,7 +627,7 @@ public class StreamConnectionTest {
 
         doAnswer(consumerAnswer).when(consumer).accept(anyString());
 
-        stream = new StreamConnection(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
 
         ExecutorService thread = Executors.newSingleThreadExecutor();
         Callable<Boolean> callable = new Callable<Boolean>() {
@@ -554,7 +660,7 @@ public class StreamConnectionTest {
 
     @Test
     public void testCloseBeforeRead() throws Exception {
-        stream = new StreamConnection(descriptor(), http, consumer, url);
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
 
         stream.close();
 
@@ -581,16 +687,13 @@ public class StreamConnectionTest {
         }
     }
 
-    private void read(final StreamConnection mes,
-                      final Optional<StartPosition> position,
-                      final int consumeSeconds) throws Exception {
-
-        ExecutorService thread = Executors.newFixedThreadPool(2);
-        Future<?> future = thread.submit(new Runnable() {
+    private void read(final StreamConnection conn, final Optional<StartPosition> position) {
+        final ListeningExecutorService thread = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
+        ListenableFuture<?> future = thread.submit(new Runnable() {
             @Override
             public void run() {
                 try {
-                    mes.read(position);
+                    conn.read(position);
                 }
                 catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -598,37 +701,12 @@ public class StreamConnectionTest {
             }
         });
 
-        thread.submit(new Runnable() {
+        future.addListener(new Runnable() {
             @Override
             public void run() {
-                try {
-                    Thread.sleep(consumeSeconds);
-                    mes.close();
-                }
-                catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
+                thread.shutdownNow();
             }
-        });
-
-        try {
-            future.get(consumeSeconds * 2, TimeUnit.SECONDS);
-        }
-        catch (ExecutionException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-            else {
-                e.printStackTrace();
-                fail();
-            }
-        }
-        finally {
-            thread.shutdownNow();
-        }
+        }, MoreExecutors.directExecutor());
     }
 
     private StreamQueryDescriptor descriptor() {
