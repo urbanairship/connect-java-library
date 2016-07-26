@@ -502,6 +502,7 @@ public class StreamConnectionTest {
                 // hoping this is enough to force flushing data down the wire
                 exchange.getResponseBody().write(randomAlphabetic(10000).getBytes(UTF_8));
                 exchange.getResponseBody().write("\n".getBytes(UTF_8));
+                exchange.getResponseBody().flush();
 
                 return null;
             }
