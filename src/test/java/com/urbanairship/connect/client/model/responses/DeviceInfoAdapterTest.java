@@ -12,7 +12,7 @@ public class DeviceInfoAdapterTest {
 
 
     @Test
-    public void deserialize() throws Exception {
+    public void testDeserialize() throws Exception {
         final DeviceInfoAdapter deviceInfoAdapter = new DeviceInfoAdapter();
 
         final JsonObject deviceInfo = new JsonObject();
@@ -30,7 +30,6 @@ public class DeviceInfoAdapterTest {
 
         final DeviceInfo deserialized = deviceInfoAdapter.deserialize(deviceInfo, DeviceInfo.class, null);
 
-        System.out.println(deserialized);
         assertEquals(deserialized.getAttributes().get("yes"), "no");
         assertEquals(deserialized.getIdentifiers().get("balooga"), "whale");
         assertEquals(deserialized.getPlatform(), DeviceFilterType.ANDROID);
@@ -38,7 +37,7 @@ public class DeviceInfoAdapterTest {
     }
 
     @Test
-    public void serialize() throws Exception {
+    public void testSerialize() throws Exception {
 
     }
 
