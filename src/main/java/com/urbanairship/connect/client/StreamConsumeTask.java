@@ -11,6 +11,8 @@ import com.google.common.base.Supplier;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.ning.http.client.AsyncHttpClient;
+import com.urbanairship.connect.client.consume.BackoffConnectionRetryStrategy;
+import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
@@ -249,13 +251,19 @@ public final class StreamConsumeTask implements Runnable {
         }
     }
 
+    private static final ConnectionRetryStrategy CONNECTION_RETRY_STRATEGY = BackoffConnectionRetryStrategy.newBuilder()
+            .setMaxAttempts(10)
+            .setInterval(500L)
+            .setMaxWaitSeconds(30L)
+            .build();
+
     // Default StreamConnectionSupplier implementation
     private static class MobileEventStreamConnectionSupplier implements StreamConnectionSupplier {
         @Override
         public StreamConnection get(StreamQueryDescriptor descriptor,
                                     AsyncHttpClient client,
                                     Consumer<String> eventConsumer) {
-            return new StreamConnection(descriptor, client, eventConsumer, Constants.API_URL);
+            return new StreamConnection(descriptor, client, CONNECTION_RETRY_STRATEGY, eventConsumer, Constants.API_URL);
         }
     }
 

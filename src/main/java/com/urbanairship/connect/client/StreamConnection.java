@@ -14,6 +14,7 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
+import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
@@ -21,6 +22,8 @@ import com.urbanairship.connect.client.consume.StatusAndHeaders;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.nio.charset.StandardCharsets;
@@ -49,6 +52,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class StreamConnection implements AutoCloseable {
 
+    private static final Logger log = LogManager.getLogger(StreamConnection.class);
+
     public static final String X_UA_APPKEY = "X-UA-Appkey";
     public static final String ACCEPT_HEADER = "application/vnd.urbanairship+x-ndjson; version=3;";
 
@@ -56,6 +61,7 @@ public class StreamConnection implements AutoCloseable {
 
     private final StreamQueryDescriptor descriptor;
     private final AsyncHttpClient client;
+    private final ConnectionRetryStrategy connectionRetryStrategy;
     private final Consumer<String> eventConsumer;
     private final String url;
 
@@ -70,10 +76,12 @@ public class StreamConnection implements AutoCloseable {
 
     public StreamConnection(StreamQueryDescriptor descriptor,
                             AsyncHttpClient client,
+                            ConnectionRetryStrategy connectionRetryStrategy,
                             Consumer<String> eventConsumer,
                             String url) {
         this.descriptor = descriptor;
         this.client = client;
+        this.connectionRetryStrategy = connectionRetryStrategy;
         this.eventConsumer = eventConsumer;
         this.url = url;
     }
@@ -94,30 +102,57 @@ public class StreamConnection implements AutoCloseable {
             throw new IllegalStateException("Stream is already consuming!");
         }
 
-        // The sync is shared with the cleanup method and ensures we don't miss a "close" signal and potentially setup
-        // resources after the close and thus don't have those resources cleaned up in the case of a race between a call
-        // to cleanup and this method.
-        synchronized (transitionLock) {
-            if (closed) {
-                return;
+        boolean connected = false;
+        boolean retry;
+        int attempt = 0;
+        do {
+            attempt++;
+
+            // The sync is shared with the cleanup method and ensures we don't miss a "close" signal and potentially setup
+            // resources after the close and thus don't have those resources cleaned up in the case of a race between a call
+            // to cleanup and this method.
+            synchronized (transitionLock) {
+                if (closed) {
+                    break;
+                }
+
+                connected = begin(startPosition, attempt);
             }
 
-            begin(startPosition);
+            retry = false;
+            if (!connected && !closed) {
+                retry = connectionRetryStrategy.shouldRetry(attempt);
+                if (retry) {
+                    Thread.sleep(connectionRetryStrategy.getPauseMillis(attempt));
+                }
+            }
+        } while (!connected && retry);
+
+        if (!connected && !closed) {
+            throw new RuntimeException(String.format("Failed to establish connection to event stream after %d attempts", attempt));
         }
 
-        consume();
+        if (connected) {
+            consume();
+        }
     }
 
-    private void begin(Optional<StartPosition> startPosition) throws InterruptedException {
+    private boolean begin(Optional<StartPosition> startPosition, int attempt) throws InterruptedException {
         try {
             connection = connect(Collections.<Cookie>emptyList(), startPosition);
         }
-        catch (ExecutionException e) {
-            throw new RuntimeException("Failure attempting to connect to mobile event stream for app " + getAppKey(), e);
+        catch (InterruptedException | ConnectionException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            log.warn("Failure attempting to connect to event stream. Attempt #" + attempt, e);
+            return false;
         }
 
         bodyConsumeLatch = new CountDownLatch(1);
         connection.consume(bodyConsumeLatch);
+
+        return true;
     }
 
     private void consume() throws InterruptedException {
@@ -195,7 +230,7 @@ public class StreamConnection implements AutoCloseable {
         }
 
         if (status != 307) {
-            throw new ConnectionException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
+            throw new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
         }
 
         return handleRedirect(statusAndHeaders, startPosition);
