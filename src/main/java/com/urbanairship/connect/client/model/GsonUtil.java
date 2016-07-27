@@ -18,7 +18,6 @@ public final class GsonUtil {
     private final static Gson gson;
     static {
         gson = new GsonBuilder()
-                .registerTypeAdapterFactory(new OptionalTypeAdapterFactory())
                 .registerTypeAdapter(DeviceType.class, DeviceType.SERIALIZER)
                 .registerTypeAdapter(DeviceFilter.class, DeviceFilter.SERIALIZER)
                 .registerTypeAdapter(Filter.class, Filter.SERIALIZER)
