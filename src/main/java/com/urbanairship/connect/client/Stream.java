@@ -5,8 +5,8 @@ import com.google.common.base.Optional;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.urbanairship.connect.client.model.StartPosition;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class Stream extends AbstractIterator<String> implements AutoCloseable {
 
-    private static final Logger log = LogManager.getLogger(Stream.class);
+    private static final Logger log = LoggerFactory.getLogger(Stream.class);
 
     private final AtomicReference<SourceExit> sourceExit = new AtomicReference<>(null);
 

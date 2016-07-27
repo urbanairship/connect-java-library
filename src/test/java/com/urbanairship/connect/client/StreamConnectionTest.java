@@ -416,17 +416,28 @@ public class StreamConnectionTest {
     @Rule public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void testConnectionRefused() throws Exception {
+    public void testConnectionFail() throws Exception {
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+                exchange.sendResponseHeaders(500, 0L);
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Failed to establish connection");
 
-        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, String.format("https://localhost:%d%s", PORT, PATH));
+        stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
 
         stream.read(Optional.<StartPosition>absent());
     }
 
     @Test
-    public void testConnectionFail() throws Exception {
+    public void testConnectionBadRequest() throws Exception {
         Answer httpAnswer = new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
