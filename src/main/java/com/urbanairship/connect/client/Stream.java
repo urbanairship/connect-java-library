@@ -4,7 +4,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.urbanairship.connect.client.model.StartPosition;
+import com.urbanairship.connect.client.model.StreamQueryDescriptor;
+import com.urbanairship.connect.client.model.request.StartPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

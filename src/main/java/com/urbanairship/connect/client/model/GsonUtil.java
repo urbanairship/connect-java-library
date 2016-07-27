@@ -6,48 +6,32 @@ package com.urbanairship.connect.client.model;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.urbanairship.connect.client.model.filters.DeviceFilter;
-import com.urbanairship.connect.client.model.filters.DeviceFilterSerializer;
-import com.urbanairship.connect.client.model.responses.DateTimeAdapter;
-import com.urbanairship.connect.client.model.responses.DeviceInfo;
-import com.urbanairship.connect.client.model.responses.DeviceInfoAdapter;
-import com.urbanairship.connect.client.model.responses.Event;
-import com.urbanairship.connect.client.model.responses.EventAdapter;
-import org.joda.time.DateTime;
+import com.urbanairship.connect.client.model.request.StreamRequestPayload;
+import com.urbanairship.connect.client.model.request.Subset;
+import com.urbanairship.connect.client.model.request.filters.DeviceFilter;
+import com.urbanairship.connect.client.model.request.filters.DeviceType;
+import com.urbanairship.connect.client.model.request.filters.Filter;
+import com.urbanairship.connect.client.model.request.filters.NotificationFilter;
 
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
+public final class GsonUtil {
 
-public class GsonUtil {
-    private final static JsonParser parser = new JsonParser();
     private final static Gson gson;
-
     static {
-        GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapter(DeviceInfo.class, new DeviceInfoAdapter());
-        builder.registerTypeAdapterFactory(new OptionalTypeAdapterFactory());
-        builder.registerTypeAdapter(Event.class, new EventAdapter());
-        builder.registerTypeAdapter(DeviceFilter.class, new DeviceFilterSerializer());
-        builder.registerTypeAdapter(DateTime.class, new DateTimeAdapter());
-        gson = builder.create();
-    }
-
-    public static JsonObject parseJSONfromBytes(byte[] bytes) {
-        String byteString = new String(bytes, StandardCharsets.UTF_8);
-        return  parser.parse(byteString).getAsJsonObject();
-    }
-
-    public static byte[] serializeToJSONBytes(Object serializableObject, Type type) {
-        return gson.toJson(serializableObject, type).toString().getBytes(StandardCharsets.UTF_8);
+        gson = new GsonBuilder()
+                .registerTypeAdapterFactory(new OptionalTypeAdapterFactory())
+                .registerTypeAdapter(DeviceType.class, DeviceType.SERIALIZER)
+                .registerTypeAdapter(DeviceFilter.class, DeviceFilter.SERIALIZER)
+                .registerTypeAdapter(Filter.class, Filter.SERIALIZER)
+                .registerTypeAdapter(NotificationFilter.class, NotificationFilter.SERIALIZER)
+                .registerTypeAdapter(Subset.SampleSubset.class, Subset.SAMPLE_SUBSET_SERIALIZER)
+                .registerTypeAdapter(Subset.PartitionSubset.class, Subset.PARTITION_SUBSET_SERIALIZER)
+                .registerTypeAdapter(StreamRequestPayload.class, StreamRequestPayload.SERIALIZER)
+                .create();
     }
 
     public static Gson getGson() {
         return gson;
     }
 
-    public static JsonParser getParser() {
-        return parser;
-    }
+    private GsonUtil() { }
 }
