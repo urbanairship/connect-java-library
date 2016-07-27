@@ -19,14 +19,16 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
-import com.urbanairship.connect.client.model.DeviceFilterType;
-import com.urbanairship.connect.client.model.EventType;
+import com.urbanairship.connect.client.model.Creds;
 import com.urbanairship.connect.client.model.GsonUtil;
-import com.urbanairship.connect.client.model.StartPosition;
-import com.urbanairship.connect.client.model.Subset;
-import com.urbanairship.connect.client.model.filters.DeviceFilter;
-import com.urbanairship.connect.client.model.filters.Filter;
-import com.urbanairship.connect.client.model.filters.NotificationFilter;
+import com.urbanairship.connect.client.model.StreamQueryDescriptor;
+import com.urbanairship.connect.client.model.request.StartPosition;
+import com.urbanairship.connect.client.model.request.Subset;
+import com.urbanairship.connect.client.model.request.filters.DeviceFilter;
+import com.urbanairship.connect.client.model.request.filters.DeviceFilterType;
+import com.urbanairship.connect.client.model.request.filters.DeviceType;
+import com.urbanairship.connect.client.model.request.filters.Filter;
+import com.urbanairship.connect.client.model.request.filters.NotificationFilter;
 import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.After;
@@ -345,23 +347,23 @@ public class StreamConnectionTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        DeviceFilter device1 = new DeviceFilter(DeviceFilterType.ANDROID, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
-        DeviceFilter device2 = new DeviceFilter(DeviceFilterType.IOS, "3d970087-600e-4bb6-8474-5857d438faaa");
-        DeviceFilter device3 = new DeviceFilter(DeviceFilterType.NAMED_USER, "cool user");
-        NotificationFilter notification = NotificationFilter.createGroupIdFilter("a30abf06-7878-4096-9535-b50ac0ad6e8e");
+        DeviceFilter device1 = new DeviceFilter(DeviceFilterType.ANDROID_CHANNEL, "c8044c8a-d5fa-4e58-91d4-54d0f70b7409");
+        DeviceFilter device2 = new DeviceFilter(DeviceFilterType.IOS_CHANNEL, "3d970087-600e-4bb6-8474-5857d438faaa");
+        DeviceFilter device3 = new DeviceFilter(DeviceFilterType.NAMED_USER_ID, "cool user");
+        NotificationFilter notification = new NotificationFilter(NotificationFilter.Type.GROUP_ID, "a30abf06-7878-4096-9535-b50ac0ad6e8e");
 
         Filter filter1 = Filter.newBuilder()
             .setLatency(20000000)
             .addDevices(device1, device2, device3)
-            .addDeviceTypes(DeviceFilterType.ANDROID, DeviceFilterType.AMAZON)
-            .addNotification(notification)
-            .addType(EventType.OPEN)
+            .addDeviceTypes(DeviceType.ANDROID)
+            .addNotifications(notification)
+            .addEventTypes("OPEN")
             .build();
 
         Filter filter2 = Filter.newBuilder()
             .setLatency(400)
-            .addDeviceTypes(DeviceFilterType.IOS)
-            .addType(EventType.TAG_CHANGE)
+            .addDeviceTypes(DeviceType.IOS)
+            .addEventTypes("TAG_CHANGE")
             .build();
 
         StreamQueryDescriptor descriptor = filterDescriptor(filter1, filter2);
@@ -399,7 +401,11 @@ public class StreamConnectionTest {
         };
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        Subset subset = Subset.createPartitionSubset(10, 0);
+        Subset subset = Subset.createPartitionSubset()
+                .setCount(10)
+                .setSelection(0)
+                .build();
+
         StreamQueryDescriptor descriptor = subsetDescriptor(subset);
 
         stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);

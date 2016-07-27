@@ -19,8 +19,11 @@ import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
 import com.urbanairship.connect.client.consume.StatusAndHeaders;
+import com.urbanairship.connect.client.model.Creds;
 import com.urbanairship.connect.client.model.GsonUtil;
-import com.urbanairship.connect.client.model.StartPosition;
+import com.urbanairship.connect.client.model.StreamQueryDescriptor;
+import com.urbanairship.connect.client.model.request.StartPosition;
+import com.urbanairship.connect.client.model.request.StreamRequestPayload;
 import com.urbanairship.connect.java8.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +32,6 @@ import sun.net.www.protocol.http.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -282,27 +284,9 @@ public class StreamConnection implements AutoCloseable {
     }
 
     private byte[] getQuery(Optional<StartPosition> position) {
-        Map<String, Object> body = new HashMap<>();
+        StreamRequestPayload payload = new StreamRequestPayload(descriptor.getFilters(), descriptor.getSubset(), position);
+        String json = GSON.toJson(payload);
 
-        if (position.isPresent()) {
-            StartPosition startAt = position.get();
-            if (startAt.isRelative()) {
-                body.put("start", startAt.getRelativePosition().getId());
-            }
-            else {
-                body.put("resume_offset", startAt.getOffset());
-            }
-        }
-
-        if (descriptor.getSubset().isPresent()) {
-            body.put("subset", descriptor.getSubset().get());
-        }
-
-        if (descriptor.getFilters().isPresent()) {
-            body.put("filters", descriptor.getFilters().get());
-        }
-
-        String json = GSON.toJson(body);
         return json.getBytes(StandardCharsets.UTF_8);
     }
 

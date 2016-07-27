@@ -5,6 +5,7 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client;
 
 import com.ning.http.client.AsyncHttpClient;
+import com.urbanairship.connect.client.model.StreamQueryDescriptor;
 import com.urbanairship.connect.java8.Consumer;
 
 /**
