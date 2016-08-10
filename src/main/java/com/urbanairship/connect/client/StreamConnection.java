@@ -15,6 +15,7 @@ import com.ning.http.client.ListenableFuture;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.cookie.CookieDecoder;
 import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
+import com.urbanairship.connect.client.consume.FullBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamConnectFuture;
 import com.urbanairship.connect.client.consume.MobileEventStreamResponseHandler;
@@ -152,7 +153,7 @@ public class StreamConnection implements AutoCloseable {
         }
 
         bodyConsumeLatch = new CountDownLatch(1);
-        connection.consume(bodyConsumeLatch);
+        connection.consume(bodyConsumeLatch, eventConsumer);
 
         return true;
     }
@@ -202,8 +203,7 @@ public class StreamConnection implements AutoCloseable {
         AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies, startPosition);
 
         MobileEventStreamConnectFuture connectFuture = new MobileEventStreamConnectFuture();
-        Consumer<byte[]> consumer = new MobileEventStreamBodyConsumer(eventConsumer);
-        MobileEventStreamResponseHandler responseHandler = new MobileEventStreamResponseHandler(consumer, connectFuture);
+        MobileEventStreamResponseHandler responseHandler = new MobileEventStreamResponseHandler(connectFuture);
 
         ListenableFuture<Boolean> future = request.execute(responseHandler);
 
@@ -222,20 +222,38 @@ public class StreamConnection implements AutoCloseable {
             return new Connection(future, responseHandler);
         }
 
-        // At this point, we know we don't want to consume anything else on the response - even if there was something there
-        responseHandler.stop();
-        future.done();
-
-        // 400s indicate a bad request
-        if (399 < status && status < 500) {
-            throw new ConnectionException(String.format("Received status code (%d) from a bad request for app %s", status, getAppKey()));
-        }
-
         if (status != 307) {
-            throw new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s", status, getAppKey()));
+            throw buildErrorException(responseHandler, future, status);
         }
 
         return handleRedirect(statusAndHeaders, startPosition);
+    }
+
+    private RuntimeException buildErrorException(MobileEventStreamResponseHandler responseHandler,
+                                                 ListenableFuture<Boolean> future,
+                                                 int status)
+            throws InterruptedException, ExecutionException {
+
+        // The response indicates an error of some sort. Read the response body so we can detail any information
+        // about the error from the server out through an exception message
+        FullBodyConsumer bodyReader = new FullBodyConsumer();
+        try {
+            responseHandler.consumeBody(bodyReader);
+            future.get();
+        }
+        finally {
+            responseHandler.stop();
+            future.done();
+        }
+
+        String body = bodyReader.get();
+
+        // 400s indicate a bad request
+        if (399 < status && status < 500) {
+            return new ConnectionException(String.format("Received status code (%d) from a bad request for app %s. Response body: %s", status, getAppKey(), body));
+        }
+
+        return new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s. Response body: %s", status, getAppKey(), body));
     }
 
     private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<StartPosition> startPosition) {
@@ -304,7 +322,7 @@ public class StreamConnection implements AutoCloseable {
             this.handler = handler;
         }
 
-        public void consume(final CountDownLatch doneLatch) {
+        public void consume(final CountDownLatch doneLatch, Consumer<String> eventConsumer) {
             Runnable doneLatchCountDownRunnable = new Runnable() {
                 @Override
                 public void run() {
@@ -313,7 +331,9 @@ public class StreamConnection implements AutoCloseable {
             };
 
             future.addListener(doneLatchCountDownRunnable, MoreExecutors.directExecutor());
-            handler.consumeBody();
+
+            MobileEventStreamBodyConsumer bodyConsumer = new MobileEventStreamBodyConsumer(eventConsumer);
+            handler.consumeBody(bodyConsumer);
         }
 
         public Optional<Throwable> getConsumeError() {

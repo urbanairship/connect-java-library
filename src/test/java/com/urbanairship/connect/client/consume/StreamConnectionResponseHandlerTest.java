@@ -49,7 +49,7 @@ public class StreamConnectionResponseHandlerTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        handler = new MobileEventStreamResponseHandler(receiver, connectCallback);
+        handler = new MobileEventStreamResponseHandler(connectCallback);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class StreamConnectionResponseHandlerTest {
 
             assertTrue(timedOut);
 
-            handler.consumeBody();
+            handler.consumeBody(receiver);
 
             AsyncHandler.STATE result = future.get(1, TimeUnit.SECONDS);
 
@@ -131,7 +131,7 @@ public class StreamConnectionResponseHandlerTest {
 
     @Test
     public void testBodyConsumeAfterClose() throws Exception {
-        handler.consumeBody();
+        handler.consumeBody(receiver);
         handler.stop();
 
         HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
