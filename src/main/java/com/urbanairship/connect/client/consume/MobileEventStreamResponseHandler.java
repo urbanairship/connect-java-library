@@ -25,29 +25,29 @@ import java.util.concurrent.atomic.AtomicReference;
  * of events.
  *
  * Intended usage requires that once the caller has received the call to {@link ConnectCallback#connected(StatusAndHeaders)} the
- * caller should call {@link #consumeBody()}. The handler will *not* read any of the response body until {@link #consumeBody()} is called.
- * This is done so that the caller can deal with any special handling that may be needed based on response status code and/or
- * headers before receiving the streamed body.
+ * caller should call {@link #consumeBody(Consumer)}. The handler will *not* read any of the response body until
+ * {@link #consumeBody(Consumer)} is called.  This is done so that the caller can deal with any special handling that may be
+ * needed based on response status code and/or headers before receiving the streamed body.
  */
 public final class MobileEventStreamResponseHandler implements AsyncHandler<Boolean> {
 
     private final AtomicBoolean stop = new AtomicBoolean(false);
 
-    private int statusCode;
-    private String statusMessage;
+
 
     private final CountDownLatch consumeLatch = new CountDownLatch(1);
     private final Semaphore consumePermit = new Semaphore(1);
 
-    private volatile boolean connected = false;
-
-    private final Consumer<byte[]> receiver;
     private final ConnectCallback connectCallback;
 
     private final AtomicReference<Throwable> error = new AtomicReference<>(null);
 
-    public MobileEventStreamResponseHandler(Consumer<byte[]> receiver, ConnectCallback connectCallback) {
-        this.receiver = receiver;
+    private volatile boolean connected = false;
+    private volatile int statusCode;
+    private volatile String statusMessage;
+    private volatile Consumer<byte[]> receiver = null;
+
+    public MobileEventStreamResponseHandler(ConnectCallback connectCallback) {
         this.connectCallback = connectCallback;
     }
 
@@ -88,7 +88,8 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
         return STATE.CONTINUE;
     }
 
-    public void consumeBody() {
+    public void consumeBody(Consumer<byte[]> receiver) {
+        this.receiver = receiver;
         consumeLatch.countDown();
     }
 

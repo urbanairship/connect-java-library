@@ -428,6 +428,7 @@ public class StreamConnectionTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
                 exchange.sendResponseHeaders(500, 0L);
+                exchange.close();
                 return null;
             }
         };
@@ -449,6 +450,7 @@ public class StreamConnectionTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
                 exchange.sendResponseHeaders(403, 0L);
+                exchange.close();
                 return null;
             }
         };
@@ -468,6 +470,7 @@ public class StreamConnectionTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
                 exchange.sendResponseHeaders(500, 0L);
+                exchange.close();
                 return null;
             }
         };
@@ -534,6 +537,7 @@ public class StreamConnectionTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
                 exchange.sendResponseHeaders(400, 0L);
+                exchange.close();
                 return null;
             }
         };
