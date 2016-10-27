@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *     }
  * </pre>
  */
-public final class Stream extends AbstractIterator<String> implements AutoCloseable {
+public final class Stream extends AbstractIterator<String> implements ConnectStreamApi {
 
     private static final Logger log = LoggerFactory.getLogger(Stream.class);
 
