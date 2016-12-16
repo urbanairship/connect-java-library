@@ -1,3 +1,9 @@
+2016-12-xx: Release 4.0.2
+
+    The Connect Client has changed so it now provides the raw JSON string
+    instead of parsing and creating java objects. Retry logic has also been
+    incorporated into the connection flow.
+
 2016-06-06: Release 3.0.0
 
 	Caught an error where push and group identifiers would not be set on
