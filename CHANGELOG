@@ -1,8 +1,9 @@
-2016-12-xx: Release 4.0.2
+2016-12-xx: Release 4.0.0
 
     The Connect Client has changed so it now provides the raw JSON string
     instead of parsing and creating java objects. Retry logic has also been
-    incorporated into the connection flow.
+    incorporated into the connection flow. The stream query descriptor no
+    longer includes the offset start position.
 
 2016-06-06: Release 3.0.0
 
