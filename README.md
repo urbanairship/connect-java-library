@@ -38,7 +38,8 @@ Add the following to your pom.xml
     <dependency>
         <groupId>com.urbanairship</groupId>
         <artifactId>connect-client</artifactId>
-        <version>4.0.2</version>
+        <version>VERSION</version>
+        <!-- Replace VERSION with the version you want to use -->
     </dependency>
 ```
 
