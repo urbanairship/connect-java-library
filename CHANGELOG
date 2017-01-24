@@ -1,3 +1,15 @@
+2017-01-24: Release 4.0.0
+
+    - The connect client now provides raw JSON strings rather than parsing
+      and creating Java objects.  Offset tracking functionality has been
+      removed, since it is the user's business whether they want to retrieve
+      the offset, and what they want to do with it.
+    - It provides a variety of levels of abstraction for consuming the
+      connect event stream. Users are advised to default to the Stream class,
+      which is an iterator over connect events.
+    - Regardless of the interface, clients now pass the start position
+      separately from the rest of the connect query.
+
 2016-06-06: Release 3.0.0
 
 	Caught an error where push and group identifiers would not be set on
