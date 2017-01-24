@@ -2,7 +2,7 @@
 
     - The connect client now provides raw JSON strings rather than parsing
       and creating Java objects.  Offset tracking functionality has been
-      removed, since it is the users business whether they want to retrieve
+      removed, since it is the user's business whether they want to retrieve
       the offset, and what they want to do with it.
     - It provides a variety of levels of abstraction for consuming the
       connect event stream. Users are advised to default to the Stream class,
