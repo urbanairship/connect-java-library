@@ -9,11 +9,32 @@ package com.urbanairship.connect.client;
  */
 public final class ConnectionException extends RuntimeException {
 
+    /**
+     * The http error code we received from the API.
+     */
+    private final int errorCode;
+
     public ConnectionException(String message) {
         super(message);
+        this.errorCode = -1;
     }
 
     public ConnectionException(String message, Throwable cause) {
         super(message, cause);
+        this.errorCode = -1;
+    }
+
+    public ConnectionException(String message, int errorCode) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public ConnectionException(String message, int errorCode, Throwable cause) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
     }
 }

@@ -86,7 +86,7 @@ public class StreamTest {
         when(connSupplier.get(Matchers.<StreamQueryDescriptor>any(), Matchers.<AsyncHttpClient>any(), Matchers.<Consumer<String>>any()))
                 .thenReturn(conn);
 
-        doThrow(new ConnectionException("boom")).when(conn).read(Matchers.<Optional<StartPosition>>any());
+        doThrow(new ConnectionException("boom", 404)).when(conn).read(Matchers.<Optional<StartPosition>>any());
 
         expectedException.expect(RuntimeException.class);
         expectedException.expectCause(Is.isA(ConnectionException.class));
