@@ -250,10 +250,10 @@ public class StreamConnection implements AutoCloseable {
 
         // 400s indicate a bad request
         if (399 < status && status < 500) {
-            return new ConnectionException(String.format("Received status code (%d) from a bad request for app %s. Response body: %s", status, getAppKey(), body));
+            return new ConnectionException(String.format("Received status code (%d) from a bad request for app %s. Response body: %s", status, getAppKey(), body), status);
         }
 
-        return new RuntimeException(String.format("Received unexpected status code (%d) from request for stream for app %s. Response body: %s", status, getAppKey(), body));
+        return new ConnectionException(String.format("Received unexpected status code (%d) from request for stream for app %s. Response body: %s", status, getAppKey(), body), status);
     }
 
     private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<StartPosition> startPosition) {
@@ -281,14 +281,14 @@ public class StreamConnection implements AutoCloseable {
 
         List<String> values = statusAndHeaders.getHeaders().get("Set-Cookie");
         if (values == null || values.isEmpty()) {
-            throw new ConnectionException("Received redirect response with no 'Set-Cookie' header in response!");
+            throw new ConnectionException("Received redirect response with no 'Set-Cookie' header in response!", statusAndHeaders.getStatusCode());
         }
 
         String value = values.get(0);
         Cookie cookie = CookieDecoder.decode(value);
 
         if (cookie == null) {
-            throw new ConnectionException("Received redirect response with unparsable 'Set-Cookie' value - " + value);
+            throw new ConnectionException("Received redirect response with unparsable 'Set-Cookie' value - " + value, statusAndHeaders.getStatusCode());
         }
 
         return connect(ImmutableList.of(cookie), startPosition);

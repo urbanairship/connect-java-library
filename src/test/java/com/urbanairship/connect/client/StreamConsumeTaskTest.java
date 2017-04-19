@@ -227,7 +227,7 @@ public class StreamConsumeTaskTest {
         when(supplier.get(Matchers.<StreamQueryDescriptor>any(), Matchers.<AsyncHttpClient>any(), Matchers.<Consumer<String>>any()))
                 .thenReturn(stream);
 
-        doThrow(new ConnectionException("boom")).when(stream).read(Matchers.<Optional<StartPosition>>any());
+        doThrow(new ConnectionException("boom", 400)).when(stream).read(Matchers.<Optional<StartPosition>>any());
 
         Future<?> future = readThread.submit(task);
 
