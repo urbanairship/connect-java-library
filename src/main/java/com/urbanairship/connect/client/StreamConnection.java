@@ -157,11 +157,9 @@ public class StreamConnection implements AutoCloseable {
             throw e;
         }
         catch (ConnectionException e) {
-            log.warn("Failure attempting to connect to event stream. Attempt #" + attempt, e);
             return Optional.of(e);
         }
         catch (Exception e) {
-            log.warn("Failure attempting to connect to event stream. Attempt #" + attempt, e);
             return Optional.of(e);
         }
 
