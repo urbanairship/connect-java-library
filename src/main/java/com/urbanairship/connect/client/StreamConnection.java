@@ -108,6 +108,7 @@ public class StreamConnection implements AutoCloseable {
         boolean connected = false;
         boolean retry;
         int attempt = 0;
+        Optional<? extends Exception> failure = Optional.absent();
         do {
             attempt++;
 
@@ -118,8 +119,8 @@ public class StreamConnection implements AutoCloseable {
                 if (closed) {
                     break;
                 }
-
-                connected = begin(startPosition, attempt);
+                failure = begin(startPosition, attempt);
+                connected = !failure.isPresent();
             }
 
             retry = false;
@@ -132,7 +133,15 @@ public class StreamConnection implements AutoCloseable {
         } while (!connected && retry);
 
         if (!connected && !closed) {
-            throw new RuntimeException(String.format("Failed to establish connection to event stream after %d attempts", attempt));
+            Exception lastFailure = failure.get();
+            String message = String.format("Failed to establish connection to event stream after %d attempts", attempt);
+
+            if (lastFailure instanceof ConnectionException) {
+                ConnectionException lastConnectionException = (ConnectionException) lastFailure;
+                throw new ConnectionException(message, lastConnectionException.getErrorCode(), lastConnectionException);
+            }
+
+            throw new RuntimeException(message);
         }
 
         if (connected) {
@@ -140,22 +149,24 @@ public class StreamConnection implements AutoCloseable {
         }
     }
 
-    private boolean begin(Optional<StartPosition> startPosition, int attempt) throws InterruptedException {
+    private Optional<? extends Exception> begin(Optional<StartPosition> startPosition, int attempt) throws InterruptedException {
         try {
             connection = connect(Collections.<Cookie>emptyList(), startPosition);
         }
-        catch (InterruptedException | ConnectionException e) {
+        catch (InterruptedException e) {
             throw e;
         }
+        catch (ConnectionException e) {
+            return Optional.of(e);
+        }
         catch (Exception e) {
-            log.warn("Failure attempting to connect to event stream. Attempt #" + attempt, e);
-            return false;
+            return Optional.of(e);
         }
 
         bodyConsumeLatch = new CountDownLatch(1);
         connection.consume(bodyConsumeLatch, eventConsumer);
 
-        return true;
+        return Optional.absent();
     }
 
     private void consume() throws InterruptedException {
@@ -291,7 +302,11 @@ public class StreamConnection implements AutoCloseable {
             throw new ConnectionException("Received redirect response with unparsable 'Set-Cookie' value - " + value, statusAndHeaders.getStatusCode());
         }
 
-        return connect(ImmutableList.of(cookie), startPosition);
+        try {
+            return connect(ImmutableList.of(cookie), startPosition);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     private Map<String, String> getAuthHeaders(Creds creds) {
