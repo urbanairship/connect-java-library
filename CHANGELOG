@@ -1,51 +1,57 @@
+2017-05-18: Release 4.1.0
+
+    Add the HTTP response status code to the ConnectionException.
+
 2017-01-24: Release 4.0.2
 
-    - The connect client now provides raw JSON strings rather than parsing
-      and creating Java objects.  Offset tracking functionality has been
-      removed, since it is the user's business whether they want to retrieve
-      the offset, and what they want to do with it.
-    - It provides a variety of levels of abstraction for consuming the
-      connect event stream. Users are advised to default to the Stream class,
-      which is an iterator over connect events.
-    - Regardless of the interface, clients now pass the start position
-      separately from the rest of the connect query.
+     The connect client now provides raw JSON strings rather than parsing and
+     creating Java objects.  Offset tracking functionality has been  removed,
+     since it is the user's business whether they want to retrieve the offset,
+     and what they want to do with it.
+
+     It provides a variety of levels of abstraction for consuming the connect
+     event stream. Users are advised to default to the Stream class, which is an
+     iterator over connect events.
+
+    Regardless of the interface, clients now pass the start position separately
+    from the rest of the connect query.
 
 2016-06-06: Release 3.0.0
 
-	Caught an error where push and group identifiers would not be set on
-	push body events. Push ids are also optional on many events, so they
-	were changed to Guava Optionals on associated pushes, which is the
-	breaking change requiring the major version bump.
+    Caught an error where push and group identifiers would not be set on
+    push body events. Push ids are also optional on many events, so they
+    were changed to Guava Optionals on associated pushes, which is the
+    breaking change requiring the major version bump.
 
 2016-06-02: Release 2.2.4
 
-	Caught an error where device info attributes and identifiers were
-	reversed.
-
-	Skipping a few patch versions due to churn while we figured out some
-	internal distribution logic.
+    Caught an error where device info attributes and identifiers were
+    reversed.
+    
+    Skipping a few patch versions due to churn while we figured out some
+    internal distribution logic.
 
 2016-05-23: Released 2.2.1
 
-	Screen View were not parsing properly, in app message expiration events
-	would not serialize back to JSON properly.
+    Screen View were not parsing properly, in app message expiration events
+    would not serialize back to JSON properly.
 
 2016-05-11: Released 2.2.0
 
-	Screen View are now supported in the client. Also adds session_ids to
-	the events for custom events and in app messages.
+    Screen View are now supported in the client. Also adds session_ids to
+    the events for custom events and in app messages.
 
 2016-03-10: Released 2.1.0
 
-        Adds support for device attributes,  app-defined identifiers, and a
-        new event type. The new event type, Control events, are not yet defined
-        in the official documentation.
+    Adds support for device attributes,  app-defined identifiers, and a
+    new event type. The new event type, Control events, are not yet defined
+    in the official documentation.
 
 2016-02-17: Released 2.0.0
 
-	Removed unused fields from Custom Event model objects, and switched
-	one of the fields from String to Optional<String>. This will break any
-	code relying on the Custom Event model object, hence the major version
-	bump.
+    Removed unused fields from Custom Event model objects, and switched
+    one of the fields from String to Optional<String>. This will break any
+    code relying on the Custom Event model object, hence the major version
+    bump.
 
-	diff: https://github.com/urbanairship/connect-java-library/compare/b53aa6d86d6df8cd742c657f9e7a7966f1c3ffd0...00942d2e1d37ffca9af0b5cef8c31cfcbc721a29
+    diff: https://github.com/urbanairship/connect-java-library/compare/b53aa6d86d6df8cd742c657f9e7a7966f1c3ffd0...00942d2e1d37ffca9af0b5cef8c31cfcbc721a29
