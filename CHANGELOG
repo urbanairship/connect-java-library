@@ -1,3 +1,7 @@
+2017-05-18: Release 4.1.0
+
+   Add the HTTP response status code to the ConnectionException.
+
 2017-01-24: Release 4.0.0
 
     - The connect client now provides raw JSON strings rather than parsing
