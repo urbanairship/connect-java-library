@@ -436,7 +436,7 @@ public class StreamConnectionTest {
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
         expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("Failed to establish connection");
+        expectedException.expectMessage("Failed to establish connection to event stream after 1 attempts");
 
         stream = new StreamConnection(descriptor(), http, connectionRetryStrategy, consumer, url);
 
