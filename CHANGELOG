@@ -1,4 +1,4 @@
-2017-01-24: Release 4.0.0
+2017-01-24: Release 4.0.2
 
     - The connect client now provides raw JSON strings rather than parsing
       and creating Java objects.  Offset tracking functionality has been
