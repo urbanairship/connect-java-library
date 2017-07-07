@@ -275,6 +275,7 @@ public class StreamConsumeTaskTest {
         readThread.submit(task);
 
         try {
+            iterationsDone.await();
             assertTrue(iterationsDone.await(10, TimeUnit.SECONDS));
 
             assertEquals(
