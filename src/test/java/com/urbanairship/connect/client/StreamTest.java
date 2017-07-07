@@ -88,8 +88,7 @@ public class StreamTest {
 
         doThrow(new ConnectionException("boom", 404)).when(conn).read(Matchers.<Optional<StartPosition>>any());
 
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectCause(Is.isA(ConnectionException.class));
+        expectedException.expect(ConnectionException.class);
 
         try (Stream stream = new Stream(descriptor(), Optional.<StartPosition>absent(), Optional.of(connSupplier))){
             while (stream.hasNext()) {

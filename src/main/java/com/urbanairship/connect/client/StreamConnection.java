@@ -209,7 +209,7 @@ public class StreamConnection implements AutoCloseable {
         cleanup();
     }
 
-    private Connection connect(Collection<Cookie> cookies, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException {
+    private Connection connect(Collection<Cookie> cookies, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException, ConnectionException {
 
         AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies, startPosition);
 
@@ -240,7 +240,7 @@ public class StreamConnection implements AutoCloseable {
         return handleRedirect(statusAndHeaders, startPosition);
     }
 
-    private RuntimeException buildErrorException(MobileEventStreamResponseHandler responseHandler,
+    private ConnectionException buildErrorException(MobileEventStreamResponseHandler responseHandler,
                                                  ListenableFuture<Boolean> future,
                                                  int status)
             throws InterruptedException, ExecutionException {
@@ -288,7 +288,7 @@ public class StreamConnection implements AutoCloseable {
         return request;
     }
 
-    private Connection handleRedirect(StatusAndHeaders statusAndHeaders, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException {
+    private Connection handleRedirect(StatusAndHeaders statusAndHeaders, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException, ConnectionException {
 
         List<String> values = statusAndHeaders.getHeaders().get("Set-Cookie");
         if (values == null || values.isEmpty()) {
