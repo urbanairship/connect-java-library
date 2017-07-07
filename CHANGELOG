@@ -1,3 +1,13 @@
+2017-07-07: Release 4.1.1
+
+    The `Stream` class, which presents an iterator interface was wrapping ConnectionExceptions in runtime, which would
+    prevent clients from correctly recognizing the connection exception when they occurred. Additionally, unexpected
+    exceptions encountered by the StreamConsumeTask#stream method would simply be logged to console rather than thrown.
+
+    Both issues are solved with guava's Throwables.propagate, which will throw the appropriate exception or wrap in runtime if
+    needed.
+
+
 2017-05-18: Release 4.1.0
 
     Add the HTTP response status code to the ConnectionException.

@@ -8,6 +8,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
+import com.google.common.base.Throwables;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.ning.http.client.AsyncHttpClient;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,10 +32,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * A class for handling {@link StreamConnection} interactions and expose the data received from the Urban Airship Connect
  * API out through a {@link BlockingQueue} provided by the user. Includes basic stream connection/consumption and
  * reconnection on retryable errors.
- *
+ * <p>
  * Proper use of this class requires that only a single call ever be made to the {@link #run()} method. The {@link #stop()}
  * method can be called by any thread, but should not be called before {@link #run()} is called.
- *
+ * <p>
  * StreamConsumeTask objects cannot be reused.
  */
 public final class StreamConsumeTask implements Runnable {
@@ -80,9 +82,9 @@ public final class StreamConsumeTask implements Runnable {
     @Override
     public void run() {
         try {
+            // can throw a ConnectionException, which extends runtime.
             stream();
-        }
-        finally {
+        } finally {
             if (manageHttpLifecycle) {
                 http.close();
             }
@@ -91,23 +93,19 @@ public final class StreamConsumeTask implements Runnable {
         }
     }
 
-    private void stream() {
-        String appKey = streamQueryDescriptor.getCreds().getAppKey();
+    private void stream() throws ConnectionException {
         while (active.get()) {
 
             Optional<StartPosition> position = getPosition();
             try (StreamConnection newStreamConnection = supplier.get(streamQueryDescriptor, http, consumer)) {
                 transitionToReading(position, newStreamConnection);
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
-            }
-            catch (ConnectionException e) {
+            } catch (ConnectionException e) {
                 throw e;
-            }
-            catch (Throwable throwable) {
-                log.error("Error encountered while consuming stream for app " + appKey, throwable);
+            } catch (Throwable throwable) {
+                throw Throwables.propagate(throwable);
             }
         }
     }
@@ -121,7 +119,7 @@ public final class StreamConsumeTask implements Runnable {
         return initialPosition;
     }
 
-    private void transitionToReading(Optional<StartPosition> position, StreamConnection newStreamConnection) throws InterruptedException {
+    private void transitionToReading(Optional<StartPosition> position, StreamConnection newStreamConnection) throws InterruptedException, ConnectionException {
         // The streamLock sync is used to ensure consistency between the stop method and the swap of the streamConnection
         // resource in the case of a race. We want to ensure we only active and begin reading from the stream if a
         // stop signal has not been received. Note, it's ok to call StreamConnection.read() even if the StreamConnection
@@ -156,8 +154,7 @@ public final class StreamConsumeTask implements Runnable {
             if (streamConnection != null) {
                 try {
                     streamConnection.close();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     throw new RuntimeException("Failed to shutdown stream and stop gracefully", e);
                 }
             }
@@ -174,7 +171,8 @@ public final class StreamConsumeTask implements Runnable {
 
         private AsyncHttpClient http = null;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         /**
          * Specify the queue into which received events will be placed upon receipt.
@@ -209,10 +207,10 @@ public final class StreamConsumeTask implements Runnable {
         /**
          * Optionally set the http client that will be used for connecting to the API endpoint. If the client is not
          * specified, the default client specified by {@link HttpClientUtil#defaultHttpClient()} will be used.
-         *
+         * <p>
          * This is exposed to provide the ability to override the HTTP client settings. In most cases, this is not
          * necessary.
-         *
+         * <p>
          * If a client is provided externally by using this method, the task will NOT close it when the task exits
          * meaning that it is the responsibility of the caller to manage the HTTP client's lifecycle. If no external
          * HTTP client is specified via this method (and thus the library default client is used) the task will handle
@@ -298,8 +296,7 @@ public final class StreamConsumeTask implements Runnable {
                     }
 
                 }
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }

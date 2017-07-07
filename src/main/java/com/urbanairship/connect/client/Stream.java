@@ -2,6 +2,7 @@ package com.urbanairship.connect.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.urbanairship.connect.client.model.StreamQueryDescriptor;
@@ -92,7 +93,7 @@ public final class Stream extends AbstractIterator<String> implements ConnectStr
             if (exit != null) {
                 // Source is no longer providing data
                 if (exit.error.isPresent()) {
-                    throw new RuntimeException("Underlying stream connection failed", exit.error.get());
+                    throw Throwables.propagate(exit.error.get());
                 }
 
                 break;
@@ -120,7 +121,6 @@ public final class Stream extends AbstractIterator<String> implements ConnectStr
     }
 
     private final class SourceWatcher implements Runnable {
-
         private final Future<?> handle;
 
         public SourceWatcher(Future<?> handle) {
