@@ -81,7 +81,6 @@ public final class StreamConsumeTask implements Runnable {
      */
     @Override
     public void run() {
-        ConnectionException result = null;
         try {
             // can throw a ConnectionException, which extends runtime.
             stream();
