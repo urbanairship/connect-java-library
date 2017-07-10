@@ -105,7 +105,12 @@ public final class StreamConsumeTask implements Runnable {
             } catch (ConnectionException e) {
                 throw e;
             } catch (Throwable throwable) {
-                throw Throwables.propagate(throwable);
+                // we simply log because part of the purpose of this class is to permit the user to ignore network
+                // errors, prematurely truncated buffers, &c.
+
+                // After this exception is caught, The connection will be re-opened from the last successfully consumed
+                // offset, and processing will continue from there.
+                log.warn("caught exception consuming from connect stream, will resume reading from last successfully consumed event", throwable);
             }
         }
     }
