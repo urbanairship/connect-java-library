@@ -51,6 +51,18 @@ The client library provides all the components you need to consume a mobile even
 _Note that Connect requests with this client may experience SSL handshake failures unless using the
 **Java Cryptography Extension (JCE) Unlimited Strength** package cipher suite._
 
+If you encounter a generic connection failure `java.lang.RuntimeException`, the max strength encryption policy might be the culprit, and you should ensure this JCE Unlimited Strength package is installed on your system.
+
+You can find the JCE Unlimited Strength package at the following locations.  Choose the one that corresponds to your JRE version.
+
+- [JCE Unlimited Strength Jurisdiction Policy Files 6](http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html)
+- [JCE Unlimited Strength Jurisdiction Policy Files 7](http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html)
+- [JCE Unlimited Strength Jurisdiction Policy Files 8](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html)
+
+_These files are not required for JRE 9 or for JRE 8u151 or newer._
+
+To install the JCE files, copy all of the jar files in the JCE zip archive to `$JAVA_HOME/jre/lib/security/`, overwriting the existing jars in that directory.  You may wish to create a backup of that directory, first.
+
 Example
 -------
 
