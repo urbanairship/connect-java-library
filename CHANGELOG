@@ -1,3 +1,11 @@
+2017-11-17: Release 4.1.2
+
+    Updated the version for maven-enforcer-plugin to 1.2
+
+    Added templates for contributing, submitting pull requests, opening issues and finding support.
+
+    
+
 2017-07-07: Release 4.1.1
 
     The `Stream` class, which presents an iterator interface was wrapping ConnectionExceptions in runtime, which would
