@@ -4,7 +4,7 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
-  <version>4.1.1-SNAPSHOT</version>
+  <version>4.1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Connect Client</name>
@@ -171,7 +171,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.2-ua1.0</version>
+        <version>1.2</version>
         <configuration>
           <rules>
             <requireUpperBoundDeps />
