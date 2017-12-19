@@ -141,7 +141,7 @@ public class StreamConnection implements AutoCloseable {
                 throw new ConnectionException(message, lastConnectionException.getErrorCode(), lastConnectionException);
             }
 
-            throw new RuntimeException(message);
+            throw new RuntimeException(message, lastFailure);
         }
 
         if (connected) {
