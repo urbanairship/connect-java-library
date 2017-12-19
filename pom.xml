@@ -4,7 +4,11 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
+<<<<<<< HEAD
   <version>4.1.3</version>
+=======
+  <version>4.1.3</version>
+>>>>>>> cb20abd982f90db00b78362591ac705426ae4ced
   <packaging>jar</packaging>
 
   <name>Connect Client</name>
