@@ -30,6 +30,7 @@ import com.urbanairship.connect.client.model.request.filters.DeviceType;
 import com.urbanairship.connect.client.model.request.filters.Filter;
 import com.urbanairship.connect.client.model.request.filters.NotificationFilter;
 import com.urbanairship.connect.java8.Consumer;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -244,7 +245,7 @@ public class StreamConnectionTest {
 
         doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
 
-        long offset = RandomUtils.nextInt(0, 100000);
+        String offset = RandomStringUtils.randomAlphanumeric(32);
         StreamQueryDescriptor descriptor = descriptor();
 
         stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
@@ -253,7 +254,7 @@ public class StreamConnectionTest {
         assertTrue(received.await(10, TimeUnit.SECONDS));
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
-        assertEquals(offset, bodyObj.get("resume_offset").getAsLong());
+        assertEquals(offset, bodyObj.get("resume_offset").getAsString());
     }
 
     @Test
@@ -453,8 +454,6 @@ public class StreamConnectionTest {
         read(stream, Optional.<StartPosition>absent());
 
         assertTrue(received.await(10, TimeUnit.SECONDS));
-
-        Gson gson = GsonUtil.getGson();
 
         JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
         assertEquals(true, bodyObj.get("enable_offset_updates").getAsBoolean());
