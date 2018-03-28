@@ -46,7 +46,7 @@ Add the following to your pom.xml
 Usage
 =====
 
-The client library provides all the components you need to consume a mobile event stream.
+The client library provides all the components you need to consume a Connect direct stream.
 
 _Note that Connect requests with this client may experience SSL handshake failures unless using the
 **Java Cryptography Extension (JCE) Unlimited Strength** package cipher suite._
@@ -71,7 +71,7 @@ Example
             .build();
 ```
 ```
-        // can also set eagle creek filter, subset, or offset specifications
+        // can also set filter, subset, or offset specifications
         StreamQueryDescriptor descriptor = StreamQueryDescriptor.newBuilder()
             .setCreds(creds)
             .build();
@@ -107,7 +107,13 @@ StreamQueryDescriptor
 ---------------------
 
 Begin by creating a StreamQueryDescriptor instance.  This will contain the app credentials, any request filters,
- a starting offset, and any subset options.
+ a starting offset, offset update preference, and any subset options.
+
+If offset updates are enabled, then regardless of other filters provided the stream may contain events with type
+OFFSET_UPDATE. These don't correspond to any activity in Urban Airship's systems and requests for the same stream
+position will not return the same OFFSET_UPDATE events. The offsets on them will be the same as some other event
+in the stream. They serve to allow clients to update stored offsets in the case of low traffic or filters removing
+large portions of the stream.
 
 First, store the app credentials (app key and auth token) in a Creds object:
 
@@ -151,6 +157,7 @@ Next, you will want to build any request filters or subset.  See the request doc
             .setCreds(creds)
             .addFilters(filter)
             .setSubset(subset)
+            .enableOffsetUpdates()
             .build();
 ```
 

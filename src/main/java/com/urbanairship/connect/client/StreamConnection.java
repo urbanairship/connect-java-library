@@ -317,7 +317,9 @@ public class StreamConnection implements AutoCloseable {
     }
 
     private byte[] getQuery(Optional<StartPosition> position) {
-        StreamRequestPayload payload = new StreamRequestPayload(descriptor.getFilters(), descriptor.getSubset(), position);
+        StreamRequestPayload payload =
+                new StreamRequestPayload(descriptor.getFilters(), descriptor.getSubset(), position, descriptor.offsetUpdatesEnabled());
+
         String json = GSON.toJson(payload);
 
         return json.getBytes(StandardCharsets.UTF_8);

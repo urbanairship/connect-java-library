@@ -419,6 +419,48 @@ public class StreamConnectionTest {
         assertEquals(gson.toJson(subset), gson.toJson(bodyObj.get("subset")));
     }
 
+    @Test
+    public void testRequestBodyWithOffsetUpdates() throws Exception {
+        final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
+
+                exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
+
+                return null;
+            }
+        };
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        StreamQueryDescriptor descriptor = StreamQueryDescriptor.newBuilder()
+                .setCreds( Creds.newBuilder()
+                        .setAppKey(randomAlphabetic(22))
+                        .setToken(randomAlphabetic(5))
+                        .build())
+                .enableOffsetUpdates()
+                .build();
+
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer, url);
+        read(stream, Optional.<StartPosition>absent());
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
+
+        Gson gson = GsonUtil.getGson();
+
+        JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
+        assertEquals(true, bodyObj.get("enable_offset_updates").getAsBoolean());
+    }
+
+
     @Rule public ExpectedException expectedException = ExpectedException.none();
 
     @Test
