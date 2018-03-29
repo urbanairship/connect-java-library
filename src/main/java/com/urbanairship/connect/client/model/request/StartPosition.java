@@ -2,6 +2,7 @@ package com.urbanairship.connect.client.model.request;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
@@ -39,8 +40,8 @@ public final class StartPosition {
      * @param offset the offset specifying the position. An offset can be retrieved from the body of an event received from
      *               the Urban Airship Connect API and specifies that event's position in the overall stream.
      */
-    public static StartPosition offset(long offset) {
-        Preconditions.checkArgument(offset >= 0, "Offset cannot be negative");
+    public static StartPosition offset(String offset) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(offset), "Offset cannot be null or empty");
         return new StartPosition(null, offset);
     }
 
@@ -51,13 +52,13 @@ public final class StartPosition {
      */
     public static StartPosition relative(RelativePosition position) {
         Preconditions.checkNotNull(position);
-        return new StartPosition(position, -1L);
+        return new StartPosition(position, "");
     }
 
     private final RelativePosition relativePosition;
-    private final long offset;
+    private final String offset;
 
-    private StartPosition(RelativePosition relativePosition, long offset) {
+    private StartPosition(RelativePosition relativePosition, String offset) {
         this.relativePosition = relativePosition;
         this.offset = offset;
     }
@@ -71,22 +72,18 @@ public final class StartPosition {
         return relativePosition;
     }
 
-    public long getOffset() {
+    public String getOffset() {
         Preconditions.checkState(relativePosition == null, "Start position is relative");
         return offset;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (!(o instanceof StartPosition)) return false;
         StartPosition that = (StartPosition) o;
-        return offset == that.offset &&
-                relativePosition == that.relativePosition;
+        return relativePosition == that.relativePosition &&
+                Objects.equals(offset, that.offset);
     }
 
     @Override

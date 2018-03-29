@@ -1,6 +1,5 @@
 package com.urbanairship.connect.client.model.request;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -17,11 +16,14 @@ public final class StreamRequestPayload {
     private final Set<Filter> filters;
     private final Optional<Subset> subset;
     private final Optional<StartPosition> startPosition;
+    private final Optional<Boolean> offsetUpdatesEnabled;
 
-    public StreamRequestPayload(Set<Filter> filters, Optional<Subset> subset, Optional<StartPosition> startPosition) {
+    public StreamRequestPayload(Set<Filter> filters, Optional<Subset> subset, Optional<StartPosition> startPosition,
+                                Optional<Boolean> offsetUpdatesEnabled) {
         this.filters = filters;
         this.subset = subset;
         this.startPosition = startPosition;
+        this.offsetUpdatesEnabled = offsetUpdatesEnabled;
     }
 
     public Set<Filter> getFilters() {
@@ -36,38 +38,41 @@ public final class StreamRequestPayload {
         return startPosition;
     }
 
+    public Optional<Boolean> offsetUpdatesEnabled() {
+        return offsetUpdatesEnabled;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (!(o instanceof StreamRequestPayload)) return false;
         StreamRequestPayload that = (StreamRequestPayload) o;
-        return Objects.equals(filters, that.filters) &&
+        return offsetUpdatesEnabled == that.offsetUpdatesEnabled &&
+                Objects.equals(filters, that.filters) &&
                 Objects.equals(subset, that.subset) &&
                 Objects.equals(startPosition, that.startPosition);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filters, subset, startPosition);
+        return Objects.hash(filters, subset, startPosition, offsetUpdatesEnabled);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("filters", filters)
-                .add("subset", subset)
-                .add("startPosition", startPosition)
-                .toString();
+        return "StreamRequestPayload{" +
+                "filters=" + filters +
+                ", subset=" + subset +
+                ", startPosition=" + startPosition +
+                ", offsetUpdatesEnabled=" + offsetUpdatesEnabled +
+                '}';
     }
 
     public static final String FILTERS_KEY = "filters";
     public static final String START_KEY = "start";
     public static final String RESUME_OFFSET_KEY = "resume_offset";
     public static final String SUBSET_KEY = "subset";
+    public static final String OFFSET_UPDATE_KEY = "enable_offset_updates";
 
     public static final JsonSerializer<StreamRequestPayload> SERIALIZER = new JsonSerializer<StreamRequestPayload>() {
         @Override
@@ -90,6 +95,10 @@ public final class StreamRequestPayload {
 
             if (streamRequestPayload.getSubset().isPresent()) {
                 obj.add(SUBSET_KEY, context.serialize(streamRequestPayload.getSubset().get()));
+            }
+
+            if (streamRequestPayload.offsetUpdatesEnabled().isPresent()) {
+                obj.addProperty(OFFSET_UPDATE_KEY, streamRequestPayload.offsetUpdatesEnabled().get());
             }
 
             return obj;
