@@ -24,6 +24,7 @@ public final class StreamQueryDescriptor {
     private final Creds creds;
     private final Set<Filter> filters;
     private final Optional<Subset> subset;
+    private final Optional<Boolean> offsetUpdatesEnabled;
 
     /**
      * StreamDescriptor builder
@@ -33,10 +34,11 @@ public final class StreamQueryDescriptor {
         return new Builder();
     }
 
-    private StreamQueryDescriptor(Creds creds, Set<Filter> filters, Optional<Subset> subset) {
+    private StreamQueryDescriptor(Creds creds, Set<Filter> filters, Optional<Subset> subset, Optional<Boolean> offsetUpdatesEnabled) {
         this.creds = creds;
         this.filters = filters;
         this.subset = subset;
+        this.offsetUpdatesEnabled = offsetUpdatesEnabled;
     }
 
     /**
@@ -66,6 +68,15 @@ public final class StreamQueryDescriptor {
         return subset;
     }
 
+    /**
+     * Get offset update enabled status
+     *
+     * @return Absent if no override is specified otherwise true if offset update events are enabled, false otherwise
+     */
+    public Optional<Boolean> offsetUpdatesEnabled() {
+        return offsetUpdatesEnabled;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -91,6 +102,7 @@ public final class StreamQueryDescriptor {
 
         private Creds creds = null;
         private Subset subset = null;
+        private Optional<Boolean> offsetUpdatesEnabled = Optional.absent();
 
         private Builder() {}
 
@@ -128,13 +140,33 @@ public final class StreamQueryDescriptor {
         }
 
         /**
+         * Enable offset updates
+         *
+         * @return Builder
+         */
+        public Builder enableOffsetUpdates() {
+            this.offsetUpdatesEnabled = Optional.of(true);
+            return this;
+        }
+
+        /**
+         * Disable offset updates
+         *
+         * @return Builder
+         */
+        public Builder disableOffsetUpdates() {
+            this.offsetUpdatesEnabled = Optional.of(false);
+            return this;
+        }
+
+        /**
          * Builder a StreamDescriptor object.
          * @return StreamDescriptor
          */
         public StreamQueryDescriptor build() {
             Preconditions.checkNotNull(creds, "Creds object must be provided");
 
-            return new StreamQueryDescriptor(creds, ImmutableSet.copyOf(filters), Optional.fromNullable(subset));
+            return new StreamQueryDescriptor(creds, ImmutableSet.copyOf(filters), Optional.fromNullable(subset), offsetUpdatesEnabled);
         }
     }
 }

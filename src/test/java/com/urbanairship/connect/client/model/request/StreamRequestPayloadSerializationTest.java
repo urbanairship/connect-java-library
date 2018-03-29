@@ -6,7 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.request.filters.Filter;
-import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -18,7 +18,7 @@ public class StreamRequestPayloadSerializationTest {
     private static final JsonParser parser = new JsonParser();
 
     @Test
-    public void testSerialization() throws Exception {
+    public void testSerialization() {
         StreamRequestPayload payload = new StreamRequestPayload(
                 ImmutableSet.of(Filter.newBuilder().addEventTypes("OPEN").build()),
                 Optional.of(Subset.createPartitionSubset()
@@ -26,7 +26,8 @@ public class StreamRequestPayloadSerializationTest {
                         .setSelection(5)
                         .build()
                 ),
-                Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST))
+                Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST)),
+                Optional.of(true)
         );
 
         JsonElement obj = GsonUtil.getGson().toJsonTree(payload);
@@ -40,7 +41,8 @@ public class StreamRequestPayloadSerializationTest {
                     "\"count\":10," +
                     "\"selection\":5" +
                 "}," +
-                "\"start\":\"EARLIEST\"" +
+                "\"start\":\"EARLIEST\"," +
+                "\"enable_offset_updates\": true" +
             "}";
 
         JsonElement expected = parser.parse(json);
@@ -49,33 +51,39 @@ public class StreamRequestPayloadSerializationTest {
     }
 
     @Test
-    public void testStartPositions() throws Exception {
-        StreamRequestPayload payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST)));
+    public void testStartEarliest() {
+        StreamRequestPayload payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.of(StartPosition.relative(StartPosition.RelativePosition.EARLIEST)), Optional.<Boolean>absent());
 
         JsonElement obj = GsonUtil.getGson().toJsonTree(payload);
         JsonElement expected = parser.parse("{\"start\":\"EARLIEST\"}");
 
         assertEquals(expected, obj);
+    }
 
-        payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.of(StartPosition.relative(StartPosition.RelativePosition.LATEST)));
+    @Test
+    public void testStartLatest() {
+        StreamRequestPayload payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.of(StartPosition.relative(StartPosition.RelativePosition.LATEST)), Optional.<Boolean>absent());
 
-        obj = GsonUtil.getGson().toJsonTree(payload);
-        expected = parser.parse("{\"start\":\"LATEST\"}");
-
-        assertEquals(expected, obj);
-
-        long offset = RandomUtils.nextLong(10L, 10000L);
-        payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.of(StartPosition.offset(offset)));
-
-        obj = GsonUtil.getGson().toJsonTree(payload);
-        expected = parser.parse(String.format("{\"resume_offset\":%d}", offset));
+        JsonElement obj = GsonUtil.getGson().toJsonTree(payload);
+        JsonElement expected = parser.parse("{\"start\":\"LATEST\"}");
 
         assertEquals(expected, obj);
     }
 
     @Test
-    public void testEmptyPayload() throws Exception {
-        StreamRequestPayload payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.<StartPosition>absent());
+    public void testStartAbsolute() {
+        String offset = RandomStringUtils.randomAlphanumeric(32);
+        StreamRequestPayload payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.of(StartPosition.offset(offset)), Optional.<Boolean>absent());
+
+        JsonElement obj = GsonUtil.getGson().toJsonTree(payload);
+        JsonElement expected = parser.parse(String.format("{\"resume_offset\":\"%s\"}", offset));
+
+        assertEquals(expected, obj);
+    }
+
+    @Test
+    public void testEmptyPayload() {
+        StreamRequestPayload payload = new StreamRequestPayload(Collections.<Filter>emptySet(), Optional.<Subset>absent(), Optional.<StartPosition>absent(), Optional.<Boolean>absent());
 
         JsonElement obj = GsonUtil.getGson().toJsonTree(payload);
         JsonElement expected = parser.parse("{}");

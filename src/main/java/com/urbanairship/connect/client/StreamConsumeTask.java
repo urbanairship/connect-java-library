@@ -8,7 +8,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
-import com.google.common.base.Throwables;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.ning.http.client.AsyncHttpClient;
@@ -22,11 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A class for handling {@link StreamConnection} interactions and expose the data received from the Urban Airship Connect
@@ -116,7 +114,7 @@ public final class StreamConsumeTask implements Runnable {
     }
 
     private Optional<StartPosition> getPosition() {
-        Optional<Long> lastOffset = consumer.get();
+        Optional<String> lastOffset = consumer.get();
         if (lastOffset.isPresent()) {
             return Optional.of(StartPosition.offset(lastOffset.get()));
         }
@@ -271,9 +269,9 @@ public final class StreamConsumeTask implements Runnable {
         }
     }
 
-    private final class EnqueuingConsumer implements Consumer<String>, Supplier<Optional<Long>> {
+    private final class EnqueuingConsumer implements Consumer<String>, Supplier<Optional<String>> {
 
-        private final AtomicLong lastOffset = new AtomicLong(-1L);
+        private final AtomicReference<String> lastOffset = new AtomicReference<>(null);
 
         private final Gson gson;
         private final BlockingQueue<String> targetQueue;
@@ -285,11 +283,11 @@ public final class StreamConsumeTask implements Runnable {
 
         @Override
         public void accept(String event) {
-            long offset = getOffset(event);
+            String offset = getOffset(event);
 
             // Possible that a reconnection reset the stream to our last offset and thus we could get an event we've
             // seen already since the stream starts at the last recorded offset
-            if (lastOffset.get() > -1L && lastOffset.get() == offset) {
+            if (lastOffset.get() != null && lastOffset.get().equals(offset)) {
                 return;
             }
 
@@ -306,18 +304,14 @@ public final class StreamConsumeTask implements Runnable {
             }
         }
 
-        private long getOffset(String event) {
+        private String getOffset(String event) {
             JsonObject obj = gson.fromJson(event, JsonObject.class);
-            return obj.get("offset").getAsLong();
+            return obj.get("offset").getAsString();
         }
 
         @Override
-        public Optional<Long> get() {
-            if (lastOffset.get() == -1L) {
-                return Optional.absent();
-            }
-
-            return Optional.of(lastOffset.get());
+        public Optional<String> get() {
+            return Optional.fromNullable(lastOffset.get());
         }
     }
 }

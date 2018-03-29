@@ -14,6 +14,7 @@ import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StreamQueryDescriptor;
 import com.urbanairship.connect.client.model.request.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,9 +55,6 @@ public class StreamConsumeTaskTest {
 
     private StreamConsumeTask task;
 
-    @Mock private Consumer<String> consumer;
-
-    @Mock private AsyncHttpClient http;
     @Mock private StreamConnectionSupplier supplier;
     @Mock private StreamConnection stream;
 
@@ -189,7 +187,7 @@ public class StreamConsumeTaskTest {
 
     @Test
     public void testSpecifiedStartPosition() throws Exception {
-        StartPosition position = StartPosition.offset(12355L);
+        StartPosition position = StartPosition.offset(RandomStringUtils.randomAlphanumeric(32));
         task = StreamConsumeTask.newBuilder()
                 .setStreamQueryDescriptor(descriptor())
                 .setStreamConnectionSupplier(supplier)
@@ -388,10 +386,11 @@ public class StreamConsumeTaskTest {
         List<TestEvent> events = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             JsonObject o = new JsonObject();
-            o.addProperty("offset", i);
+            final String offset = Integer.toString(i);
+            o.addProperty("offset", offset);
 
             String json = GsonUtil.getGson().toJson(o);
-            events.add(new TestEvent(i, json));
+            events.add(new TestEvent(offset, json));
         }
 
         return events;
@@ -426,10 +425,10 @@ public class StreamConsumeTaskTest {
 
     private static class TestEvent {
 
-        private final long offset;
+        private final String offset;
         private final String json;
 
-        public TestEvent(long offset, String json) {
+        public TestEvent(String offset, String json) {
             this.offset = offset;
             this.json = json;
         }
