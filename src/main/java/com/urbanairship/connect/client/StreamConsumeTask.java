@@ -87,6 +87,7 @@ public final class StreamConsumeTask implements Runnable {
             if (manageHttpLifecycle) {
                 http.close();
             }
+
             log.debug("Stopping run");
             done.countDown();
         }
@@ -99,7 +100,6 @@ public final class StreamConsumeTask implements Runnable {
             log.debug("stream position: " + position);
             try (StreamConnection newStreamConnection = supplier.get(streamQueryDescriptor, http, consumer)) {
                 transitionToReading(position, newStreamConnection);
-
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
