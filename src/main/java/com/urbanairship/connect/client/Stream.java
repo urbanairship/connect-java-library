@@ -44,6 +44,9 @@ public final class Stream extends AbstractIterator<String> implements ConnectStr
 
     public Stream(StreamQueryDescriptor descriptor, Optional<StartPosition> startingPosition) {
         this(descriptor, startingPosition, Optional.<StreamConnectionSupplier>absent());
+        log.debug("Stream Filters: " + descriptor.getFilters()
+                + " Subset: " + descriptor.getSubset()
+                + " Starting Position " + startingPosition);
     }
 
     @VisibleForTesting
