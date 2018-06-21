@@ -97,7 +97,7 @@ public final class StreamConsumeTask implements Runnable {
         while (active.get()) {
 
             Optional<StartPosition> position = getPosition();
-            log.debug("stream position: " + position);
+            log.debug("Opening new stream connection at position " + position);
             try (StreamConnection newStreamConnection = supplier.get(streamQueryDescriptor, http, consumer)) {
                 transitionToReading(position, newStreamConnection);
             } catch (InterruptedException e) {
@@ -118,7 +118,7 @@ public final class StreamConsumeTask implements Runnable {
 
     private Optional<StartPosition> getPosition() {
         Optional<String> lastOffset = consumer.get();
-        log.debug("Position - Consumer: " + consumer + " InitialPosition: " + initialPosition + " Last Offset: " + lastOffset);
+        log.debug("Consumer last offset: " + consumer.lastOffset + ", InitialPosition: " + initialPosition + ", Last Offset: " + lastOffset);
         if (lastOffset.isPresent()) {
             return Optional.of(StartPosition.offset(lastOffset.get()));
         }
