@@ -118,7 +118,7 @@ public final class StreamConsumeTask implements Runnable {
 
     private Optional<StartPosition> getPosition() {
         Optional<String> lastOffset = consumer.get();
-        log.debug("Consumer last offset: " + consumer.lastOffset + ", InitialPosition: " + initialPosition + ", Last Offset: " + lastOffset);
+        log.debug("Consumer last offset: " + consumer.lastOffset + ", InitialPosition: " + initialPosition);
         if (lastOffset.isPresent()) {
             return Optional.of(StartPosition.offset(lastOffset.get()));
         }
