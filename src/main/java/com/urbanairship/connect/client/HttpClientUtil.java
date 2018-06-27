@@ -18,6 +18,9 @@ public final class HttpClientUtil {
 
     /**
      * Builds an AsyncHttpClient with default settings
+     * The setMaxRequestRetry will be handled by the StreamConsumeTask.
+     * Allowing the Aysnc client to handle the re-request will result in the same start offset being requested,
+     * even if the connection has been processing for hours.
      * @return An AsyncHttpClient instance.
      */
     public static AsyncHttpClient defaultHttpClient() {
@@ -28,6 +31,7 @@ public final class HttpClientUtil {
             .setRequestTimeout(-1)
             .setAllowPoolingConnections(false)
             .setAllowPoolingSslConnections(false)
+            .setMaxRequestRetry(0)
             .build();
 
         return new AsyncHttpClient(clientConfig);
