@@ -1,3 +1,11 @@
+2018-06-21 Release 5.0.2
+
+    Set AsyncHttpClient Max Request Retry to 0 to better handle disconnects and not restart at old offsets.
+
+2018-06-21 Release 5.0.1
+
+    Added debug logs
+
 2018-03-26 Release 5.0.0
 
     Add field to stream descriptor to request OFFSET_UPDATE events.
