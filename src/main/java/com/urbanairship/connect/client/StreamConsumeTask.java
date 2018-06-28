@@ -81,12 +81,14 @@ public final class StreamConsumeTask implements Runnable {
     public void run() {
         try {
             // can throw a ConnectionException, which extends runtime.
+            log.debug("Starting run");
             stream();
         } finally {
             if (manageHttpLifecycle) {
                 http.close();
             }
 
+            log.debug("Stopping run");
             done.countDown();
         }
     }
@@ -95,6 +97,7 @@ public final class StreamConsumeTask implements Runnable {
         while (active.get()) {
 
             Optional<StartPosition> position = getPosition();
+            log.debug("Opening new stream connection at position " + position);
             try (StreamConnection newStreamConnection = supplier.get(streamQueryDescriptor, http, consumer)) {
                 transitionToReading(position, newStreamConnection);
             } catch (InterruptedException e) {
@@ -115,6 +118,7 @@ public final class StreamConsumeTask implements Runnable {
 
     private Optional<StartPosition> getPosition() {
         Optional<String> lastOffset = consumer.get();
+        log.debug("Consumer last offset: " + consumer.lastOffset + ", InitialPosition: " + initialPosition);
         if (lastOffset.isPresent()) {
             return Optional.of(StartPosition.offset(lastOffset.get()));
         }
