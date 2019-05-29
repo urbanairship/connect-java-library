@@ -269,7 +269,7 @@ public final class StreamConsumeTask implements Runnable {
         public StreamConnection get(StreamQueryDescriptor descriptor,
                                     AsyncHttpClient client,
                                     Consumer<String> eventConsumer) {
-            return new StreamConnection(descriptor, client, CONNECTION_RETRY_STRATEGY, eventConsumer, Constants.API_URL);
+            return new StreamConnection(descriptor, client, CONNECTION_RETRY_STRATEGY, eventConsumer);
         }
     }
 
