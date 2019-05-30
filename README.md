@@ -107,7 +107,7 @@ StreamQueryDescriptor
 ---------------------
 
 Begin by creating a StreamQueryDescriptor instance.  This will contain the app credentials, any request filters,
- a starting offset, offset update preference, and any subset options.
+ a starting offset, offset update preference, endpoint URL, and any subset options.
 
 If offset updates are enabled, then regardless of other filters provided the stream may contain events with type
 OFFSET_UPDATE. These don't correspond to any activity in Urban Airship's systems and requests for the same stream
