@@ -89,6 +89,13 @@ public class StreamConnection implements AutoCloseable {
         this.url = url;
     }
 
+    public StreamConnection(StreamQueryDescriptor descriptor,
+                            AsyncHttpClient client,
+                            ConnectionRetryStrategy connectionRetryStrategy,
+                            Consumer<String> eventConsumer) {
+        this(descriptor, client, connectionRetryStrategy, eventConsumer, descriptor.getEndpointUrl());
+    }
+
     /**
      * Opens up a connection to Urban Airship Connect and begins consuming data and passing it to the configured consumer
      * starting at the position specified by the startPosition parameter.

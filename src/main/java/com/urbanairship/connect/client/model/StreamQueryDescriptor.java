@@ -7,9 +7,11 @@ package com.urbanairship.connect.client.model;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.urbanairship.connect.client.Constants;
 import com.urbanairship.connect.client.StreamConnection;
 import com.urbanairship.connect.client.model.request.Subset;
 import com.urbanairship.connect.client.model.request.filters.Filter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,6 +27,7 @@ public final class StreamQueryDescriptor {
     private final Set<Filter> filters;
     private final Optional<Subset> subset;
     private final Optional<Boolean> offsetUpdatesEnabled;
+    private final String endpointUrl;
 
     /**
      * StreamDescriptor builder
@@ -34,11 +37,12 @@ public final class StreamQueryDescriptor {
         return new Builder();
     }
 
-    private StreamQueryDescriptor(Creds creds, Set<Filter> filters, Optional<Subset> subset, Optional<Boolean> offsetUpdatesEnabled) {
+    private StreamQueryDescriptor(Creds creds, Set<Filter> filters, Optional<Subset> subset, Optional<Boolean> offsetUpdatesEnabled, String endpointUrl) {
         this.creds = creds;
         this.filters = filters;
         this.subset = subset;
         this.offsetUpdatesEnabled = offsetUpdatesEnabled;
+        this.endpointUrl = endpointUrl;
     }
 
     /**
@@ -77,23 +81,30 @@ public final class StreamQueryDescriptor {
         return offsetUpdatesEnabled;
     }
 
+    /**
+     * Get Configured endpoint URL
+     *
+     * @return endpoint URL
+     */
+    public String getEndpointUrl() {
+        return endpointUrl;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         StreamQueryDescriptor that = (StreamQueryDescriptor) o;
         return Objects.equals(creds, that.creds) &&
                 Objects.equals(filters, that.filters) &&
-                Objects.equals(subset, that.subset);
+                Objects.equals(subset, that.subset) &&
+                Objects.equals(offsetUpdatesEnabled, that.offsetUpdatesEnabled) &&
+                Objects.equals(endpointUrl, that.endpointUrl);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(creds, filters, subset);
+        return Objects.hash(creds, filters, subset, offsetUpdatesEnabled, endpointUrl);
     }
 
     public static final class Builder {
@@ -103,6 +114,7 @@ public final class StreamQueryDescriptor {
         private Creds creds = null;
         private Subset subset = null;
         private Optional<Boolean> offsetUpdatesEnabled = Optional.absent();
+        private String endpointUrl = Constants.API_URL;
 
         private Builder() {}
 
@@ -159,14 +171,25 @@ public final class StreamQueryDescriptor {
             return this;
         }
 
+        public Builder setEndpointUrl(String url) {
+            this.endpointUrl = url;
+            return this;
+        }
+
         /**
          * Builder a StreamDescriptor object.
          * @return StreamDescriptor
          */
         public StreamQueryDescriptor build() {
             Preconditions.checkNotNull(creds, "Creds object must be provided");
+            Preconditions.checkArgument(StringUtils.isNotBlank(endpointUrl), "Endpoint URL must not be null");
 
-            return new StreamQueryDescriptor(creds, ImmutableSet.copyOf(filters), Optional.fromNullable(subset), offsetUpdatesEnabled);
+            return new StreamQueryDescriptor(
+                    creds,
+                    ImmutableSet.copyOf(filters),
+                    Optional.fromNullable(subset),
+                    offsetUpdatesEnabled,
+                    endpointUrl);
         }
     }
 }
