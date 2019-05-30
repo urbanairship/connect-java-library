@@ -258,6 +258,47 @@ public class StreamConnectionTest {
     }
 
     @Test
+    public void testRequestBodyWithDescriptorUrl() throws Exception {
+        final AtomicReference<String> body = new AtomicReference<>();
+        final CountDownLatch received = new CountDownLatch(1);
+        Answer httpAnswer = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                HttpExchange exchange = (HttpExchange) invocation.getArguments()[0];
+
+                int length = Integer.parseInt(exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_LENGTH));
+                byte[] bytes = new byte[length];
+                exchange.getRequestBody().read(bytes);
+                body.set(new String(bytes, UTF_8));
+
+                exchange.sendResponseHeaders(200, 0L);
+                received.countDown();
+
+                return null;
+            }
+        };
+
+        doAnswer(httpAnswer).when(serverHandler).handle(Matchers.<HttpExchange>any());
+
+        String offset = RandomStringUtils.randomAlphanumeric(32);
+        StreamQueryDescriptor descriptor = StreamQueryDescriptor.newBuilder()
+            .setEndpointUrl(url)
+            .setCreds( Creds.newBuilder()
+                .setAppKey(randomAlphabetic(22))
+                .setToken(randomAlphabetic(5))
+                .build())
+            .build();
+
+        stream = new StreamConnection(descriptor, http, connectionRetryStrategy, consumer);
+        read(stream, Optional.of(StartPosition.offset(offset)));
+
+        assertTrue(received.await(10, TimeUnit.SECONDS));
+
+        JsonObject bodyObj = parser.parse(body.get()).getAsJsonObject();
+        assertEquals(offset, bodyObj.get("resume_offset").getAsString());
+    }
+
+    @Test
     public void testRequestWithRelativeOffsetLatest() throws Exception {
         final AtomicReference<String> body = new AtomicReference<>();
         final CountDownLatch received = new CountDownLatch(1);
