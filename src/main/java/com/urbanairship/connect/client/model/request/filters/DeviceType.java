@@ -9,7 +9,7 @@ import java.lang.reflect.Type;
 
 public enum DeviceType {
 
-    IOS("ios"), ANDROID("android"), AMAZON("amazon");
+    IOS("ios"), ANDROID("android"), AMAZON("amazon"), SMS("sms"), OPEN("open"), EMAIL("email");
 
     private final String serializedValue;
 

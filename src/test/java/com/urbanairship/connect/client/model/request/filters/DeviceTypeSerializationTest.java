@@ -20,10 +20,13 @@ public class DeviceTypeSerializationTest {
         types.add(DeviceType.AMAZON);
         types.add(DeviceType.ANDROID);
         types.add(DeviceType.IOS);
+        types.add(DeviceType.SMS);
+        types.add(DeviceType.EMAIL);
+        types.add(DeviceType.OPEN);
 
         JsonElement obj = GsonUtil.getGson().toJsonTree(types);
 
-        JsonElement expected = parser.parse("[\"amazon\", \"android\", \"ios\"]");
+        JsonElement expected = parser.parse("[\"amazon\", \"android\", \"ios\", \"sms\", \"email\", \"open\"]");
 
         assertEquals(expected, obj);
     }
