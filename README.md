@@ -1,7 +1,14 @@
-Urban Airship Connect Client Library
+Airship Real Time Data Stream Client Library
 ====================================
 
-This is the official supported Java library for Urban Airship Connect.
+This is the official supported Java library for Airship Real Time Data Stream (formerly known as Connect).
+
+
+Questions
+=========
+
+The best place to ask questions or report a problem is our support site:
+http://support.airship.com/
 
 
 Installation
@@ -46,9 +53,9 @@ Add the following to your pom.xml
 Usage
 =====
 
-The client library provides all the components you need to consume a Connect direct stream.
+The client library provides all the components you need to consume a RTDS direct stream.
 
-_Note that Connect requests with this client may experience SSL handshake failures unless using the
+_Note that RTDS requests with this client may experience SSL handshake failures unless using the
 **Java Cryptography Extension (JCE) Unlimited Strength** package cipher suite._
 
 If you encounter a generic connection failure `java.lang.RuntimeException`, the max strength encryption policy might be the culprit, and you should ensure this JCE Unlimited Strength package is installed on your system.
@@ -110,7 +117,7 @@ Begin by creating a StreamQueryDescriptor instance.  This will contain the app c
  a starting offset, offset update preference, endpoint URL, and any subset options.
 
 If offset updates are enabled, then regardless of other filters provided the stream may contain events with type
-OFFSET_UPDATE. These don't correspond to any activity in Urban Airship's systems and requests for the same stream
+OFFSET_UPDATE. These don't correspond to any activity in Airship's systems and requests for the same stream
 position will not return the same OFFSET_UPDATE events. The offsets on them will be the same as some other event
 in the stream. They serve to allow clients to update stored offsets in the case of low traffic or filters removing
 large portions of the stream.
