@@ -1,7 +1,7 @@
-Airship Real Time Data Stream Client Library
-====================================
+Airship Real-Time Data Streaming Client Library
+===============================================
 
-This is the official supported Java library for Airship Real Time Data Stream (formerly known as Connect).
+This is the official supported Java library for Airship Real-Time Data Streaming (formerly known as Connect).
 
 
 Questions
