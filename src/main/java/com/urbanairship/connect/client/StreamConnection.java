@@ -10,10 +10,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.ListenableFuture;
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.cookie.CookieDecoder;
+import io.netty.handler.codec.http.CookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.BoundRequestBuilder;
+import org.asynchttpclient.ListenableFuture;
 import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
 import com.urbanairship.connect.client.consume.FullBodyConsumer;
 import com.urbanairship.connect.client.consume.MobileEventStreamBodyConsumer;
@@ -31,10 +34,12 @@ import org.slf4j.LoggerFactory;
 import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -218,7 +223,7 @@ public class StreamConnection implements AutoCloseable {
 
     private Connection connect(Collection<Cookie> cookies, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException, ConnectionException {
 
-        AsyncHttpClient.BoundRequestBuilder request = buildRequest(cookies, startPosition);
+        BoundRequestBuilder request = buildRequest(cookies, startPosition);
 
         MobileEventStreamConnectFuture connectFuture = new MobileEventStreamConnectFuture();
         MobileEventStreamResponseHandler responseHandler = new MobileEventStreamResponseHandler(connectFuture);
@@ -274,10 +279,11 @@ public class StreamConnection implements AutoCloseable {
         return new ConnectionException(String.format("Received unexpected status code (%d) from request for stream for app %s. Response body: %s", status, getAppKey(), body), status);
     }
 
-    private AsyncHttpClient.BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<StartPosition> startPosition) {
+    private BoundRequestBuilder buildRequest(Collection<Cookie> cookies, Optional<StartPosition> startPosition) {
+
         byte[] query = getQuery(startPosition);
 
-        AsyncHttpClient.BoundRequestBuilder request = client.preparePost(url)
+        BoundRequestBuilder request = client.preparePost(url)
                 .addHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER)
                 .addHeader(HttpHeaders.CONTENT_LENGTH, Integer.toString(query.length));
 
@@ -297,20 +303,19 @@ public class StreamConnection implements AutoCloseable {
 
     private Connection handleRedirect(StatusAndHeaders statusAndHeaders, Optional<StartPosition> startPosition) throws InterruptedException, ExecutionException, ConnectionException {
 
-        List<String> values = statusAndHeaders.getHeaders().get("Set-Cookie");
-        if (values == null || values.isEmpty()) {
+        String value = statusAndHeaders.getHeaders().get("Set-Cookie");
+        if (value == null) {
             throw new ConnectionException("Received redirect response with no 'Set-Cookie' header in response!", statusAndHeaders.getStatusCode());
         }
 
-        String value = values.get(0);
-        Cookie cookie = CookieDecoder.decode(value);
+        Set<io.netty.handler.codec.http.Cookie> cookies = CookieDecoder.decode(value);
 
-        if (cookie == null) {
+        if (cookies == null) {
             throw new ConnectionException("Received redirect response with unparsable 'Set-Cookie' value - " + value, statusAndHeaders.getStatusCode());
         }
 
         try {
-            return connect(ImmutableList.of(cookie), startPosition);
+            return connect(new ArrayList<Cookie>(cookies), startPosition);
         } catch (Exception e) {
             throw e;
         }

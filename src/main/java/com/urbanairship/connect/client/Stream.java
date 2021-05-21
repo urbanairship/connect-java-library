@@ -2,6 +2,7 @@ package com.urbanairship.connect.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -77,6 +78,43 @@ public final class Stream extends AbstractIterator<String> implements ConnectStr
         threads.submit(new SourceWatcher(handle));
     }
 
+    private Stream(Builder builder) {
+        StreamQueryDescriptor descriptor = builder.descriptor;
+        Optional<StartPosition> startPosition = Optional.fromNullable(builder.startingPosition);
+        Optional<StreamConnectionSupplier> connSupplier = Optional.fromNullable(builder.connSupplier);
+        Optional<RequestClient> requestClient = Optional.fromNullable(builder.requestClient);
+
+        eventQueue = new LinkedBlockingQueue<>(100);
+        threads = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
+                .setDaemon(false)
+                .setNameFormat("Stream iteration thread %d")
+                .build());
+
+        StreamConsumeTask.Builder consumeTaskBuilder = StreamConsumeTask.newBuilder()
+                .setTargetQueue(eventQueue)
+                .setStreamQueryDescriptor(descriptor);
+
+        if (requestClient.isPresent()) {
+            consumeTaskBuilder.setHttpClient(requestClient.get().getRequestClient());
+        }
+
+        if (startPosition.isPresent()) {
+            consumeTaskBuilder.setStartingPosition(startPosition.get());
+        }
+
+        if (connSupplier.isPresent()) {
+            consumeTaskBuilder.setStreamConnectionSupplier(connSupplier.get());
+        }
+
+        consumeTask = consumeTaskBuilder.build();
+        Future<?> handle = threads.submit(consumeTask);
+        threads.submit(new SourceWatcher(handle));
+    }
+
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
     @Override
     public void close() throws Exception {
         try {
@@ -146,6 +184,38 @@ public final class Stream extends AbstractIterator<String> implements ConnectStr
             finally {
                 sourceExit.set(new SourceExit(Optional.fromNullable(error)));
             }
+        }
+    }
+
+    public static class Builder {
+        private StreamQueryDescriptor descriptor = null;
+        private StartPosition startingPosition = null;
+        private StreamConnectionSupplier connSupplier = null;
+        private RequestClient requestClient = null;
+
+        public Builder setDescriptor(StreamQueryDescriptor descriptor) {
+            this.descriptor = descriptor;
+            return this;
+        }
+
+        public Builder setStartPosition(StartPosition startPosition) {
+            this.startingPosition = startPosition;
+            return this;
+        }
+
+        public Builder setConnectionSupplier(StreamConnectionSupplier connSupplier) {
+            this.connSupplier = connSupplier;
+            return this;
+        }
+
+        public Builder setRequestClient(RequestClient requestClient) {
+            this.requestClient = requestClient;
+            return this;
+        }
+
+        public Stream build() {
+            Preconditions.checkNotNull(descriptor, "descriptor must be set.");
+            return new Stream(this);
         }
     }
 }

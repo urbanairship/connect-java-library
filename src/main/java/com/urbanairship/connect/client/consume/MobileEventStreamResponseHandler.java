@@ -5,11 +5,11 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.consume;
 
 import com.google.common.base.Optional;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
 import com.urbanairship.connect.java8.Consumer;
+import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,24 +68,25 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
     }
 
     @Override
-    public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+    public State onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
         statusCode = responseStatus.getStatusCode();
         statusMessage = responseStatus.getStatusText();
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     @Override
-    public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-        Map<String, List<String>> copied = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : headers.getHeaders().entrySet()) {
-            copied.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+    public State onHeadersReceived(HttpHeaders headers) throws Exception {
+        Map<String, String> copied = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : headers.entries()) {
+            copied.put(entry.getKey(), entry.getValue());
         }
 
         StatusAndHeaders statusAndHeaders = new StatusAndHeaders(statusCode, statusMessage, copied);
 
         connected = true;
         connectCallback.connected(statusAndHeaders);
-        return STATE.CONTINUE;
+        return State.CONTINUE;
     }
 
     public void consumeBody(Consumer<byte[]> receiver) {
@@ -94,11 +95,11 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
     }
 
     @Override
-    public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+    public State onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
         consumeLatch.await();
 
         if (!consumePermit.tryAcquire()) {
-            return STATE.ABORT;
+            return State.ABORT;
         }
 
         try {
@@ -108,7 +109,7 @@ public final class MobileEventStreamResponseHandler implements AsyncHandler<Bool
             consumePermit.release();
         }
 
-        return stop.get() ? STATE.ABORT : STATE.CONTINUE;
+        return stop.get() ? State.ABORT : State.CONTINUE;
     }
 
     @Override
