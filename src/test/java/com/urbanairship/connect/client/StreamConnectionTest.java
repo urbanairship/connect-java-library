@@ -13,8 +13,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -32,6 +30,10 @@ import com.urbanairship.connect.client.model.request.filters.NotificationFilter;
 import com.urbanairship.connect.java8.Consumer;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -119,14 +121,12 @@ public class StreamConnectionTest {
         Mockito.reset(serverHandler);
         stream = null;
 
-        AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
+        AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder()
                 .setUserAgent("Connect Client")
                 .setRequestTimeout(-1)
-                .setAllowPoolingConnections(false)
-                .setAllowPoolingSslConnections(false)
                 .build();
 
-        http = new AsyncHttpClient(clientConfig);
+        http = new DefaultAsyncHttpClient(clientConfig);
 
         when(connectionRetryStrategy.shouldRetry(anyInt())).thenReturn(false);
         when(connectionRetryStrategy.getPauseMillis(anyInt())).thenReturn(0L);
@@ -685,7 +685,6 @@ public class StreamConnectionTest {
                 exchange.getResponseBody().write(randomAlphabetic(10).getBytes(UTF_8));
                 exchange.getResponseBody().write("\n".getBytes(UTF_8));
                 exchange.getResponseBody().flush();
-
                 return null;
             }
         };
@@ -698,6 +697,7 @@ public class StreamConnectionTest {
 
         expectedException.expect(RuntimeException.class);
         stream.read(Optional.<StartPosition>absent());
+        stream.wait(100);
     }
 
     @Test

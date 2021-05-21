@@ -1,3 +1,11 @@
+2021-05-21 Release 5.3.0
+
+    Added support for implementing an AsyncHttpClient.
+
+    Updated underlying http client to asynchttpclient 2.12.3.
+
+    Updated slf4j to version 1.7.30.
+
 2019-10-24 Release 5.2.0
 
     Add device type filters for sms, email, and open channels.

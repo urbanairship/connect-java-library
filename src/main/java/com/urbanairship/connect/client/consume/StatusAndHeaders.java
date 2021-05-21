@@ -6,7 +6,6 @@ package com.urbanairship.connect.client.consume;
 
 import com.google.common.base.MoreObjects;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -15,9 +14,9 @@ public final class StatusAndHeaders {
 
     private final int statusCode;
     private final String statusMessage;
-    private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-    public StatusAndHeaders(int statusCode, String statusMessage, Map<String, List<String>> headers) {
+    public StatusAndHeaders(int statusCode, String statusMessage, Map<String, String> headers) {
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
         this.headers.putAll(headers);
@@ -27,7 +26,7 @@ public final class StatusAndHeaders {
         return statusCode;
     }
 
-    public Map<String, List<String>> getHeaders() {
+    public Map<String, String> getHeaders() {
         return headers;
     }
 

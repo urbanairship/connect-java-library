@@ -4,8 +4,10 @@ Copyright 2015 Urban Airship and Contributors
 
 package com.urbanairship.connect.client;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,16 +26,25 @@ public final class HttpClientUtil {
      * @return An AsyncHttpClient instance.
      */
     public static AsyncHttpClient defaultHttpClient() {
-        AsyncHttpClientConfig clientConfig = new AsyncHttpClientConfig.Builder()
+        AsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder()
             .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
             .setReadTimeout(HTTP_READ_TIMEOUT)
             .setUserAgent("UA Java Connect Client")
             .setRequestTimeout(-1)
-            .setAllowPoolingConnections(false)
-            .setAllowPoolingSslConnections(false)
             .setMaxRequestRetry(0)
             .build();
 
-        return new AsyncHttpClient(clientConfig);
+        return new DefaultAsyncHttpClient(clientConfig);
+    }
+
+    public static DefaultAsyncHttpClientConfig.Builder defaultHttpClientConfigBuilder() {
+        DefaultAsyncHttpClientConfig.Builder clientConfigBuilder = new DefaultAsyncHttpClientConfig.Builder()
+                .setConnectTimeout(HttpClientUtil.HTTP_CONNECT_TIMEOUT)
+                .setReadTimeout(HttpClientUtil.HTTP_READ_TIMEOUT)
+                .setUserAgent("UA Java Connect Client")
+                .setRequestTimeout(-1)
+                .setMaxRequestRetry(0);
+
+        return clientConfigBuilder;
     }
 }

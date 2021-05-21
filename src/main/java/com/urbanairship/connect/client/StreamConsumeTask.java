@@ -10,16 +10,17 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.ning.http.client.AsyncHttpClient;
 import com.urbanairship.connect.client.consume.BackoffConnectionRetryStrategy;
 import com.urbanairship.connect.client.consume.ConnectionRetryStrategy;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StreamQueryDescriptor;
 import com.urbanairship.connect.client.model.request.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
+import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +86,11 @@ public final class StreamConsumeTask implements Runnable {
             stream();
         } finally {
             if (manageHttpLifecycle) {
-                http.close();
+                try {
+                    http.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             log.debug("Stopping run");

@@ -2,12 +2,12 @@ package com.urbanairship.connect.client;
 
 import com.google.common.base.Optional;
 import com.google.gson.JsonObject;
-import com.ning.http.client.AsyncHttpClient;
 import com.urbanairship.connect.client.model.Creds;
 import com.urbanairship.connect.client.model.GsonUtil;
 import com.urbanairship.connect.client.model.StreamQueryDescriptor;
 import com.urbanairship.connect.client.model.request.StartPosition;
 import com.urbanairship.connect.java8.Consumer;
+import org.asynchttpclient.AsyncHttpClient;
 import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
@@ -63,6 +63,49 @@ public class StreamTest {
 
         List<String> received = new ArrayList<>();
         try (Stream stream = new Stream(descriptor(), Optional.<StartPosition>absent(), Optional.of(connSupplier))){
+            while (stream.hasNext()) {
+                received.add(stream.next());
+                if (received.size() == 20) {
+                    break;
+                }
+            }
+        }
+        finally {
+            stop.countDown();
+        }
+
+        assertEquals(events, received);
+
+        verify(conn, atLeastOnce()).close();
+    }
+
+    @Test
+    public void testAirshipRequestClientStream() throws Exception {
+        final AtomicReference<Consumer<String>> consumer = hookStream(connSupplier, conn);
+        final List<String> events = events(20);
+        final CountDownLatch stop = new CountDownLatch(1);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                for (String event : events) {
+                    consumer.get().accept(event);
+                }
+
+                stop.await();
+                return null;
+            }
+        })
+                .when(conn).read(Matchers.<Optional<StartPosition>>any());
+
+        List<String> received = new ArrayList<>();
+        RequestClient requestClient = AirshipRequestClient.newBuilder().build();
+
+        Stream stream = Stream.newBuilder()
+                .setDescriptor(descriptor())
+                .setRequestClient(requestClient)
+                .setConnectionSupplier(connSupplier)
+                .build();
+        try {
             while (stream.hasNext()) {
                 received.add(stream.next());
                 if (received.size() == 20) {

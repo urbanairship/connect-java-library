@@ -5,15 +5,12 @@ Copyright 2015 Urban Airship and Contributors
 package com.urbanairship.connect.client.consume;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.ning.http.client.AsyncHandler;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.HttpResponseBodyPart;
-import com.ning.http.client.HttpResponseHeaders;
-import com.ning.http.client.HttpResponseStatus;
 import com.urbanairship.connect.java8.Consumer;
+import io.netty.handler.codec.http.HttpHeaders;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,8 +18,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.net.HttpURLConnection;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -69,17 +68,22 @@ public class StreamConnectionResponseHandlerTest {
         when(status.getStatusCode()).thenReturn(code);
         when(status.getStatusText()).thenReturn(message);
 
-        AsyncHandler.STATE state = handler.onStatusReceived(status);
-        assertEquals(AsyncHandler.STATE.CONTINUE, state);
+        AsyncHandler.State state = handler.onStatusReceived(status);
+        assertEquals(AsyncHandler.State.CONTINUE, state);
 
-        HttpResponseHeaders headers = mock(HttpResponseHeaders.class);
-        Map<String, Collection<String>> headerMap = ImmutableMap.of(
-                RandomStringUtils.randomAlphanumeric(5), ImmutableList.of(RandomStringUtils.randomAlphabetic(10)),
-                RandomStringUtils.randomAlphanumeric(5), (Collection<String>) ImmutableList.of(RandomStringUtils.randomAlphabetic(10), RandomStringUtils.randomAlphabetic(5))
-        );
-        when(headers.getHeaders()).thenReturn(new FluentCaseInsensitiveStringsMap(headerMap));
+        HttpHeaders headers = mock(HttpHeaders.class);
+        List<Map.Entry<String, String>> entryList = new ArrayList<>();
+        entryList.add(new AbstractMap.SimpleEntry<String, String>(RandomStringUtils.randomAlphanumeric(5), RandomStringUtils.randomAlphabetic(10)));
+        entryList.add(new AbstractMap.SimpleEntry<String, String>(RandomStringUtils.randomAlphanumeric(5), RandomStringUtils.randomAlphabetic(10)));
+
+        Map<String, String> entries = new HashMap<>();
+        for (Map.Entry<String, String> entry : entryList) {
+            entries.put(entry.getKey(), entry.getValue());
+        }
+
+        when(headers.entries()).thenReturn(entryList);
         state = handler.onHeadersReceived(headers);
-        assertEquals(AsyncHandler.STATE.CONTINUE, state);
+        assertEquals(AsyncHandler.State.CONTINUE, state);
 
         ArgumentCaptor<StatusAndHeaders> captor = ArgumentCaptor.forClass(StatusAndHeaders.class);
         verify(connectCallback).connected(captor.capture());
@@ -88,7 +92,7 @@ public class StreamConnectionResponseHandlerTest {
 
         assertEquals(code, received.getStatusCode());
         assertEquals(message, received.getStatusMessage());
-        assertEquals(headerMap, received.getHeaders());
+        assertEquals(entries, received.getHeaders());
     }
 
     @Test
@@ -98,15 +102,15 @@ public class StreamConnectionResponseHandlerTest {
         when(bodyPart.getBodyPartBytes()).thenReturn(bytes);
 
         ExecutorService thread = Executors.newSingleThreadExecutor();
-        Callable<AsyncHandler.STATE> callable = new Callable<AsyncHandler.STATE>() {
+        Callable<AsyncHandler.State> callable = new Callable<AsyncHandler.State>() {
             @Override
-            public AsyncHandler.STATE call() throws Exception {
+            public AsyncHandler.State call() throws Exception {
                 return handler.onBodyPartReceived(bodyPart);
             }
         };
 
         try {
-            Future<AsyncHandler.STATE> future = thread.submit(callable);
+            Future<AsyncHandler.State> future = thread.submit(callable);
 
             boolean timedOut = false;
             try {
@@ -120,9 +124,9 @@ public class StreamConnectionResponseHandlerTest {
 
             handler.consumeBody(receiver);
 
-            AsyncHandler.STATE result = future.get(1, TimeUnit.SECONDS);
+            AsyncHandler.State result = future.get(1, TimeUnit.SECONDS);
 
-            assertEquals(AsyncHandler.STATE.CONTINUE, result);
+            assertEquals(AsyncHandler.State.CONTINUE, result);
         }
         finally {
             thread.shutdownNow();
@@ -135,9 +139,9 @@ public class StreamConnectionResponseHandlerTest {
         handler.stop();
 
         HttpResponseBodyPart bodyPart = mock(HttpResponseBodyPart.class);
-        AsyncHandler.STATE result = handler.onBodyPartReceived(bodyPart);
+        AsyncHandler.State result = handler.onBodyPartReceived(bodyPart);
 
-        assertEquals(AsyncHandler.STATE.ABORT, result);
+        assertEquals(AsyncHandler.State.ABORT, result);
     }
 
     @Test
@@ -148,8 +152,9 @@ public class StreamConnectionResponseHandlerTest {
         when(status.getStatusCode()).thenReturn(code);
         when(status.getStatusText()).thenReturn(message);
 
-        HttpResponseHeaders headers = mock(HttpResponseHeaders.class);
-        when(headers.getHeaders()).thenReturn(new FluentCaseInsensitiveStringsMap(Collections.<String, Collection<String>>emptyMap()));
+        HttpHeaders headers = mock(HttpHeaders.class);
+        List<Map.Entry<String, String>> entries = new ArrayList<>();
+        when(headers.entries()).thenReturn(entries);
 
         handler.onStatusReceived(status);
         handler.onHeadersReceived(headers);
@@ -171,8 +176,9 @@ public class StreamConnectionResponseHandlerTest {
         when(status.getStatusCode()).thenReturn(code);
         when(status.getStatusText()).thenReturn(message);
 
-        HttpResponseHeaders headers = mock(HttpResponseHeaders.class);
-        when(headers.getHeaders()).thenReturn(new FluentCaseInsensitiveStringsMap(Collections.<String, Collection<String>>emptyMap()));
+        HttpHeaders headers = mock(HttpHeaders.class);
+        List<Map.Entry<String, String>> entries = new ArrayList<>();
+        when(headers.entries()).thenReturn(entries);
 
         handler.onStatusReceived(status);
         handler.onHeadersReceived(headers);
