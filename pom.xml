@@ -241,6 +241,12 @@
         <version>2.12.3</version>
       </dependency>
 
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-http</artifactId>
+        <version>4.1.60.Final</version>
+      </dependency>
+
       <!-- test deps -->
       <dependency>
         <groupId>junit</groupId>
