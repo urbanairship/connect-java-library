@@ -30,6 +30,14 @@
     </developer>
   </developers>
 
+
+  <distributionManagement>
+    <repository>
+      <id>mvnrepository-central-connect-client</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <build>
     <plugins>
 
