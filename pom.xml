@@ -4,7 +4,7 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
-  <version>5.1.2-SNAPSHOT</version>
+  <version>5.1.2</version>
   <packaging>jar</packaging>
 
   <name>Connect Client</name>
@@ -30,13 +30,12 @@
     </developer>
   </developers>
 
-
-  <distributionManagement>
-    <repository>
-      <id>connect-client</id>
-      <url>https://mvnrepository.com/artifact/com.urbanairship/connect-client/</url>
-    </repository>
-  </distributionManagement>
+    <distributionManagement>
+      <repository>
+        <id>connect-client</id>
+        <url>https://repo.maven.apache.org/maven2/com/urbanairship/connect-client/</url>
+      </repository>
+    </distributionManagement>
 
   <build>
     <plugins>
