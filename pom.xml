@@ -10,7 +10,7 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
-  <version>5.3.0-SNAPSHOT</version>
+  <version>5.3.1</version>
   <packaging>jar</packaging>
 
   <name>Connect Client</name>
@@ -27,7 +27,7 @@
     <connection>scm:git:git@github.com:urbanairship/connect-java-library.git</connection>
     <developerConnection>scm:git:git@github.com:urbanairship/connect-java-library.git</developerConnection>
     <url>git@github.com:urbanairship/connect-java-library.git</url>
-    <tag>HEAD</tag>
+    <tag>5.3.1</tag>
   </scm>
 
   <developers>
