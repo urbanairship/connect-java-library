@@ -10,7 +10,7 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
-  <version>5.0.2-SNAPSHOT</version>
+  <version>5.1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Connect Client</name>
