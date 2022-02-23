@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Wraps up the the low level classes that interact with the Urban Airship Connect API and exposes the data received
+ * Wraps up the the low level classes that interact with the Airship Real-Time Data Streaming API and exposes the data received
  * from the API as an {@link java.util.Iterator} that is open ended and behaves conceptually as a "stream" of events.
  *
  * Note this class is {@link AutoCloseable} and so proper use should look something like:

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Airship and Contributors
+Copyright 2015-2022 Airship and Contributors
 */
 
 package com.urbanairship.connect.client;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * A class for handling {@link StreamConnection} interactions and expose the data received from the Urban Airship Connect
+ * A class for handling {@link StreamConnection} interactions and expose the data received from the Airship Real-Time Data Streaming
  * API out through a {@link BlockingQueue} provided by the user. Includes basic stream connection/consumption and
  * reconnection on retryable errors.
  * <p>

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 Airship and Contributors
+Copyright 2015-2022 Airship and Contributors
 */
 
 package com.urbanairship.connect.client.consume;

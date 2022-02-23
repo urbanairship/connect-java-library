@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 
 /**
- * Identifies a position - either relative or absolute - within a stream of events sourced from the Urban Airship Connect API.
+ * Identifies a position - either relative or absolute - within a stream of events sourced from the Airship Real-Time Data Streaming API.
  */
 public final class StartPosition {
 
@@ -38,7 +38,7 @@ public final class StartPosition {
      * Create a position specified by an exact offset.
      *
      * @param offset the offset specifying the position. An offset can be retrieved from the body of an event received from
-     *               the Urban Airship Connect API and specifies that event's position in the overall stream.
+     *               the Airship Real-Time Data Streaming API and specifies that event's position in the overall stream.
      */
     public static StartPosition offset(String offset) {
         Preconditions.checkArgument(StringUtils.isNotBlank(offset), "Offset cannot be null or empty");
