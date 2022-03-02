@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Urban Airship and Contributors
+Copyright 2015-2022 Airship and Contributors
 */
 
 package com.urbanairship.connect.client;
@@ -45,7 +45,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Provides the abstraction through which events are streamed from the Urban Airship Connect endpoint to a caller.
+ * Provides the abstraction through which events are streamed from the Airship Real-Time Data Streaming endpoint to a caller.
  *
  * Usage should follow the pattern:
  * <pre>
@@ -102,7 +102,7 @@ public class StreamConnection implements AutoCloseable {
     }
 
     /**
-     * Opens up a connection to Urban Airship Connect and begins consuming data and passing it to the configured consumer
+     * Opens up a connection to Airship Real-Time Data Streaming and begins consuming data and passing it to the configured consumer
      * starting at the position specified by the startPosition parameter.
      *
      * @param startPosition optionally specifies the starting position to consume from.
