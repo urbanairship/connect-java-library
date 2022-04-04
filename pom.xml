@@ -10,7 +10,7 @@
 
   <groupId>com.urbanairship</groupId>
   <artifactId>connect-client</artifactId>
-  <version>5.3.1-SNAPSHOT</version>
+  <version>5.4.0</version>
   <packaging>jar</packaging>
 
   <name>Real-Time Data Stream Client</name>
@@ -27,7 +27,7 @@
     <connection>scm:git:git@github.com:urbanairship/connect-java-library.git</connection>
     <developerConnection>scm:git:git@github.com:urbanairship/connect-java-library.git</developerConnection>
     <url>git@github.com:urbanairship/connect-java-library.git</url>
-    <tag>HEAD</tag>
+    <tag>5.4.0</tag>
   </scm>
 
   <developers>
