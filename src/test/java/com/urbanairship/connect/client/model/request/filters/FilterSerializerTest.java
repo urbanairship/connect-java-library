@@ -5,6 +5,7 @@ Copyright 2015-2022 Airship and Contributors
 package com.urbanairship.connect.client.model.request.filters;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.urbanairship.connect.client.model.GsonUtil;
 import org.apache.commons.lang3.RandomUtils;
@@ -26,10 +27,12 @@ public class FilterSerializerTest {
         String eventType = "OPEN";
         long latency = RandomUtils.nextLong(1L, 100000L);
         String pushId = UUID.randomUUID().toString();
+        JsonObject predicate = "{\"and\":[{\"key\":\"type\",\"value\":{\"equals\":\"CUSTOM\"}},{\"scope\":\"body\",\"key\":\"name\",\"value\":{\"equals\":\"initial_open\"}}";
 
         Filter filter = Filter.newBuilder()
                 .addDevices(new DeviceFilter(DeviceFilterType.ANDROID_CHANNEL, deviceId))
                 .addDeviceTypes(DeviceType.ANDROID)
+                .addPredicates(predicate)
                 .addEventTypes(eventType)
                 .addNotifications(new NotificationFilter(NotificationFilter.Type.PUSH_ID, pushId))
                 .setLatency(latency)
@@ -43,11 +46,14 @@ public class FilterSerializerTest {
                 "\"notifications\":[{" +
                     "\"push_id\":\"%s\"" +
                 "}]," +
+                "\"predicates\":[" +
+                    "%s" +
+                "]," +
                 "\"types\":[\"%s\"]," +
                 "\"devices\":[{" +
                     "\"android_channel\":\"%s\"" +
                 "}]" +
-            "}", latency, pushId, eventType, deviceId);
+            "}", latency, pushId, predicate, eventType, deviceId);
 
         JsonElement expected = parser.parse(json);
 
