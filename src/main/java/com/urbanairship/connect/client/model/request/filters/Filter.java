@@ -157,7 +157,7 @@ public final class Filter {
             Preconditions.checkArgument((
                     !deviceTypes.isEmpty() ||
                     !notifications.isEmpty() ||
-                    !deviceTypes.isEmpty() ||
+                    !devices.isEmpty() ||
                     !predicates.isEmpty() ||
                     !types.isEmpty() ||
                     latency != null), "Cannot create an empty filter payload");
