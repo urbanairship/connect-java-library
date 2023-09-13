@@ -12,6 +12,7 @@ import com.urbanairship.connect.client.model.request.filters.DeviceFilter;
 import com.urbanairship.connect.client.model.request.filters.DeviceType;
 import com.urbanairship.connect.client.model.request.filters.Filter;
 import com.urbanairship.connect.client.model.request.filters.NotificationFilter;
+import com.urbanairship.connect.client.model.request.filters.PredicateFilter;
 
 public final class GsonUtil {
 
@@ -22,6 +23,7 @@ public final class GsonUtil {
                 .registerTypeAdapter(DeviceFilter.class, DeviceFilter.SERIALIZER)
                 .registerTypeAdapter(Filter.class, Filter.SERIALIZER)
                 .registerTypeAdapter(NotificationFilter.class, NotificationFilter.SERIALIZER)
+                .registerTypeAdapter(PredicateFilter.class, PredicateFilter.SERIALIZER)
                 .registerTypeAdapter(Subset.SampleSubset.class, Subset.SAMPLE_SUBSET_SERIALIZER)
                 .registerTypeAdapter(Subset.PartitionSubset.class, Subset.PARTITION_SUBSET_SERIALIZER)
                 .registerTypeAdapter(StreamRequestPayload.class, StreamRequestPayload.SERIALIZER)
