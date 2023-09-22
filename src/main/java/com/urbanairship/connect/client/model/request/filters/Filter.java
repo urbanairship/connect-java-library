@@ -22,6 +22,7 @@ public final class Filter {
     private final Set<DeviceType> deviceTypes;
     private final Set<NotificationFilter> notifications;
     private final Set<DeviceFilter> devices;
+    private final Set<PredicateFilter> predicates;
     private final Set<String> types;
     private final Optional<Long> latency;
 
@@ -32,11 +33,13 @@ public final class Filter {
     private Filter(Set<DeviceType> deviceTypes,
                    Set<NotificationFilter> notifications,
                    Set<DeviceFilter> devices,
+                   Set<PredicateFilter> predicates,
                    Set<String> types,
                    Optional<Long> latency) {
         this.deviceTypes = deviceTypes;
         this.notifications = notifications;
         this.devices = devices;
+        this.predicates = predicates;
         this.types = types;
         this.latency = latency;
     }
@@ -51,6 +54,10 @@ public final class Filter {
 
     public Set<DeviceFilter> getDevices() {
         return devices;
+    }
+
+    public Set<PredicateFilter> getPredicates() {
+        return predicates;
     }
 
     public Set<String> getTypes() {
@@ -70,6 +77,7 @@ public final class Filter {
 
         if (!deviceTypes.equals(filter.deviceTypes)) return false;
         if (!devices.equals(filter.devices)) return false;
+        if (!predicates.equals(filter.predicates)) return false;
         if (!latency.equals(filter.latency)) return false;
         if (!notifications.equals(filter.notifications)) return false;
         if (!types.equals(filter.types)) return false;
@@ -82,6 +90,7 @@ public final class Filter {
         int result = deviceTypes.hashCode();
         result = 31 * result + notifications.hashCode();
         result = 31 * result + devices.hashCode();
+        result = 31 * result + predicates.hashCode();
         result = 31 * result + types.hashCode();
         result = 31 * result + latency.hashCode();
         return result;
@@ -93,6 +102,7 @@ public final class Filter {
             "deviceTypes=" + deviceTypes +
             ", notifications=" + notifications +
             ", devices=" + devices +
+            ", predicates=" + predicates +
             ", types=" + types +
             ", latency=" + latency +
             '}';
@@ -103,6 +113,7 @@ public final class Filter {
         private final Set<DeviceType> deviceTypes = new HashSet<>();
         private final Set<NotificationFilter> notifications = new HashSet<>();
         private final Set<DeviceFilter> devices = new HashSet<>();
+        private final Set<PredicateFilter> predicates = new HashSet<>();
         private final Set<String> types = new HashSet<>();
 
         private Long latency = null;
@@ -124,6 +135,11 @@ public final class Filter {
             return this;
         }
 
+        public Builder addPredicates(PredicateFilter... predicates) {
+            Collections.addAll(this.predicates, predicates);
+            return this;
+        }
+
         public Builder addEventTypes(String... types) {
             for (String type : types) {
                 this.types.add(type.toUpperCase());
@@ -141,7 +157,8 @@ public final class Filter {
             Preconditions.checkArgument((
                     !deviceTypes.isEmpty() ||
                     !notifications.isEmpty() ||
-                    !deviceTypes.isEmpty() ||
+                    !devices.isEmpty() ||
+                    !predicates.isEmpty() ||
                     !types.isEmpty() ||
                     latency != null), "Cannot create an empty filter payload");
 
@@ -151,6 +168,7 @@ public final class Filter {
                     ImmutableSet.copyOf(deviceTypes),
                     ImmutableSet.copyOf(notifications),
                     ImmutableSet.copyOf(devices),
+                    ImmutableSet.copyOf(predicates),
                     ImmutableSet.copyOf(types),
                     Optional.fromNullable(latency)
             );
@@ -159,6 +177,7 @@ public final class Filter {
 
     public static final String DEVICE_TYPES_KEY = "device_types";
     public static final String DEVICES_KEY = "devices";
+    public static final String PREDICATES_KEY = "predicates";
     public static final String NOTIFICATIONS_KEY = "notifications";
     public static final String EVENT_TYPES_KEY = "types";
     public static final String LATENCY_KEY = "latency";
@@ -172,6 +191,9 @@ public final class Filter {
             }
             if (!filter.getDevices().isEmpty()) {
                 obj.add(DEVICES_KEY, context.serialize(filter.getDevices()));
+            }
+            if (!filter.getPredicates().isEmpty()) {
+                obj.add(PREDICATES_KEY, context.serialize(filter.getPredicates()));
             }
             if (!filter.getNotifications().isEmpty()) {
                 obj.add(NOTIFICATIONS_KEY, context.serialize(filter.getNotifications()));
