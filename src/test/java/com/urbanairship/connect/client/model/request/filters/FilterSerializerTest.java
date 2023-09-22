@@ -26,10 +26,14 @@ public class FilterSerializerTest {
         String eventType = "OPEN";
         long latency = RandomUtils.nextLong(1L, 100000L);
         String pushId = UUID.randomUUID().toString();
+        String predicateJson = "{\"and\":[{\"key\":\"type\",\"value\":{\"equals\":\"CUSTOM\"}},{\"scope\":\"body\",\"key\":\"name\",\"value\":{\"equals\":\"initial_open\"}}]}";
+        JsonElement predicateObject = parser.parse(predicateJson);
+        PredicateFilter predicate = new PredicateFilter(predicateObject.getAsJsonObject());
 
         Filter filter = Filter.newBuilder()
                 .addDevices(new DeviceFilter(DeviceFilterType.ANDROID_CHANNEL, deviceId))
                 .addDeviceTypes(DeviceType.ANDROID)
+                .addPredicates(predicate)
                 .addEventTypes(eventType)
                 .addNotifications(new NotificationFilter(NotificationFilter.Type.PUSH_ID, pushId))
                 .setLatency(latency)
@@ -43,11 +47,14 @@ public class FilterSerializerTest {
                 "\"notifications\":[{" +
                     "\"push_id\":\"%s\"" +
                 "}]," +
+                "\"predicates\":[" +
+                    "%s" +
+                "]," +
                 "\"types\":[\"%s\"]," +
                 "\"devices\":[{" +
                     "\"android_channel\":\"%s\"" +
                 "}]" +
-            "}", latency, pushId, eventType, deviceId);
+            "}", latency, pushId, predicateJson, eventType, deviceId);
 
         JsonElement expected = parser.parse(json);
 
