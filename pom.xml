@@ -260,7 +260,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>31.0.1-jre</version>
+      <version>32.1.3-jre</version>
     </dependency>
 
     <dependency>
@@ -272,7 +272,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http</artifactId>
-      <version>4.1.74.Final</version>
+      <version>4.1.104.Final</version>
     </dependency>
 
     <dependency>
