@@ -115,6 +115,7 @@ public class StreamTest {
         }
         finally {
             stop.countDown();
+            stream.close();
         }
 
         assertEquals(events, received);
