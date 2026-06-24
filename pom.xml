@@ -63,7 +63,6 @@
             </goals>
             <configuration>
               <keyname>mobileteam@urbanairship.com</keyname>
-              <keyname>${gpg.keyname}</keyname>
               <gpgArguments>
                 <arg>--pinentry-mode</arg>
                 <arg>loopback</arg>
