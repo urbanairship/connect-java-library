@@ -13,8 +13,7 @@ on:
   #workflow_dispatch:
 
 env:
-  JAVA_VERSION: '11' #( 8, 11, 17, 21)
-
+  JAVA_VERSION: '8'
 jobs:
   build:
     runs-on: ubuntu-latest
