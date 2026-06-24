@@ -1,7 +1,10 @@
 name: Perform Maven Release (Standalone)
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - "INFRA-8096"
+  #workflow_dispatch:
 
 permissions:
   contents: write
