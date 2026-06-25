@@ -24,6 +24,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure Release Runs On Master Only
+        run: |
+          if [ "${{ github.ref_name }}" != "master" ]; then
+            echo "ERROR: Maven releases must be triggered from the 'master' branch."
+            echo "Current branch is '${{ github.ref_name }}'."
+            exit 1
+          fi
+
       - name: Configure Git User
         run: |
           git config user.email "actions@github.com"
@@ -82,3 +90,12 @@ jobs:
         run: |
           git push origin master
           git push origin --tags
+
+      - name: Generate Release Summary
+        if: success()
+        run: |
+            echo "### Maven Release successfully staged!" >> $GITHUB_STEP_SUMMARY
+            echo "The artifacts for \`${{ github.ref_name }}\` have been signed and uploaded." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next Step:** You need to manually drop or approve the staging bundle." >> $GITHUB_STEP_SUMMARY
+            echo "Click here to validate your release: [Sonatype Central Portals](https://central.sonatype.com/publishing)" >> $GITHUB_STEP_SUMMARY
