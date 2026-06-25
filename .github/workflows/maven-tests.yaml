@@ -7,9 +7,6 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - "INFRA-8096"
   workflow_dispatch:
 
 env:
